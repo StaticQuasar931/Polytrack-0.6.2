@@ -19,7 +19,8 @@
     multiplayerInvites: '0.6.2_multiplayer_invites',
     multiplayerSessions: '0.6.2_multiplayer_sessions',
     multiplayerMessages: '0.6.2_multiplayer_messages',
-    moderationNames: '0.6.2_moderation_names'
+    moderationNames: '0.6.2_moderation_names',
+    dailyStreaks: '0.6.2_daily_streaks'
   });
 
   function __pt062WebpackRequire(){
@@ -315,9 +316,32 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     const streak = state.completedDay === utcDayKey(-1) ? (Number(state.streak||0)+1) : 1;
     try { localStorage.setItem('polytrack-0.6.2-daily-streak-v1',JSON.stringify({completedDay:daily.day,streak})); } catch {}
   }
+  async function syncDailySpotlightStreak(d, accountId, ownerUid, trackId, name){
+    const daily = dailySpotlight();
+    if (!accountId || !ownerUid || String(trackId || '') !== daily.track.id) return null;
+    const ref = d.collection(COLLECTIONS.dailyStreaks).doc(String(accountId).slice(0,128));
+    let result = null;
+    await d.runTransaction(async (tx)=>{
+      const snap = await tx.get(ref);
+      const current = snap.exists ? (snap.data() || {}) : {};
+      if (current.lastDay === daily.day) { result=current; return; }
+      const nextStreak = current.lastDay === utcDayKey(-1) ? Math.min(10000,Number(current.currentStreak||0)+1) : 1;
+      result = {accountId:String(accountId).slice(0,128),ownerUid,name:safeDisplayName(name,accountId),currentStreak:nextStreak,bestStreak:Math.max(nextStreak,Number(current.bestStreak||0)),lastDay:daily.day,lastTrackId:daily.track.id,updatedAt:Date.now()};
+      tx.set(ref,result,{merge:false});
+    });
+    return result;
+  }
+  async function loadStreakLeader(){
+    try {
+      const d = await db();
+      const snap = await d.collection(COLLECTIONS.dailyStreaks).orderBy('bestStreak','desc').limit(1).get();
+      const row = snap.docs?.[0]?.data?.() || null;
+      return row ? {name:safeDisplayName(row.name||'Racer',row.accountId),bestStreak:Number(row.bestStreak||0)||0} : null;
+    } catch { return null; }
+  }
   function dailySpotlightMarkup(){
     const daily = dailySpotlight();
-    return `<div class="overall-daily"><span class="overall-daily-label">DAILY SPOTLIGHT</span><strong>${escapeHtml(daily.track.name)}</strong><span>${daily.completed?'Completed today':`Finish it today · ${daily.streak} day streak`}</span></div>`;
+    return `<div class="overall-daily"><span class="overall-daily-label">DAILY</span><strong>${escapeHtml(daily.track.name)}</strong><span>${daily.completed?'Completed today':`Finish today · ${daily.streak} day streak`}</span><span id="overallStreakLeader">Top streak loading...</span></div>`;
   }
   function normalizeCarColorId(colors){
     const fallback = 'ffffff8ec7ff28346a212b58';
@@ -739,8 +763,8 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     const style = document.createElement('style');
     style.id = 'polytrack-ext-style';
     style.textContent = `
-      #overallLeaderboardPanel{--rank-bg:#202d60;--rank-surface:#2a3a77;--rank-surface-2:#17224d;--rank-blue:#8ec7ff;--rank-cyan:#78e4ff;display:none;position:fixed;inset:0;z-index:10001;background:rgba(12,17,39,.86);backdrop-filter:blur(8px);padding:clamp(10px,2vw,26px);overflow:hidden;color:var(--text-color,#fff);font-family:ForcedSquare,Arial,sans-serif}
-      .overall-shell{width:min(1420px,calc(100vw - 32px));height:min(930px,calc(100vh - 32px));margin:auto;display:flex;flex-direction:column;overflow:hidden;position:relative;background:var(--rank-bg);clip-path:polygon(18px 0,calc(100% - 18px) 0,100% 18px,100% calc(100% - 18px),calc(100% - 18px) 100%,18px 100%,0 calc(100% - 18px),0 18px);box-shadow:0 24px 80px rgba(0,0,0,.58);animation:rankPanelIn .32s cubic-bezier(.16,.78,.2,1) both}
+      #overallLeaderboardPanel{--rank-bg:#263874;--rank-surface:#354b8b;--rank-surface-2:#1b2859;--rank-blue:#a7d5ff;--rank-cyan:#7ee7ff;display:none;position:fixed;inset:0;z-index:10001;background:rgba(10,15,36,.82);backdrop-filter:blur(7px);padding:8px;overflow:hidden;color:var(--text-color,#fff);font-family:ForcedSquare,Arial,sans-serif}
+      .overall-shell{width:min(1460px,calc(100vw - 16px));height:min(970px,calc(100vh - 16px));margin:auto;display:flex;flex-direction:column;overflow:hidden;position:relative;background:var(--rank-bg);clip-path:polygon(16px 0,calc(100% - 16px) 0,100% 16px,100% calc(100% - 16px),calc(100% - 16px) 100%,16px 100%,0 calc(100% - 16px),0 16px);box-shadow:0 24px 80px rgba(0,0,0,.58);animation:rankPanelIn .32s cubic-bezier(.16,.78,.2,1) both}
       .overall-top{display:flex;justify-content:space-between;align-items:center;padding:22px 28px 14px;background:linear-gradient(90deg,#263a7b 0%,#1d2c61 65%,#17234f 100%);border-bottom:4px solid var(--rank-blue);position:relative;z-index:2}
       .overall-title-group{display:flex;align-items:center;gap:16px;min-width:0}
       .overall-top h2{margin:0;font-size:clamp(36px,4vw,58px);font-weight:normal;line-height:.95;color:#fff;letter-spacing:.5px;text-shadow:3px 3px 0 rgba(0,0,0,.22)}
@@ -748,26 +772,26 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
       .overall-actions{display:flex;gap:10px;flex:0 0 auto}
       .overall-action-btn{min-width:104px;font-size:20px;line-height:34px;cursor:pointer;transition:transform .12s ease,filter .12s ease}
       .overall-action-btn:hover,.overall-action-btn:focus-visible{transform:translateY(-2px);filter:brightness(1.12)}
-      .overall-sub{margin:0;padding:13px 28px 10px;background:var(--rank-surface-2);color:rgba(240,248,255,.82);font-size:20px;line-height:1.25}
+      .overall-sub{margin:0;padding:13px 28px 12px;background:var(--rank-surface-2);color:rgba(246,250,255,.9);font-size:19px;line-height:1.3}
       .overall-sub strong{color:var(--rank-cyan);font-weight:normal}
-      .overall-daily{display:flex;align-items:center;gap:14px;padding:9px 28px;background:linear-gradient(90deg,#31518b,#21376f);color:rgba(235,245,255,.74);font-size:15px}.overall-daily-label{padding:4px 7px;background:#78e4ff;color:#162651;font-size:12px;letter-spacing:.8px}.overall-daily strong{font-size:19px;color:#fff;font-weight:normal}.overall-daily span:last-child{margin-left:auto}
+      .overall-daily{display:flex;align-items:center;gap:13px;min-height:38px;padding:8px 24px;background:#17234f;border-top:3px solid #5374b6;color:rgba(239,247,255,.78);font-size:14px}.overall-daily-label{padding:4px 8px;background:#7ee7ff;color:#162651;font-size:12px;letter-spacing:.8px}.overall-daily strong{font-size:18px;color:#fff;font-weight:normal}.overall-daily span:last-child{margin-left:auto;color:#a7d5ff}
       .overall-columns{display:grid;grid-template-columns:94px minmax(380px,1.7fr) minmax(220px,.85fr) minmax(210px,.75fr);gap:12px;padding:9px 36px 8px 22px;background:#121b3f;color:rgba(220,235,255,.62);font-size:14px;text-transform:uppercase;letter-spacing:1.2px}
       .overall-columns span:last-child{text-align:right}
-      #overallLeaderboardList{padding:10px 14px 18px;display:flex;flex-direction:column;gap:7px;overflow-y:auto;overflow-x:hidden;flex:1;background:linear-gradient(180deg,#182450,#131c40);scrollbar-color:#526da9 #121a3b}
+      #overallLeaderboardList{padding:10px 14px 12px;display:flex;flex-direction:column;gap:8px;overflow-y:auto;overflow-x:hidden;flex:1;background:linear-gradient(180deg,#203168,#17234e);scrollbar-color:#6a89c7 #142047}
       #overallHelpPopup{display:none;position:absolute;inset:0;background:rgba(8,12,31,.9);backdrop-filter:blur(5px);align-items:center;justify-content:center;padding:24px;z-index:4}
-      .overall-help-card{width:min(1020px,calc(100% - 30px));max-height:min(820px,calc(100vh - 50px));overflow:auto;background:#26366f;clip-path:polygon(16px 0,calc(100% - 16px) 0,100% 16px,100% calc(100% - 16px),calc(100% - 16px) 100%,16px 100%,0 calc(100% - 16px),0 16px);box-shadow:0 18px 60px rgba(0,0,0,.45)}
+      .overall-help-card{width:min(1120px,calc(100% - 24px));max-height:min(880px,calc(100vh - 30px));overflow:auto;background:#30447f;clip-path:polygon(16px 0,calc(100% - 16px) 0,100% 16px,100% calc(100% - 16px),calc(100% - 16px) 100%,16px 100%,0 calc(100% - 16px),0 16px);box-shadow:0 18px 60px rgba(0,0,0,.45)}
       .overall-help-head{padding:22px 26px 16px;border-bottom:4px solid var(--rank-blue);background:#1c2959}
       .overall-help-card h3{margin:0;font-size:38px;color:#fff;font-weight:normal}
       .overall-help-content{padding:22px 26px}
-      .overall-help-card p{margin:0 0 14px;font-size:21px;color:rgba(255,255,255,.9);line-height:1.42}
+      .overall-help-card p{margin:0 0 16px;font-size:22px;color:rgba(255,255,255,.94);line-height:1.45}
       .overall-help-card .small{font-size:17px;color:rgba(255,255,255,.66)}
       .overall-help-note{padding:14px 16px;background:#18234e;border-left:5px solid var(--rank-cyan)}
       .overall-help-actions{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:20px}
-      .overall-discord-cta{display:inline-flex;align-items:center;gap:10px;padding:9px 15px;background:#5865f2;color:#fff;text-decoration:none;font-size:18px;clip-path:polygon(7px 0,100% 0,calc(100% - 7px) 100%,0 100%);transition:filter .15s ease,transform .15s ease}
+      .overall-discord-cta{display:inline-flex;align-items:center;gap:10px;padding:9px 15px;color:#fff;text-decoration:none;font-size:18px;transition:filter .15s ease,transform .15s ease}
       .overall-discord-cta:hover{filter:brightness(1.12);transform:translateY(-2px)}
       .overall-discord-cta img{width:25px;height:25px}
       #overallHelpClose{cursor:pointer;min-width:100px}
-      .overall-entry{position:relative;display:grid;grid-template-columns:94px minmax(380px,1.7fr) minmax(220px,.85fr) minmax(210px,.75fr);gap:12px;align-items:center;min-height:106px;padding:0 22px 0 0;background:var(--rank-surface);clip-path:polygon(8px 0,calc(100% - 8px) 0,100% 8px,100% calc(100% - 8px),calc(100% - 8px) 100%,8px 100%,0 calc(100% - 8px),0 8px);opacity:0;transform:translateX(-34px);animation:overallEntryIn .38s cubic-bezier(.16,.78,.2,1) forwards;transition:filter .14s ease,transform .14s ease}
+      .overall-entry{position:relative;display:grid;grid-template-columns:94px minmax(360px,1.45fr) minmax(280px,1fr) minmax(220px,.72fr);gap:14px;align-items:center;min-height:108px;padding:0 24px 0 0;background:var(--rank-surface);clip-path:polygon(8px 0,calc(100% - 8px) 0,100% 8px,100% calc(100% - 8px),calc(100% - 8px) 100%,8px 100%,0 calc(100% - 8px),0 8px);opacity:0;transform:translateX(-34px);animation:overallEntryIn .38s cubic-bezier(.16,.78,.2,1) forwards;transition:filter .14s ease,transform .14s ease}
       .overall-entry::after{content:'';position:absolute;left:0;bottom:0;width:0;height:4px;background:var(--rank-cyan);animation:rankLineIn .45s ease-out forwards;animation-delay:inherit}
       .overall-entry:hover{filter:brightness(1.08);transform:translateX(3px)}
       .overall-entry.top-1{min-height:122px;background:linear-gradient(90deg,#806b27 0%,#4d4a3a 42%,#2c3764 100%)}
@@ -780,25 +804,25 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
       .overall-entry.top-1 .overall-car-model{height:112px;width:138px}
       .overall-car-model > img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center;opacity:0;filter:none!important;transition:opacity .24s ease,transform .24s ease;transform:scale(.94)}
       .overall-car-model > img.show{opacity:1;transform:scale(1.08)}
-      .overall-name{font-size:29px;white-space:normal;overflow:hidden;display:flex;align-items:center;min-width:0}
+      .overall-name{font-size:30px;white-space:normal;overflow:hidden;display:flex;align-items:center;min-width:0;color:#fff}
       .overall-name-label{display:flex;flex-direction:column;gap:5px;min-width:0}.overall-name-main{line-height:1.05;overflow:hidden;text-overflow:ellipsis}.overall-name-hint{font-size:13px;color:rgba(226,239,255,.66);text-transform:uppercase;letter-spacing:.9px}.overall-racer-code{border:0;background:transparent;color:rgba(185,215,255,.52);padding:0;text-align:left;font:inherit;font-size:12px;letter-spacing:.7px;cursor:pointer}.overall-racer-code:hover{color:var(--rank-cyan)}
       .overall-mid{min-width:0;text-align:left;display:flex;flex-direction:column;gap:7px}
       .overall-move{font-size:20px}.overall-move.up{color:#78ff9a}.overall-move.down{color:#ff8c8c}.overall-move.flat{color:rgba(230,240,255,.55)}
-      .overall-best{font-size:15px;color:rgba(218,233,255,.72);line-height:1.2}
+      .overall-best{font-size:16px;color:rgba(238,246,255,.86);line-height:1.25}
       .overall-stats{text-align:center;min-width:0}.overall-score{font-size:37px;color:#fff;line-height:1}.overall-score-unit{font-size:14px;color:var(--rank-cyan);letter-spacing:1px;margin-top:3px}.overall-races{font-size:15px;color:rgba(215,236,255,.76);margin-top:5px}
       .overall-loading{margin:auto;width:min(520px,calc(100% - 30px));padding:30px 26px;text-align:center;background:#26366f;clip-path:polygon(10px 0,calc(100% - 10px) 0,100% 10px,100% calc(100% - 10px),calc(100% - 10px) 100%,10px 100%,0 calc(100% - 10px),0 10px)}.overall-loading strong{display:block;font-size:28px;font-weight:normal;color:#fff}.overall-loading span{display:block;margin-top:8px;color:var(--rank-cyan);font-size:16px}.overall-loading-bar{height:5px;margin-top:18px;background:#121b3f;overflow:hidden}.overall-loading-bar::after{content:'';display:block;width:38%;height:100%;background:var(--rank-cyan);animation:rankLoading 1.05s ease-in-out infinite}
-      .overall-empty{margin:auto;padding:50px 30px;display:flex;flex-direction:column;gap:10px;text-align:center;font-size:21px;color:rgba(233,244,255,.68)}.overall-empty strong{font-size:34px;color:#fff;font-weight:normal}
+      .overall-empty{margin:auto;width:min(650px,calc(100% - 40px));padding:42px 34px;display:flex;flex-direction:column;gap:12px;text-align:center;font-size:20px;color:rgba(239,247,255,.8);background:#2b407c;clip-path:polygon(12px 0,calc(100% - 12px) 0,100% 12px,100% calc(100% - 12px),calc(100% - 12px) 100%,12px 100%,0 calc(100% - 12px),0 12px)}.overall-empty strong{font-size:34px;color:#fff;font-weight:normal}.overall-empty .button{align-self:center;margin-top:8px;min-width:150px}
       #injectedRankingsBtn{animation:none!important;will-change:transform,opacity,filter;position:relative}
       #injectedRankingsBtn.button-spawn{animation:rankedButtonSpawn .72s cubic-bezier(.16,.78,.2,1.06) both!important}
       #injectedRankingsBtn.button-spawn img{animation:rankedIconPop .72s cubic-bezier(.16,.78,.2,1.06) both}
-      .static-discord-link{position:absolute;left:calc(26px + var(--safe-area-horizontal));bottom:58px;z-index:8;display:flex;align-items:center;gap:11px;min-width:210px;padding:10px 16px;color:#fff!important;background:linear-gradient(90deg,#5865f2,#4752c4);text-decoration:none!important;font-size:17px;pointer-events:auto;clip-path:polygon(8px 0,calc(100% - 8px) 0,100% 8px,100% calc(100% - 8px),calc(100% - 8px) 100%,8px 100%,0 calc(100% - 8px),0 8px);transition:transform .14s ease,filter .14s ease}
+      .static-discord-link{position:absolute;left:calc(18px + var(--safe-area-horizontal));top:72px;z-index:8;display:flex;align-items:center;gap:9px;min-width:0;padding:7px 13px;color:#fff!important;text-decoration:none!important;font-size:16px;pointer-events:auto;transition:transform .14s ease,filter .14s ease}
       .static-discord-link:hover{transform:translateY(-2px);filter:brightness(1.15)}.static-discord-link img{width:28px;height:28px;margin:0!important;padding:0!important}
-      #startHotkeyLegend{position:absolute;left:calc(26px + var(--safe-area-horizontal));bottom:24px;z-index:7;color:rgba(225,238,255,.64);font-size:13px;letter-spacing:.3px;pointer-events:none}
-      #sqRankedSettings{order:-9999;margin:10px 12px 16px;padding:14px 16px;background:#1d2b5d;border-left:5px solid #78e4ff;color:#fff;font-family:ForcedSquare,Arial,sans-serif}.sq-settings-title{display:flex;justify-content:space-between;gap:12px;margin-bottom:10px}.sq-settings-title strong{font-size:23px}.sq-settings-title span{color:rgba(225,238,255,.62);font-size:14px}.sq-setting-row{display:flex;align-items:center;gap:9px;margin:7px 0;font-size:16px;cursor:pointer}.sq-setting-row input{width:18px;height:18px}.sq-moderator-tools{display:grid;grid-template-columns:1.2fr 1fr 1fr auto;gap:7px;margin-top:13px;padding-top:12px;border-top:1px solid rgba(255,255,255,.16)}.sq-moderator-tools strong,.sq-mod-status{grid-column:1/-1}.sq-moderator-tools input{min-width:0;padding:7px 9px;background:#111a3d;border:1px solid rgba(142,199,255,.45);color:#fff;font:inherit}.sq-mod-save{font-size:14px}.sq-mod-status{font-size:13px;color:#78e4ff}
-      .sq-mod-setup{margin-top:10px;color:rgba(225,238,255,.64);font-size:13px}.sq-mod-setup summary{cursor:pointer;color:#8ec7ff}.sq-mod-setup p{margin:7px 0 0}.sq-copy-uid{border:0;background:rgba(0,0,0,.25);color:#78e4ff;font:inherit;cursor:pointer;max-width:260px;overflow:hidden;text-overflow:ellipsis;vertical-align:bottom}
-      .sq-hide-lobby-extras .static-discord-link,.sq-hide-lobby-extras #staticMenu,.sq-hide-lobby-extras #staticSlideMenu{display:none!important}.sq-reduced-effects .staticFunPill,.sq-reduced-effects .staticFunText,.sq-reduced-effects .staticFunChar{animation:none!important}.sq-reduced-effects #injectedRankingsBtn.button-spawn{animation-duration:.01ms!important}
+      #startHotkeyLegend{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);z-index:7;padding:4px 9px;color:rgba(232,242,255,.68);background:rgba(20,30,65,.64);font-size:12px;letter-spacing:.25px;pointer-events:none;white-space:nowrap}
+      #sqRankedSettings{position:relative;margin:0 0 14px;padding:0 0 10px;border-bottom:3px solid var(--text-color);color:var(--text-color);font-family:ForcedSquare,Arial,sans-serif}#sqRankedSettings>h2{margin:10px;padding:4px;font-size:24px;font-weight:normal;border-bottom:2px solid var(--text-color)}.sq-settings-note{margin:8px 15px;color:rgba(235,244,255,.72);font-size:16px}.sq-setting-row{margin:10px;display:flex}.sq-setting-row>p{display:inline-block;margin:10px;min-width:0;flex-grow:1;font-size:25px}.sq-setting-row>.button-wrapper{display:flex;justify-content:end}.sq-setting-row .button{height:48px;min-width:150px}.sq-moderator-tools{display:grid;grid-template-columns:1.2fr 1fr 1fr auto;gap:7px;margin:13px 10px 0;padding-top:12px;border-top:1px solid rgba(255,255,255,.16)}.sq-moderator-tools strong,.sq-mod-status{grid-column:1/-1}.sq-moderator-tools input{min-width:0;padding:7px 9px;background:#111a3d;border:1px solid rgba(142,199,255,.45);color:#fff;font:inherit}.sq-mod-save{font-size:14px}.sq-mod-status{font-size:13px;color:#78e4ff}
+      .sq-mod-challenge{position:fixed;inset:0;z-index:12000;display:flex;align-items:center;justify-content:center;background:rgba(8,12,30,.88)}.sq-mod-card{width:min(430px,calc(100vw - 30px));padding:24px;background:#2b407c;clip-path:polygon(12px 0,calc(100% - 12px) 0,100% 12px,100% calc(100% - 12px),calc(100% - 12px) 100%,12px 100%,0 calc(100% - 12px),0 12px);text-align:center}.sq-mod-card>strong{font-size:28px}.sq-mod-card>p{font-size:15px;color:rgba(240,247,255,.72)}.sq-mod-card>output{display:block;font-size:38px;letter-spacing:8px;color:#7ee7ff}.sq-mod-entry{margin:10px 0;font-size:24px}.sq-mod-keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.sq-mod-keypad .button{min-width:0}.sq-mod-challenge-status{display:block;margin-top:12px;color:#ffd27e;font-size:14px}
+      .sq-hide-lobby-extras .static-discord-link,.sq-hide-lobby-extras #staticMenu{display:none!important}.sq-reduced-effects .staticFunPill,.sq-reduced-effects .staticFunText,.sq-reduced-effects .staticFunChar{animation:none!important}.sq-reduced-effects #injectedRankingsBtn.button-spawn{animation-duration:.01ms!important}
       @media (max-width:1100px){.overall-columns,.overall-entry{grid-template-columns:80px minmax(300px,1.5fr) minmax(170px,.8fr) minmax(170px,.7fr)}.overall-rank{width:80px}.overall-car-model{width:108px;height:88px}.overall-name{font-size:25px}.overall-score{font-size:30px}}
-      @media (max-width:760px){#overallLeaderboardPanel{padding:0}.overall-shell{width:100vw;height:100vh;clip-path:none}.overall-top{padding:16px 14px 11px}.overall-title-group{gap:8px}.overall-beta{display:none}.overall-actions{gap:5px}.overall-action-btn{min-width:76px;font-size:16px}.overall-sub{padding:10px 14px;font-size:16px}.overall-daily{padding:7px 12px;gap:7px}.overall-daily span:last-child{display:none}.overall-columns{display:none}#overallLeaderboardList{padding:7px}.overall-entry{grid-template-columns:62px 1fr auto;grid-template-areas:'rank name stats' 'rank mid stats';min-height:92px;padding-right:12px;gap:7px}.overall-rank{grid-area:rank;width:62px}.overall-name{grid-area:name;font-size:20px}.overall-mid{grid-area:mid}.overall-stats{grid-area:stats}.overall-car-model{width:76px;height:78px;margin-right:8px}.overall-entry.top-1 .overall-car-model{width:82px;height:86px}.overall-score{font-size:24px}.overall-races,.overall-best{font-size:12px}.overall-move{font-size:15px}.static-discord-link{left:14px;bottom:48px;min-width:0;font-size:14px;padding:8px 11px}.static-discord-link img{width:24px;height:24px}#startHotkeyLegend{display:none}.sq-moderator-tools{grid-template-columns:1fr}}
+      @media (max-width:760px){#overallLeaderboardPanel{padding:0}.overall-shell{width:100vw;height:100vh;clip-path:none}.overall-top{padding:16px 14px 11px}.overall-title-group{gap:8px}.overall-beta{display:none}.overall-actions{gap:5px}.overall-action-btn{min-width:76px;font-size:16px}.overall-sub{padding:10px 14px;font-size:15px}.overall-daily{padding:7px 12px;gap:7px}.overall-daily span:last-child{display:none}.overall-columns{display:none}#overallLeaderboardList{padding:7px}.overall-entry{grid-template-columns:62px 1fr auto;grid-template-areas:'rank name stats' 'rank mid stats';min-height:94px;padding-right:12px;gap:7px}.overall-rank{grid-area:rank;width:62px}.overall-name{grid-area:name;font-size:20px}.overall-mid{grid-area:mid}.overall-stats{grid-area:stats}.overall-car-model{width:76px;height:78px;margin-right:8px}.overall-entry.top-1 .overall-car-model{width:82px;height:86px}.overall-score{font-size:24px}.overall-races,.overall-best{font-size:12px}.overall-move{font-size:15px}.static-discord-link{left:10px;top:58px;font-size:13px;padding:6px 9px}.static-discord-link img{width:22px;height:22px}#startHotkeyLegend{display:none}.sq-moderator-tools{grid-template-columns:1fr}.overall-help-card p{font-size:18px}.overall-help-content{padding:18px}}
       @media (prefers-reduced-motion:reduce){.overall-shell,.overall-entry,#injectedRankingsBtn.button-spawn,#injectedRankingsBtn.button-spawn img{animation-duration:.01ms!important;animation-delay:0s!important}}
       .staticFunPill{animation:staticGlowPulse 1.8s ease-in-out infinite}.staticFunHover{transition:transform .16s ease, filter .16s ease, box-shadow .16s ease}
       .staticFunHover:hover{transform:translateY(-2px) scale(1.05);filter:brightness(1.18);box-shadow:0 0 18px rgba(255,255,255,0.20),0 0 30px rgba(0,255,255,0.18)}
@@ -915,7 +939,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
       return;
     }
     const link = document.createElement('a');
-    link.className = 'static-discord-link';
+    link.className = 'button static-discord-link';
     link.href = 'https://discord.gg/DP2hM7RRhR';
     link.target = '_blank';
     link.rel = 'noopener noreferrer';
@@ -937,19 +961,37 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
   }
 
   function settingsToggle(label, storageKey, defaultEnabled=true, inverted=false){
-    const row = document.createElement('label');
-    row.className = 'sq-setting-row';
-    const input = document.createElement('input');
-    input.type = 'checkbox';
-    const stored = localStorage.getItem(storageKey);
-    input.checked = stored == null ? defaultEnabled : (inverted ? stored !== '1' : stored !== '0');
-    const text = document.createElement('span');
+    const row = document.createElement('div');
+    row.className = 'setting sq-setting-row';
+    const text = document.createElement('p');
     text.textContent = label;
-    row.append(input,text);
-    input.addEventListener('change',()=>{
-      localStorage.setItem(storageKey,inverted ? (input.checked?'0':'1') : (input.checked?'1':'0'));
+    const wrapper = document.createElement('div');
+    wrapper.className = 'button-wrapper';
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'button';
+    const isEnabled = ()=>{
+      const stored = localStorage.getItem(storageKey);
+      return stored == null ? defaultEnabled : (inverted ? stored !== '1' : stored !== '0');
+    };
+    const render = ()=>{
+      const enabled = isEnabled();
+      button.textContent = enabled ? 'Enabled' : 'Disabled';
+      button.classList.toggle('selected',enabled);
+      button.setAttribute('aria-pressed',String(enabled));
+    };
+    button.addEventListener('click',(event)=>{
+      event.preventDefault();
+      event.stopPropagation();
+      const next = !isEnabled();
+      localStorage.setItem(storageKey,inverted ? (next?'0':'1') : (next?'1':'0'));
       applyUiPreferences();
+      render();
+      ensureLobbyHotkeyHints();
     });
+    wrapper.appendChild(button);
+    row.append(text,wrapper);
+    render();
     return row;
   }
 
@@ -958,27 +1000,18 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
       await db();
       const user = window.firebase.auth().currentUser;
       if (!user) return false;
-      const token = await user.getIdTokenResult();
-      return token?.claims?.moderator === true || (Array.isArray(window.POLYTRACK_MODERATOR_UIDS) && window.POLYTRACK_MODERATOR_UIDS.includes(user.uid));
+      const token = await user.getIdTokenResult(true);
+      return token?.claims?.moderator === true;
     } catch { return false; }
   }
 
   async function attachModeratorControls(section){
     if (section.dataset.moderatorChecked === '1') return;
     section.dataset.moderatorChecked = '1';
-    if (!(await currentUserIsModerator()) || !section.isConnected) {
-      if (!section.isConnected) return;
-      const setup = document.createElement('details');
-      setup.className = 'sq-mod-setup';
-      const uid = window.firebase?.auth?.().currentUser?.uid || 'unavailable';
-      setup.innerHTML = `<summary>Moderator access</summary><p>Protected controls require a Firebase <code>moderator: true</code> custom claim. This browser UID is <button type="button" class="sq-copy-uid">${escapeHtml(uid)}</button>.</p>`;
-      section.appendChild(setup);
-      setup.querySelector('.sq-copy-uid')?.addEventListener('click',()=>navigator.clipboard?.writeText(uid).catch(()=>{}));
-      return;
-    }
+    if (!(await currentUserIsModerator()) || !section.isConnected) return;
     const admin = document.createElement('div');
     admin.className = 'sq-moderator-tools';
-    admin.innerHTML = '<strong>Name moderation</strong><input class="sq-mod-id" maxlength="128" placeholder="Paste racer account ID"><input class="sq-mod-name" maxlength="24" placeholder="Replacement name"><input class="sq-mod-reason" maxlength="80" placeholder="Private reason"><button class="button sq-mod-save" type="button">Apply moderated name</button><span class="sq-mod-status"></span>';
+    admin.innerHTML = '<strong>Name moderation</strong><input class="sq-mod-id" maxlength="128" placeholder="Paste racer account ID"><input class="sq-mod-name" maxlength="24" placeholder="Replacement name"><input class="sq-mod-reason" maxlength="80" placeholder="Moderator note"><button class="button sq-mod-save" type="button">Apply moderated name</button><span class="sq-mod-status"></span>';
     section.appendChild(admin);
     admin.querySelector('.sq-mod-save').addEventListener('click',async()=>{
       const accountId = cleanUserId(admin.querySelector('.sq-mod-id').value);
@@ -1005,17 +1038,64 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     });
   }
 
+  let moderatorSequence = '';
+  let moderatorSequenceStage = 0;
+  function openModeratorChallenge(section){
+    if (!section || section.querySelector('.sq-mod-challenge')) return;
+    const code = Array.from(crypto.getRandomValues(new Uint8Array(6)),(value)=>String(value%10)).join('');
+    let entered = '';
+    const challenge = document.createElement('div');
+    challenge.className = 'sq-mod-challenge';
+    challenge.innerHTML = `<div class="sq-mod-card"><strong>Moderator verification</strong><p>Enter the displayed local challenge. Firebase authorization is still required.</p><output>${code}</output><div class="sq-mod-entry">_ _ _ _ _ _</div><div class="sq-mod-keypad">${[1,2,3,4,5,6,7,8,9,'Clear',0,'Close'].map((key)=>`<button type="button" class="button" data-key="${key}">${key}</button>`).join('')}</div><span class="sq-mod-challenge-status"></span></div>`;
+    section.appendChild(challenge);
+    const entry = challenge.querySelector('.sq-mod-entry');
+    const status = challenge.querySelector('.sq-mod-challenge-status');
+    challenge.addEventListener('click',async(event)=>{
+      const key = event.target.closest?.('[data-key]')?.dataset.key;
+      if (key == null) return;
+      event.preventDefault();
+      event.stopPropagation();
+      if (key === 'Close') { challenge.remove(); return; }
+      if (key === 'Clear') entered='';
+      else if (entered.length < 6) entered += key;
+      entry.textContent = Array.from({length:6},(_,index)=>index<entered.length?'●':'_').join(' ');
+      if (entered.length === 6) {
+        if (entered !== code) { status.textContent='Incorrect challenge.'; entered=''; entry.textContent='_ _ _ _ _ _'; return; }
+        status.textContent='Checking Firebase authorization...';
+        if (await currentUserIsModerator()) {
+          challenge.remove();
+          await attachModeratorControls(section);
+        } else {
+          status.textContent='Challenge passed, but this account has no moderator claim.';
+        }
+      }
+    });
+  }
+  function handleModeratorSequence(event){
+    const settings = document.querySelector('.settings-menu-ui');
+    if (!settings || !isElementVisible(settings) || event.ctrlKey || event.altKey || event.metaKey) return;
+    if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) return;
+    const key = String(event.key||'').toLowerCase();
+    if (key.length !== 1) return;
+    moderatorSequence = (moderatorSequence + key).slice(-12);
+    if (moderatorSequenceStage === 0 && moderatorSequence.endsWith('static')) { moderatorSequenceStage=1; moderatorSequence=''; return; }
+    if (moderatorSequenceStage === 1 && moderatorSequence.endsWith('931931')) {
+      moderatorSequenceStage=0;
+      moderatorSequence='';
+      openModeratorChallenge(settings.querySelector('#sqRankedSettings'));
+    }
+  }
   function ensureSettingsEnhancements(){
-    const settings = Array.from(document.querySelectorAll('.settings-menu-ui,.settings-menu,.menu-settings,.settings')).find((element)=>element.isConnected && !element.matches('button,a'));
-    if (!settings || settings.querySelector('#sqRankedSettings')) return;
+    const settings = Array.from(document.querySelectorAll('.settings-menu-ui')).find((element)=>element.isConnected);
+    const container = settings?.querySelector(':scope > .container');
+    if (!settings || !container || container.querySelector('#sqRankedSettings')) return;
     const section = document.createElement('section');
     section.id = 'sqRankedSettings';
-    section.innerHTML = '<div class="sq-settings-title"><strong>Static Ranked</strong><span>Quality of life and moderation</span></div>';
+    section.innerHTML = '<h2>Static Ranked</h2><p class="sq-settings-note">Quality-of-life options for this community edition.</p>';
     section.appendChild(settingsToggle('Keyboard shortcuts','polytrack-0.6.2-hotkeys-enabled',true));
     section.appendChild(settingsToggle('Lobby links and community widgets','polytrack-0.6.2-lobby-extras',true));
     section.appendChild(settingsToggle('Full menu animations','polytrack-0.6.2-reduced-effects',true,true));
-    settings.prepend(section);
-    attachModeratorControls(section);
+    container.prepend(section);
   }
 
   function lobbyShortcutButtons(){
@@ -1045,7 +1125,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
 
   function ensureLobbyHotkeyHints(){
     const existingLegend = document.getElementById('startHotkeyLegend');
-    if (!isStartMenuHotkeyContext()) { if (existingLegend) existingLegend.style.display='none'; return; }
+    if (localStorage.getItem('polytrack-0.6.2-hotkeys-enabled') === '0' || !isStartMenuHotkeyContext()) { if (existingLegend) existingLegend.style.display='none'; return; }
     const buttons = lobbyShortcutButtons();
     document.querySelectorAll('.sq-hotkey-hint').forEach((hint)=>hint.remove());
     document.querySelectorAll('.sq-has-hotkey').forEach((button)=>button.classList.remove('sq-has-hotkey'));
@@ -1088,14 +1168,15 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     if (document.getElementById('overallLeaderboardPanel')) return;
     const panel = document.createElement('div');
     panel.id = 'overallLeaderboardPanel';
-    panel.innerHTML = `<div class="overall-shell"><div class="overall-top"><div class="overall-title-group"><h2>${tRankingsTitle()}</h2><span class="overall-beta">STATIC RANKED · BETA</span></div><div class="overall-actions"><button id="overallHelpBtn" class="button overall-action-btn" type="button">${tr('help')}</button><button id="closeOverallLeaderboard" class="button overall-action-btn" type="button">${tr('close')}</button></div></div><p class="overall-sub"><strong>Lower RP is better.</strong> Popular tracks are worth more, official tracks receive a 1.6x premium, and thin one-player fields carry less weight. Catalog: ${OFFICIAL_TRACK_COUNT} official + ${COMMUNITY_TRACK_COUNT} community.</p>${dailySpotlightMarkup()}<div class="overall-columns" aria-hidden="true"><span>Place</span><span>Driver</span><span>Recent movement + best track</span><span>Rank points</span></div><div id="overallLeaderboardList"></div><div id="overallHelpPopup"><div class="overall-help-card"><div class="overall-help-head"><h3>Static Ranked · Work in progress</h3></div><div class="overall-help-content"><p>This ranked leaderboard is an unofficial <strong>StaticQuasar931 Unblocked Games</strong> addition to PolyTrack. It is actively being improved and may change as bugs are fixed and more racers join.</p><p class="overall-help-note"><strong>How RP works:</strong> lower is better. Your placement is adjusted for field size, then weighted by track participation. Official tracks are worth 1.6x community tracks. Completing more tracks improves confidence, but repeating slower runs cannot hurt your personal best.</p><p><strong>Fastest contact:</strong> <a href="https://discord.gg/DP2hM7RRhR" target="_blank" rel="noopener noreferrer" style="color:#9fe6ff">StaticQuasar931 Discord</a>. Next: <a href="mailto:StaticQuasar931Games@gmail.com" style="color:#9fe6ff">StaticQuasar931Games@gmail.com</a>. You can also use the <a href="https://sites.google.com/view/staticquasar931/google-form" target="_blank" rel="noopener noreferrer" style="color:#9fe6ff">Google feedback form</a>.</p><p class="small">${tr('helpSmall')} Racer codes can be copied from each row when reporting a name or score.</p><div class="overall-help-actions"><a class="overall-discord-cta" href="https://discord.gg/DP2hM7RRhR" target="_blank" rel="noopener noreferrer"><img src="images/discord.svg" alt="">Join the StaticQuasar931 Discord</a><button id="overallHelpClose" class="button overall-action-btn" type="button">${tr('close')}</button></div></div></div></div></div>`;
+    panel.innerHTML = `<div class="overall-shell"><div class="overall-top"><div class="overall-title-group"><h2>${tRankingsTitle()}</h2><span class="overall-beta">STATIC RANKED · BETA</span></div><div class="overall-actions"><button id="overallHelpBtn" class="button overall-action-btn" type="button">${tr('help')}</button><button id="closeOverallLeaderboard" class="button overall-action-btn" type="button">${tr('close')}</button></div></div><p class="overall-sub"><strong>Lower RP is better.</strong> Rankings reward strong finishes against larger fields. Official tracks receive extra weight. Catalog: ${OFFICIAL_TRACK_COUNT} official + ${COMMUNITY_TRACK_COUNT} community.</p><div class="overall-columns" aria-hidden="true"><span>Place</span><span>Driver</span><span>Movement and best track</span><span>Rank points</span></div><div id="overallLeaderboardList"></div>${dailySpotlightMarkup()}<div id="overallHelpPopup"><div class="overall-help-card"><div class="overall-help-head"><h3>Static Ranked · Work in progress</h3></div><div class="overall-help-content"><p>This ranked leaderboard is an unofficial <strong>StaticQuasar931 Unblocked Games</strong> addition to PolyTrack. It is actively being improved and may change as bugs are fixed and more racers join.</p><p class="overall-help-note"><strong>How RP works:</strong> lower is better. Your placement is adjusted for field size, then weighted by track participation. Official tracks are worth 1.6x community tracks. Completing more tracks improves confidence, but repeating slower runs cannot hurt your personal best.</p><p><strong>Fastest contact:</strong> <a href="https://discord.gg/DP2hM7RRhR" target="_blank" rel="noopener noreferrer" style="color:#9fe6ff">StaticQuasar931 Discord</a>. Next: <a href="mailto:StaticQuasar931Games@gmail.com" style="color:#9fe6ff">StaticQuasar931Games@gmail.com</a>. You can also use the <a href="https://sites.google.com/view/staticquasar931/google-form" target="_blank" rel="noopener noreferrer" style="color:#9fe6ff">Google feedback form</a>.</p><p class="small">${tr('helpSmall')} Public racer codes help identify reports without exposing an authentication token.</p><div class="overall-help-actions"><a class="button overall-discord-cta" href="https://discord.gg/DP2hM7RRhR" target="_blank" rel="noopener noreferrer"><img src="images/discord.svg" alt="">Join the StaticQuasar931 Discord</a><button id="overallHelpClose" class="button overall-action-btn" type="button">${tr('close')}</button></div></div></div></div></div>`;
     document.body.appendChild(panel);
     panel.addEventListener('click', (event)=>{
       if (event.target === panel) panel.style.display='none';
-      const copy = event.target.closest?.('[data-racer-id]');
+      const copy = event.target.closest?.('[data-racer-code]');
       if (copy) {
-        navigator.clipboard?.writeText(copy.dataset.racerId || '').then(()=>{ copy.textContent='RACER ID COPIED'; setTimeout(()=>{ if(copy.isConnected) copy.textContent=copy.dataset.label||'RACER ID'; },1200); }).catch(()=>{});
+        navigator.clipboard?.writeText(copy.dataset.label || '').then(()=>{ copy.textContent='CODE COPIED'; setTimeout(()=>{ if(copy.isConnected) copy.textContent=copy.dataset.label||'RACER CODE'; },1200); }).catch(()=>{});
       }
+      if (event.target.closest?.('[data-rank-retry]')) openPanel();
     });
     panel.querySelector('#closeOverallLeaderboard').addEventListener('click', ()=>{ panel.style.display='none'; });
     panel.querySelector('#overallHelpBtn').addEventListener('click', ()=>{
@@ -1355,22 +1436,25 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     }));
   }
 
+  let overallLoadState = {status:'idle',message:''};
   async function fetchOverallEntries(){
     let direct = [];
+    overallLoadState = {status:'loading',message:''};
     try {
       const d = await db();
       const snap = await d.collection(COLLECTIONS.leaderboardsOverall).doc('main').get();
       const data = snap.data() || {};
       direct = normalizeEntries(data.entries || []);
-      if (direct.length && data.entries?.[0]?.rankModel === 'participation-v2') return annotateOverallMovement(direct);
+      if (direct.length && data.entries?.[0]?.rankModel === 'participation-v2') { overallLoadState={status:'cloud',message:''}; return annotateOverallMovement(direct); }
       const boardsSnap = await d.collection(COLLECTIONS.leaderboardsTrack).get();
       const rebuilt = computeOverallFromTrackBoardDocs(boardsSnap.docs);
       if (rebuilt.length) {
         await d.collection(COLLECTIONS.leaderboardsOverall).doc('main').set({entries:rebuilt,updatedAt:Date.now(),seededBy:'polytrack-0.6.2-client'},{merge:false});
+        overallLoadState={status:'cloud',message:''};
         return annotateOverallMovement(rebuilt);
       }
-      const localRows = readLocalRaceRows();
-      return annotateOverallMovement(computeOverallFromRaceRows(localRows));
+      overallLoadState={status:'empty-cloud',message:'The ranked service is connected, but no shared snapshot exists yet.'};
+      return [];
     } catch (error) {
       if (isLocalApiCapableHost()) {
         try {
@@ -1378,17 +1462,14 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
           if (res.ok) {
             const data = await res.json();
             const hydrated = await hydrateOverallProfiles(data.entries || []);
+            overallLoadState={status:'cloud',message:''};
             return annotateOverallMovement(hydrated);
           }
         } catch {}
       }
-      const localRows = readLocalRaceRows();
-      if (localRows.length) {
-        const hydrated = await hydrateOverallProfiles(computeOverallFromRaceRows(localRows));
-        return annotateOverallMovement(hydrated);
-      }
       console.warn('Failed to load overall leaderboard:', error);
-      return direct || [];
+      overallLoadState={status:'error',message:/permission/i.test(String(error&&(error.message||error)))?'Firebase denied ranked access. Updated Firestore rules must be deployed.':'The shared ranked snapshot could not be reached. Check the connection and retry.'};
+      return [];
     }
   }
 
@@ -1427,14 +1508,15 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     const racerCode = safeUserId ? `R-${safeUserId.slice(-8).toUpperCase()}` : 'R-UNKNOWN';
     const officialCount = Number(row?.officialCount || 0) || 0;
     const communityCount = Number(row?.communityCount || 0) || 0;
-    return `<div class="overall-entry ${rank===1?'top-1':rank===2?'top-2':rank===3?'top-3':''}" style="animation-delay:${(index*0.045).toFixed(3)}s"><span class="overall-rank">#${rank}</span><span class="overall-name">${carModelPreview(savedCarStyle,safeUserId)}<span class="overall-name-label"><span class="overall-name-main">${safeName}</span>${hintText?`<span class="overall-name-hint">${hintText}</span>`:''}<button class="overall-racer-code" type="button" data-racer-id="${safeUserId}" data-label="${racerCode}" title="Copy full racer account ID">${racerCode}</button></span></span><div class="overall-mid">${move}<div class="overall-best">${best}</div></div><div class="overall-stats"><div class="overall-score">${score.toFixed(2)}</div><div class="overall-score-unit">RP · LOWER IS BETTER</div><div class="overall-races">${races}/${totalTracks} · ${officialCount} official · ${communityCount} community</div></div></div>`;
+    return `<div class="overall-entry ${rank===1?'top-1':rank===2?'top-2':rank===3?'top-3':''}" style="animation-delay:${(index*0.045).toFixed(3)}s"><span class="overall-rank">#${rank}</span><span class="overall-name">${carModelPreview(savedCarStyle,safeUserId)}<span class="overall-name-label"><span class="overall-name-main">${safeName}</span>${hintText?`<span class="overall-name-hint">${hintText}</span>`:''}<button class="overall-racer-code" type="button" data-racer-code="${racerCode}" data-label="${racerCode}" title="Copy public racer code">${racerCode}</button></span></span><div class="overall-mid">${move}<div class="overall-best">${best}</div></div><div class="overall-stats"><div class="overall-score">${score.toFixed(2)}</div><div class="overall-score-unit">RP · LOWER IS BETTER</div><div class="overall-races">${races}/${totalTracks} · ${officialCount} official · ${communityCount} community</div></div></div>`;
   }
 
   function renderEntries(entries){
     const listEl = document.getElementById('overallLeaderboardList');
     if (!listEl) return;
     if (!entries.length){
-      listEl.innerHTML = `<div class="overall-empty"><strong>No ranked runs yet.</strong><span>Finish an official track to claim the first position.</span></div>`;
+      const connected = overallLoadState.status === 'empty-cloud';
+      listEl.innerHTML = `<div class="overall-empty"><strong>${connected?'Ranked board is initializing':'Ranked connection unavailable'}</strong><span>${escapeHtml(overallLoadState.message || 'The shared rankings did not return a snapshot.')}</span><span>${connected?'Finish a run after the updated Firebase rules are active.':'Your local records are safe, but they are not shown as shared rankings until cloud sync succeeds.'}</span><button class="button" type="button" data-rank-retry>Retry</button></div>`;
       return;
     }
     listEl.innerHTML = entries.map((entry,index)=>renderEntryRow(entry, index, false)).join('');
@@ -1447,7 +1529,10 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     if (!panel || !listEl) return;
     panel.style.display='flex';
     listEl.innerHTML = `<div class="overall-loading"><strong>${tr('loading')}</strong><span>Reading the cached ranked snapshot</span><div class="overall-loading-bar"></div></div>`;
-    renderEntries(await fetchOverallEntries());
+    const [entries,streakLeader] = await Promise.all([fetchOverallEntries(),loadStreakLeader()]);
+    renderEntries(entries);
+    const streakEl = panel.querySelector('#overallStreakLeader');
+    if (streakEl) streakEl.textContent = streakLeader?.bestStreak ? `Best streak: ${streakLeader.name} · ${streakLeader.bestStreak} days` : 'No shared streak leader yet';
   }
 
   function nextUploadId(){
@@ -1730,8 +1815,14 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
       lastMirrorSig = mirrorSig;
       lastMirrorAt = Date.now();
       log('info','[FB202] profiles_public.set start',{accountId});
-      await d.collection(COLLECTIONS.profilesPublic).doc(accountId).set({accountId,ownerUid,name,nickname:name,countryCode,carStyle,isVerifier:false,updatedAt:createdAt},{merge:true});
-      if (saved) await rebuildCachedLeaderboards(d, trackId, raceRow);
+      try {
+        await d.collection(COLLECTIONS.profilesPublic).doc(accountId).set({accountId,ownerUid,name,nickname:name,countryCode,carStyle,isVerifier:false,updatedAt:createdAt},{merge:true});
+      } catch (profileError) {
+        log('warn','[FB402] Profile update denied; continuing PB sync',String(profileError&&(profileError.message||profileError)));
+      }
+      const postRaceTasks = [syncDailySpotlightStreak(d,accountId,ownerUid,trackId,name).catch((error)=>log('warn','[STREAK400] Streak sync failed',String(error&&(error.message||error))))];
+      if (saved) postRaceTasks.push(rebuildCachedLeaderboards(d,trackId,raceRow));
+      await Promise.all(postRaceTasks);
       try {
         localStorage.setItem(LAST_ACTIVE_NAME_KEY, name);
         localStorage.setItem('polytrack-0.6.2-last-active-car-style',carStyle);
@@ -1920,6 +2011,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
       this.seenMessages = new Set();
       this.listeningTargets = new Set();
       this.sessionRefs = new Set();
+      this.sendQueue = Promise.resolve();
       this._connect();
     }
     _emit(type,event){
@@ -1961,6 +2053,10 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     async _handleHost(payload){
       const d = await db();
       const uid = window.firebase.auth().currentUser?.uid || '';
+      if (payload.type === 'ping') {
+        this._emit('message',new MessageEvent('message',{data:JSON.stringify({type:'pong'})}));
+        return;
+      }
       if (payload.type === 'createInvite') {
         const inviteCode = multiplayerCode();
         const expiresAt = Date.now() + 30 * 60 * 1000;
@@ -2008,7 +2104,9 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
       if (this.readyState !== 1) throw new DOMException('WebSocket is not open','InvalidStateError');
       let payload;
       try { payload = JSON.parse(String(data)); } catch { return; }
-      Promise.resolve(this.role === 'host' ? this._handleHost(payload) : this._handleJoin(payload)).catch((error)=>this._fail(error));
+      this.sendQueue = this.sendQueue
+        .then(()=>this.role === 'host' ? this._handleHost(payload) : this._handleJoin(payload))
+        .catch((error)=>this._fail(error));
     }
     _fail(error){
       log('error','[MP400] Firebase signaling error',String(error&&(error.message||error)));
@@ -2090,13 +2188,20 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     const trackId = String(changedTrackId || '').slice(0,80);
     if (!trackId) return;
     const trackRef = d.collection(COLLECTIONS.leaderboardsTrack).doc(trackId);
+    const existingBoard = await trackRef.get();
+    let recoveryRows = [];
+    if (!existingBoard.exists) {
+      const recoverySnap = await d.collection(COLLECTIONS.raceResults).where('trackId','==',trackId).limit(500).get();
+      recoveryRows = recoverySnap.docs.map((doc)=>doc.data() || {});
+      log('info','[FB207] Recovering missing track cache',{trackId,rows:recoveryRows.length});
+    }
     let trackEntries = [];
     await d.runTransaction(async (tx)=>{
       const boardSnap = await tx.get(trackRef);
       const board = boardSnap.exists ? (boardSnap.data() || {}) : {};
       const accountId = String(changedRow?.accountId || changedRow?.userId || '');
       const current = (Array.isArray(board.entries) ? board.entries : []).filter((entry)=>String(entry.accountId || entry.userId || '') !== accountId);
-      trackEntries = computeTrackTopEntries([...current,{...changedRow,trackId}],trackId,500);
+      trackEntries = computeTrackTopEntries([...recoveryRows,...current,{...changedRow,trackId}],trackId,500);
       tx.set(trackRef,{trackId,entries:trackEntries,updatedAt:Date.now()},{merge:false});
     });
 
@@ -2183,6 +2288,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     observer.observe(document.body || document.documentElement, { childList:true, subtree:true, attributes:true, attributeFilter:['class','style'] });
     setInterval(reconcileUI, 1200);
     window.addEventListener('keydown', (event)=>{
+      handleModeratorSequence(event);
       if (event.key === 'Escape') {
         const panel = document.getElementById('overallLeaderboardPanel');
         const help = document.getElementById('overallHelpPopup');

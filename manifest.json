@@ -1,20 +1,15 @@
 {
-	"name": "PolyTrack 0.6.2 Ranked by StaticQuasar931",
-	"short_name": "PolyTrack Ranked",
-	"description": "Community PolyTrack with persistent ranked leaderboards, daily track spotlights, replays and Firebase multiplayer invites.",
+	"name": "PolyTrack 0.6.2 · Static Ranked",
+	"short_name": "PolyTrack",
+	"description": "Race 78 tracks, save personal bests and climb community rankings.",
 	"icons": [
 		{
-			"src": "images/icons/cover1920x1080.png",
-			"sizes": "1920x1080",
-			"type": "image/png"
-		},
-		{
-			"src": "images/icons/cover512x512.png",
+			"src": "images/cover512x512.png",
 			"sizes": "512x512",
 			"type": "image/png"
 		},
 		{
-			"src": "images/icons/icon.svg",
+			"src": "images/icon.svg",
 			"sizes": "any",
 			"type": "image/svg+xml",
 			"purpose": "any"
