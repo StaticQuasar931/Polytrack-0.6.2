@@ -677,53 +677,63 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     const style = document.createElement('style');
     style.id = 'polytrack-ext-style';
     style.textContent = `
-      #overallLeaderboardPanel{display:none;position:fixed;inset:0;z-index:10001;background:rgba(13,17,37,.96);backdrop-filter: blur(4px);padding:18px;overflow-y:auto;color:var(--text-color,#fff);font-family:ForcedSquare,Arial,sans-serif}
-      .overall-shell{max-width:1480px;max-height:min(94vh,1200px);overflow-y:auto;margin:0 auto;background:radial-gradient(circle at top,rgba(94,225,255,.16),transparent 26%),linear-gradient(180deg,#243368 0%,#1a2348 58%,#131a34 100%);border:2px solid rgba(133,211,255,.2);box-shadow:0 20px 70px rgba(0,0,0,.5);position:relative}
-      .overall-top{display:flex;justify-content:space-between;align-items:center;padding:26px 30px 18px;border-bottom:2px solid rgba(255,255,255,.12);position:sticky;top:0;background:linear-gradient(180deg,rgba(14,20,44,.95),rgba(14,20,44,.76));backdrop-filter:blur(6px);z-index:2}
-      .overall-top h2{margin:0;font-size:52px;font-weight:normal;color:#9fdfff;letter-spacing:1px;text-shadow:0 0 18px rgba(94,225,255,.28)}
-      .overall-sub{margin:0;padding:0 30px 20px;color:rgba(240,248,255,.88);font-size:26px;line-height:1.42}
-      #closeOverallLeaderboard,#overallHelpBtn{cursor:pointer;transition:transform .12s ease, filter .12s ease, box-shadow .12s ease}
-      #closeOverallLeaderboard:hover,#overallHelpBtn:hover{transform:translateY(-1px);filter:brightness(1.08);box-shadow:0 0 12px rgba(142,199,255,.25)}
-      .overall-action-btn{min-width:110px;font-size:20px;line-height:34px}
-      .overall-action-btn:hover{transform:translateY(-2px);filter:brightness(1.06)}
-      #overallLeaderboardList{padding:0 18px 20px;display:flex;flex-direction:column;gap:12px}
-      #overallHelpPopup{display:none;position:absolute;inset:0;background:rgba(9,13,30,.78);backdrop-filter:blur(2px);align-items:center;justify-content:center;z-index:3}
-      .overall-help-card{max-width:920px;background:linear-gradient(180deg,#24305f,#1a244b);border:1px solid rgba(255,255,255,.2);padding:24px 26px;box-shadow:0 12px 28px rgba(0,0,0,.4)}
-      .overall-help-card h3{margin:0 0 12px;font-size:40px;color:#9ed5ff;font-weight:normal}
-      .overall-help-card p{margin:0 0 12px;font-size:24px;color:rgba(255,255,255,.94);line-height:1.45}
-      .overall-help-card .small{font-size:18px;color:rgba(255,255,255,.74)}
-      .overall-help-actions{display:flex;justify-content:flex-end;margin-top:8px}
-      #overallHelpClose{cursor:pointer;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:#fff;padding:8px 14px;font-size:18px}
-      .overall-entry{display:grid;grid-template-columns:112px minmax(420px,1.8fr) minmax(240px,1fr) minmax(250px,.95fr);gap:16px;align-items:center;padding:18px 20px;background:linear-gradient(180deg,rgba(29,39,79,.92),rgba(18,25,52,.92));border:1px solid rgba(255,255,255,.1);opacity:0;transform:translateY(10px);animation:overallEntryIn .28s cubic-bezier(.2,.7,.2,1) forwards;box-shadow:inset 0 1px 0 rgba(255,255,255,.04)}
-      .overall-entry.top-1{border-color:rgba(255,231,128,.95);background:linear-gradient(90deg,rgba(255,231,128,.22),rgba(60,47,14,.38));box-shadow:0 0 0 1px rgba(255,233,160,.35),0 14px 34px rgba(0,0,0,.28)}
-      .overall-entry.top-2{border-color:rgba(205,221,255,.9);background:linear-gradient(90deg,rgba(205,221,255,.15),rgba(32,43,76,.34))}
-      .overall-entry.top-3{border-color:rgba(255,191,120,.88);background:linear-gradient(90deg,rgba(255,191,120,.14),rgba(68,41,19,.32))}
-      .overall-rank{width:96px;text-align:center;font-size:34px;color:#82beff;letter-spacing:.8px}
-      .overall-entry.top-1 .overall-rank{font-size:42px;color:#ffeeb0}
-      .overall-car-model{width:156px;height:94px;border-radius:14px;display:inline-flex;align-items:center;justify-content:center;margin-right:18px;border:1px solid rgba(255,255,255,.24);vertical-align:middle;box-shadow:inset 0 0 20px rgba(0,0,0,.28),0 6px 14px rgba(0,0,0,.18);overflow:hidden;position:relative;flex:0 0 auto;background:radial-gradient(circle at 50% 35%,rgba(255,255,255,.18),rgba(72,103,145,.1) 40%,rgba(5,10,24,.74) 100%)}
-      .overall-car-model > img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center;opacity:0;filter:none!important;transition:opacity .2s ease,transform .2s cubic-bezier(.2,.7,.2,1);transform:scale(.94)}
-      .overall-car-model > img.show{opacity:1;transform:scale(1.12)}
-      .overall-name{font-size:32px;padding:0 4px;white-space:normal;overflow-wrap:anywhere;display:flex;align-items:center;min-width:0}
-      .overall-mid{min-width:220px;text-align:center;display:flex;flex-direction:column;gap:6px}
-      .overall-move{font-size:24px;font-weight:bold}
-      .overall-move.up{color:#7CFF8A}
-      .overall-move.down{color:#FF7C7C}
-      .overall-move.flat{color:#A8A8A8}
-      .overall-best{font-size:16px;color:rgba(218,233,255,.84);line-height:1.25}
-      .overall-stats{text-align:right;min-width:250px}
-      .overall-score{font-size:38px;color:#7be7ff;text-shadow:0 0 16px rgba(94,225,255,.22)}
-      .overall-races{font-size:18px;color:rgba(255,255,255,.8)}
-      .overall-shell::before{content:'';position:absolute;inset:0;pointer-events:none;background:linear-gradient(135deg,rgba(255,255,255,.08),transparent 22%,transparent 78%,rgba(94,225,255,.08));mix-blend-mode:screen;opacity:.65}
-      .overall-car-model::after{content:'';position:absolute;left:12px;right:12px;bottom:7px;height:12px;border-radius:50%;background:radial-gradient(circle,rgba(94,225,255,.28),rgba(0,0,0,0) 72%);pointer-events:none}
-      .overall-name-label{display:flex;flex-direction:column;gap:4px;min-width:0}
-      .overall-name-main{line-height:1.05}
-      .overall-name-hint{font-size:15px;color:rgba(226,239,255,.8);text-transform:uppercase;letter-spacing:.9px}
-      .overall-empty{margin:18px;padding:54px 30px;display:flex;flex-direction:column;gap:12px;text-align:center;border:1px dashed rgba(151,215,255,.45);background:rgba(8,14,35,.42);font-size:24px;color:rgba(233,244,255,.8)}
-      .overall-empty strong{font-size:34px;color:#9fdfff;font-weight:normal}
-      #injectedRankingsBtn{animation:none!important;will-change:transform,opacity,filter}
-      #injectedRankingsBtn.button-spawn{animation:rankedButtonSpawn .64s cubic-bezier(.16,.78,.2,1.08) both!important}
-      @media (max-width: 1100px){.overall-entry{grid-template-columns:100px minmax(320px,1.5fr) minmax(180px,.9fr) minmax(180px,.8fr)} .overall-car-model{width:118px;height:66px} .overall-name{font-size:28px} .overall-score{font-size:32px}}
-      @media (max-width: 820px){.overall-top{padding:20px 18px 14px}.overall-top h2{font-size:40px}.overall-sub{padding:0 18px 16px;font-size:21px}.overall-entry{grid-template-columns:84px 1fr;grid-template-areas:'rank name' 'mid mid' 'stats stats';padding:16px}.overall-rank{grid-area:rank;width:auto;font-size:28px}.overall-name{grid-area:name;font-size:24px}.overall-mid{grid-area:mid;text-align:left;padding-left:98px}.overall-stats{grid-area:stats;text-align:left;padding-left:98px}.overall-car-model{width:104px;height:60px}}
+      #overallLeaderboardPanel{--rank-bg:#202d60;--rank-surface:#2a3a77;--rank-surface-2:#17224d;--rank-blue:#8ec7ff;--rank-cyan:#78e4ff;display:none;position:fixed;inset:0;z-index:10001;background:rgba(12,17,39,.86);backdrop-filter:blur(8px);padding:clamp(10px,2vw,26px);overflow:hidden;color:var(--text-color,#fff);font-family:ForcedSquare,Arial,sans-serif}
+      .overall-shell{width:min(1360px,calc(100vw - 32px));height:min(900px,calc(100vh - 32px));margin:auto;display:flex;flex-direction:column;overflow:hidden;position:relative;background:var(--rank-bg);clip-path:polygon(0 0,calc(100% - 24px) 0,100% 24px,100% 100%,24px 100%,0 calc(100% - 24px));box-shadow:0 24px 80px rgba(0,0,0,.58);animation:rankPanelIn .32s cubic-bezier(.16,.78,.2,1) both}
+      .overall-top{display:flex;justify-content:space-between;align-items:center;padding:22px 28px 14px;background:linear-gradient(90deg,#263a7b 0%,#1d2c61 65%,#17234f 100%);border-bottom:4px solid var(--rank-blue);position:relative;z-index:2}
+      .overall-title-group{display:flex;align-items:center;gap:16px;min-width:0}
+      .overall-top h2{margin:0;font-size:clamp(36px,4vw,58px);font-weight:normal;line-height:.95;color:#fff;letter-spacing:.5px;text-shadow:3px 3px 0 rgba(0,0,0,.22)}
+      .overall-beta{padding:7px 12px;background:#fff;color:#22346d;font-size:15px;line-height:1;clip-path:polygon(7px 0,100% 0,calc(100% - 7px) 100%,0 100%);white-space:nowrap}
+      .overall-actions{display:flex;gap:10px;flex:0 0 auto}
+      .overall-action-btn{min-width:104px;font-size:20px;line-height:34px;cursor:pointer;transition:transform .12s ease,filter .12s ease}
+      .overall-action-btn:hover,.overall-action-btn:focus-visible{transform:translateY(-2px);filter:brightness(1.12)}
+      .overall-sub{margin:0;padding:13px 28px 10px;background:var(--rank-surface-2);color:rgba(240,248,255,.82);font-size:20px;line-height:1.25}
+      .overall-sub strong{color:var(--rank-cyan);font-weight:normal}
+      .overall-columns{display:grid;grid-template-columns:94px minmax(380px,1.7fr) minmax(220px,.85fr) minmax(210px,.75fr);gap:12px;padding:9px 36px 8px 22px;background:#121b3f;color:rgba(220,235,255,.62);font-size:14px;text-transform:uppercase;letter-spacing:1.2px}
+      .overall-columns span:last-child{text-align:right}
+      #overallLeaderboardList{padding:10px 14px 18px;display:flex;flex-direction:column;gap:7px;overflow-y:auto;overflow-x:hidden;flex:1;background:linear-gradient(180deg,#182450,#131c40);scrollbar-color:#526da9 #121a3b}
+      #overallHelpPopup{display:none;position:absolute;inset:0;background:rgba(8,12,31,.9);backdrop-filter:blur(5px);align-items:center;justify-content:center;padding:24px;z-index:4}
+      .overall-help-card{width:min(860px,calc(100% - 30px));background:#26366f;clip-path:polygon(0 0,calc(100% - 18px) 0,100% 18px,100% 100%,18px 100%,0 calc(100% - 18px));box-shadow:0 18px 60px rgba(0,0,0,.45)}
+      .overall-help-head{padding:22px 26px 16px;border-bottom:4px solid var(--rank-blue);background:#1c2959}
+      .overall-help-card h3{margin:0;font-size:38px;color:#fff;font-weight:normal}
+      .overall-help-content{padding:22px 26px}
+      .overall-help-card p{margin:0 0 14px;font-size:21px;color:rgba(255,255,255,.9);line-height:1.42}
+      .overall-help-card .small{font-size:17px;color:rgba(255,255,255,.66)}
+      .overall-help-note{padding:14px 16px;background:#18234e;border-left:5px solid var(--rank-cyan)}
+      .overall-help-actions{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:20px}
+      .overall-discord-cta{display:inline-flex;align-items:center;gap:10px;padding:9px 15px;background:#5865f2;color:#fff;text-decoration:none;font-size:18px;clip-path:polygon(7px 0,100% 0,calc(100% - 7px) 100%,0 100%);transition:filter .15s ease,transform .15s ease}
+      .overall-discord-cta:hover{filter:brightness(1.12);transform:translateY(-2px)}
+      .overall-discord-cta img{width:25px;height:25px}
+      #overallHelpClose{cursor:pointer;min-width:100px}
+      .overall-entry{position:relative;display:grid;grid-template-columns:94px minmax(380px,1.7fr) minmax(220px,.85fr) minmax(210px,.75fr);gap:12px;align-items:center;min-height:106px;padding:0 22px 0 0;background:var(--rank-surface);clip-path:polygon(0 0,100% 0,calc(100% - 10px) 100%,0 100%);opacity:0;transform:translateX(-34px);animation:overallEntryIn .38s cubic-bezier(.16,.78,.2,1) forwards;transition:filter .14s ease,transform .14s ease}
+      .overall-entry::after{content:'';position:absolute;left:0;bottom:0;width:0;height:4px;background:var(--rank-cyan);animation:rankLineIn .45s ease-out forwards;animation-delay:inherit}
+      .overall-entry:hover{filter:brightness(1.08);transform:translateX(3px)}
+      .overall-entry.top-1{min-height:122px;background:linear-gradient(90deg,#806b27 0%,#4d4a3a 42%,#2c3764 100%)}
+      .overall-entry.top-2{background:linear-gradient(90deg,#596780 0%,#3a496f 45%,#293766 100%)}
+      .overall-entry.top-3{background:linear-gradient(90deg,#795039 0%,#4c3e42 45%,#293766 100%)}
+      .overall-entry.top-1::after{background:#ffe27a;height:5px}.overall-entry.top-2::after{background:#dce8ff}.overall-entry.top-3::after{background:#ffb77e}
+      .overall-rank{align-self:stretch;display:flex;align-items:center;justify-content:center;width:94px;background:rgba(7,12,34,.26);font-size:36px;color:var(--rank-blue);letter-spacing:.5px}
+      .overall-entry.top-1 .overall-rank{font-size:50px;color:#fff1a5}.overall-entry.top-2 .overall-rank{color:#ecf3ff}.overall-entry.top-3 .overall-rank{color:#ffc295}
+      .overall-car-model{width:124px;height:100px;display:inline-flex;align-items:center;justify-content:center;margin-right:14px;vertical-align:middle;overflow:hidden;position:relative;flex:0 0 auto;background:rgba(0,0,0,.14);clip-path:polygon(0 0,100% 0,calc(100% - 9px) 100%,0 100%)}
+      .overall-entry.top-1 .overall-car-model{height:112px;width:138px}
+      .overall-car-model > img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center;opacity:0;filter:none!important;transition:opacity .24s ease,transform .24s ease;transform:scale(.94)}
+      .overall-car-model > img.show{opacity:1;transform:scale(1.08)}
+      .overall-name{font-size:29px;white-space:normal;overflow:hidden;display:flex;align-items:center;min-width:0}
+      .overall-name-label{display:flex;flex-direction:column;gap:5px;min-width:0}.overall-name-main{line-height:1.05;overflow:hidden;text-overflow:ellipsis}.overall-name-hint{font-size:13px;color:rgba(226,239,255,.66);text-transform:uppercase;letter-spacing:.9px}
+      .overall-mid{min-width:0;text-align:left;display:flex;flex-direction:column;gap:7px}
+      .overall-move{font-size:20px}.overall-move.up{color:#78ff9a}.overall-move.down{color:#ff8c8c}.overall-move.flat{color:rgba(230,240,255,.55)}
+      .overall-best{font-size:15px;color:rgba(218,233,255,.72);line-height:1.2}
+      .overall-stats{text-align:right;min-width:0}.overall-score{font-size:34px;color:#fff}.overall-races{font-size:16px;color:var(--rank-cyan);margin-top:3px}
+      .overall-empty{margin:auto;padding:50px 30px;display:flex;flex-direction:column;gap:10px;text-align:center;font-size:21px;color:rgba(233,244,255,.68)}.overall-empty strong{font-size:34px;color:#fff;font-weight:normal}
+      #injectedRankingsBtn{animation:none!important;will-change:transform,opacity,filter;position:relative}
+      #injectedRankingsBtn.button-spawn{animation:rankedButtonSpawn .72s cubic-bezier(.16,.78,.2,1.06) both!important}
+      #injectedRankingsBtn.button-spawn img{animation:rankedIconPop .72s cubic-bezier(.16,.78,.2,1.06) both}
+      .static-discord-link{position:absolute;right:calc(30px + var(--safe-area-horizontal));bottom:126px;z-index:8;display:flex;align-items:center;gap:9px;padding:7px 12px;color:#fff!important;background:#5865f2;text-decoration:none!important;font-size:15px;pointer-events:auto;clip-path:polygon(6px 0,100% 0,calc(100% - 6px) 100%,0 100%);transition:transform .14s ease,filter .14s ease}
+      .static-discord-link:hover{transform:translateY(-2px);filter:brightness(1.15)}.static-discord-link img{width:22px;height:22px;margin:0!important;padding:0!important}
+      .sq-has-hotkey{position:relative!important}.sq-hotkey-hint{position:absolute!important;left:7px!important;top:7px!important;z-index:12!important;display:flex!important;align-items:center!important;justify-content:center!important;min-width:19px!important;height:19px!important;padding:0 4px!important;margin:0!important;background:rgba(10,16,40,.86)!important;border:1px solid rgba(183,220,255,.72)!important;color:#fff!important;font-family:ForcedSquare,Arial,sans-serif!important;font-size:12px!important;line-height:19px!important;pointer-events:none!important;clip-path:polygon(3px 0,100% 0,calc(100% - 3px) 100%,0 100%)!important;box-sizing:border-box!important;opacity:.78!important}
+      #startHotkeyLegend{position:absolute;left:calc(26px + var(--safe-area-horizontal));bottom:74px;z-index:7;color:rgba(225,238,255,.58);font-size:13px;letter-spacing:.3px;pointer-events:none}
+      @media (max-width:1100px){.overall-columns,.overall-entry{grid-template-columns:80px minmax(300px,1.5fr) minmax(170px,.8fr) minmax(170px,.7fr)}.overall-rank{width:80px}.overall-car-model{width:108px;height:88px}.overall-name{font-size:25px}.overall-score{font-size:30px}}
+      @media (max-width:760px){#overallLeaderboardPanel{padding:0}.overall-shell{width:100vw;height:100vh;clip-path:none}.overall-top{padding:16px 14px 11px}.overall-title-group{gap:8px}.overall-beta{display:none}.overall-actions{gap:5px}.overall-action-btn{min-width:76px;font-size:16px}.overall-sub{padding:10px 14px;font-size:16px}.overall-columns{display:none}#overallLeaderboardList{padding:7px}.overall-entry{grid-template-columns:62px 1fr auto;grid-template-areas:'rank name stats' 'rank mid stats';min-height:92px;padding-right:12px;gap:7px}.overall-rank{grid-area:rank;width:62px}.overall-name{grid-area:name;font-size:20px}.overall-mid{grid-area:mid}.overall-stats{grid-area:stats}.overall-car-model{width:76px;height:78px;margin-right:8px}.overall-entry.top-1 .overall-car-model{width:82px;height:86px}.overall-score{font-size:24px}.overall-races,.overall-best{font-size:12px}.overall-move{font-size:15px}.static-discord-link{right:18px;bottom:120px;font-size:0;padding:8px}.static-discord-link img{width:26px;height:26px}#startHotkeyLegend{display:none}.sq-hotkey-hint{display:none!important}}
+      @media (prefers-reduced-motion:reduce){.overall-shell,.overall-entry,#injectedRankingsBtn.button-spawn,#injectedRankingsBtn.button-spawn img{animation-duration:.01ms!important;animation-delay:0s!important}}
       .staticFunPill{animation:staticGlowPulse 1.8s ease-in-out infinite}.staticFunHover{transition:transform .16s ease, filter .16s ease, box-shadow .16s ease}
       .staticFunHover:hover{transform:translateY(-2px) scale(1.05);filter:brightness(1.18);box-shadow:0 0 18px rgba(255,255,255,0.20),0 0 30px rgba(0,255,255,0.18)}
       .staticFunText{display:inline-block;white-space:nowrap;perspective:600px;animation:staticFloat 2.2s ease-in-out infinite}
@@ -738,8 +748,10 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
       @keyframes staticSheen{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
       @keyframes staticFloat{0%{transform:translateY(0) scale(1)}50%{transform:translateY(-1px) scale(1.01)}100%{transform:translateY(0) scale(1)}}
       @keyframes staticWave{0%{transform:translateZ(0) rotateY(0deg)}50%{transform:translateZ(14px) rotateY(10deg)}100%{transform:translateZ(0) rotateY(0deg)}}
-      @keyframes overallEntryIn{to{opacity:1;transform:translateY(0)}}
-      @keyframes rankedButtonSpawn{0%{opacity:0;transform:translateY(34px) scale(.72) rotate(-3deg);filter:brightness(1.8) blur(2px)}58%{opacity:1;transform:translateY(-5px) scale(1.055) rotate(.5deg);filter:brightness(1.2) blur(0)}100%{opacity:1;transform:translateY(0) scale(1) rotate(0);filter:brightness(1) blur(0)}}
+      @keyframes rankPanelIn{from{opacity:0;transform:translateY(24px) scale(.975)}to{opacity:1;transform:translateY(0) scale(1)}}
+      @keyframes overallEntryIn{to{opacity:1;transform:translateX(0)}}@keyframes rankLineIn{to{width:100%}}
+      @keyframes rankedButtonSpawn{0%{opacity:0;transform:translateX(-48px) scaleX(.72);filter:brightness(1.7)}55%{opacity:1;transform:translateX(7px) scaleX(1.035);filter:brightness(1.2)}100%{opacity:1;transform:translateX(0) scaleX(1);filter:brightness(1)}}
+      @keyframes rankedIconPop{0%,24%{transform:scale(.45);opacity:0}68%{transform:scale(1.16);opacity:1}100%{transform:scale(1);opacity:1}}
     `;
     document.head.appendChild(style);
   }
@@ -802,7 +814,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     version.href = 'https://www.kodub.com';
     version.target = '_blank';
     version.rel = 'noopener noreferrer';
-    version.textContent = 'kodub.com - Version 0.5.2';
+    version.textContent = 'kodub.com - Version 0.6.2';
 
     const credit = document.createElement('a');
     credit.href = 'https://opengameart.org/content/sci-fi-theme-1';
@@ -822,16 +834,100 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     info.appendChild(document.createElement('br'));
     info.appendChild(privacy);
     const container = document.querySelector('.main-buttons-container');
-    const rankingsOpen = document.getElementById('overallLeaderboardPanel')?.style?.display === 'block';
+    const rankingsPanel = document.getElementById('overallLeaderboardPanel');
+    const rankingsOpen = !!(rankingsPanel && rankingsPanel.style.display !== 'none' && isElementVisible(rankingsPanel));
     const visible = !!(container && getComputedStyle(container).display !== 'none');
     info.style.display = (visible && !rankingsOpen) ? '' : 'none';
+  }
+
+  function ensureStaticDiscordLink(){
+    const menu = document.querySelector('.menu-ui, .menu');
+    if (!menu || menu.querySelector('.static-discord-link')) return;
+    const link = document.createElement('a');
+    link.className = 'static-discord-link';
+    link.href = 'https://discord.gg/DP2hM7RRhR';
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    link.setAttribute('aria-label','StaticQuasar931 Discord');
+    link.innerHTML = '<img src="images/discord.svg" alt=""><span>StaticQuasar931 Discord</span>';
+    const officialDiscord = menu.querySelector(':scope > .discord-link');
+    if (officialDiscord) officialDiscord.insertAdjacentElement('beforebegin',link);
+    else menu.appendChild(link);
+  }
+
+  function lobbyShortcutButtons(){
+    const candidates = Array.from(document.querySelectorAll('.main-buttons-container button,.main-buttons-container a,.menu-ui > .button-bar > button,.menu-ui > .button-bar > a'));
+    return candidates.filter((button,index)=>button.id !== 'overallHelpBtn' && button.id !== 'closeOverallLeaderboard' && isElementVisible(button) && candidates.indexOf(button) === index).slice(0,9);
+  }
+
+  function buttonShortcutLetter(button){
+    const signature = `${button.id||''} ${button.className||''} ${button.getAttribute('aria-label')||''} ${button.getAttribute('title')||''} ${button.textContent||''} ${Array.from(button.querySelectorAll('img')).map((img)=>img.getAttribute('src')||'').join(' ')}`.toLowerCase();
+    if (button.id === 'injectedRankingsBtn' || /rank|trophy/.test(signature)) return 'R';
+    if (/play\.svg|\bplay\b/.test(signature)) return 'P';
+    if (/customize|garage|car-menu/.test(signature)) return 'G';
+    if (/settings/.test(signature)) return 'S';
+    if (/multiplayer|invite/.test(signature)) return 'M';
+    if (/editor/.test(signature)) return 'E';
+    if (/community/.test(signature)) return 'C';
+    if (/help/.test(signature)) return 'H';
+    return '';
+  }
+
+  function ensureLobbyHotkeyHints(){
+    if (!isStartMenuHotkeyContext()) return;
+    const buttons = lobbyShortcutButtons();
+    buttons.forEach((button,index)=>{
+      button.classList.add('sq-has-hotkey');
+      let hint = button.querySelector(':scope > .sq-hotkey-hint');
+      if (!hint) {
+        hint = document.createElement('span');
+        hint.className = 'sq-hotkey-hint';
+        button.appendChild(hint);
+      }
+      const letter = buttonShortcutLetter(button);
+      const hintText = letter ? `${index+1} / ${letter}` : String(index+1);
+      if (hint.textContent !== hintText) hint.textContent = hintText;
+    });
+    const menu = document.querySelector('.menu-ui, .menu');
+    if (menu && !menu.querySelector('#startHotkeyLegend')) {
+      const legend = document.createElement('div');
+      legend.id = 'startHotkeyLegend';
+      legend.textContent = 'KEYS  1–9 menus  ·  P play  ·  R ranked  ·  G garage  ·  S settings';
+      menu.appendChild(legend);
+    }
+  }
+
+  function findLobbyAction(pattern){
+    return lobbyShortcutButtons().find((button)=>pattern.test(`${button.id||''} ${button.className||''} ${button.getAttribute('aria-label')||''} ${button.getAttribute('title')||''} ${button.textContent||''} ${Array.from(button.querySelectorAll('img')).map((img)=>img.getAttribute('src')||'').join(' ')}`.toLowerCase())) || null;
+  }
+
+  function handleLobbyShortcut(event){
+    if (event.defaultPrevented || event.repeat || event.ctrlKey || event.altKey || event.metaKey || !isStartMenuHotkeyContext()) return false;
+    const target = event.target;
+    if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement || target?.isContentEditable) return false;
+    const key = String(event.key || '').toLowerCase();
+    let action = null;
+    if (/^[1-9]$/.test(key)) action = lobbyShortcutButtons()[Number(key)-1] || null;
+    else if (key === ' ' || key === 'spacebar' || key === 'p') action = findLobbyAction(/play\.svg|\bplay\b/);
+    else if (key === 'r') action = document.getElementById('injectedRankingsBtn');
+    else if (key === 'g') action = findLobbyAction(/customize|garage|car-menu/);
+    else if (key === 's') action = findLobbyAction(/settings/);
+    else if (key === 'm') action = findLobbyAction(/multiplayer|invite/);
+    else if (key === 'e') action = findLobbyAction(/editor/);
+    else if (key === 'c') action = findLobbyAction(/community/);
+    else if (key === 'h') action = findLobbyAction(/help/);
+    if (!action || !isElementVisible(action)) return false;
+    action.click();
+    event.preventDefault();
+    event.stopPropagation();
+    return true;
   }
 
   function ensurePanel(){
     if (document.getElementById('overallLeaderboardPanel')) return;
     const panel = document.createElement('div');
     panel.id = 'overallLeaderboardPanel';
-    panel.innerHTML = `<div class="overall-shell" style="position:relative"><div class="overall-top"><h2>${tRankingsTitle()}</h2><div style="display:flex;gap:8px"><button id="overallHelpBtn" class="button overall-action-btn" type="button">${tr('help')}</button><button id="closeOverallLeaderboard" class="button overall-action-btn" type="button">${tr('close')}</button></div></div><p class="overall-sub">${tr('overallSub')}</p><div id="overallLeaderboardList"></div><div id="overallHelpPopup"><div class="overall-help-card"><h3>${tRankingsTitle()} · ${tr('help')}</h3><p>${tr('helpBody')} <a href="mailto:StaticQuasar931Games@gmail.com" style="color:#b7e2ff">StaticQuasar931Games@gmail.com</a>.</p><p class="small">${tr('helpSmall')}</p><div class="overall-help-actions"><button id="overallHelpClose" class="overall-action-btn" type="button">${tr('close')}</button></div></div></div></div>`;
+    panel.innerHTML = `<div class="overall-shell"><div class="overall-top"><div class="overall-title-group"><h2>${tRankingsTitle()}</h2><span class="overall-beta">STATIC RANKED · BETA</span></div><div class="overall-actions"><button id="overallHelpBtn" class="button overall-action-btn" type="button">${tr('help')}</button><button id="closeOverallLeaderboard" class="button overall-action-btn" type="button">${tr('close')}</button></div></div><p class="overall-sub"><strong>Lower rank score is better.</strong> Complete more official tracks and improve your placements to climb.</p><div class="overall-columns" aria-hidden="true"><span>Place</span><span>Driver</span><span>Recent movement</span><span>Rank score</span></div><div id="overallLeaderboardList"></div><div id="overallHelpPopup"><div class="overall-help-card"><div class="overall-help-head"><h3>Static Ranked · Work in progress</h3></div><div class="overall-help-content"><p>This ranked leaderboard is an unofficial <strong>StaticQuasar931 Unblocked Games</strong> addition to PolyTrack. It is actively being improved and may change as bugs are fixed and more racers join.</p><p class="overall-help-note">Your rank score combines your placements across official tracks. Lower is better. Complete more tracks, then improve your best times to move up.</p><p>${tr('helpBody')} Contact <a href="mailto:StaticQuasar931Games@gmail.com" style="color:#9fe6ff">StaticQuasar931Games@gmail.com</a> if a score, replay, or car looks wrong.</p><p class="small">${tr('helpSmall')}</p><div class="overall-help-actions"><a class="overall-discord-cta" href="https://discord.gg/DP2hM7RRhR" target="_blank" rel="noopener noreferrer"><img src="images/discord.svg" alt="">Join the StaticQuasar931 Discord</a><button id="overallHelpClose" class="button overall-action-btn" type="button">${tr('close')}</button></div></div></div></div></div>`;
     document.body.appendChild(panel);
     panel.addEventListener('click', (event)=>{ if (event.target === panel) panel.style.display='none'; });
     panel.querySelector('#closeOverallLeaderboard').addEventListener('click', ()=>{ panel.style.display='none'; });
@@ -1101,18 +1197,18 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
 
   function movementMarkup(value){
     const movement = Number(value || 0) || 0;
-    if (movement > 0) return `<span class="overall-move up">&#9650; +${movement}</span>`;
-    if (movement < 0) return `<span class="overall-move down">&#9660; ${Math.abs(movement)}</span>`;
-    return '<span class="overall-move flat">&#9679; 0</span>';
+    if (movement > 0) return `<span class="overall-move up">&#9650; Moved up ${movement}</span>`;
+    if (movement < 0) return `<span class="overall-move down">&#9660; Moved down ${Math.abs(movement)}</span>`;
+    return '<span class="overall-move flat">No recent change</span>';
   }
 
   function bestTrackMarkup(entry){
     const bestRank = Number(entry?.bestTrackRank || 0) || 0;
     const bestTrackId = String(entry?.bestTrackId || '');
     if (bestRank > 0 && bestTrackId) {
-      return `Best #${bestRank} - ${escapeHtml(bestTrackId.slice(0, 10))}`;
+      return `Best official-track finish: #${bestRank}`;
     }
-    return 'Best track: N/A';
+    return 'Complete a track to set a best finish';
   }
 
   function renderEntryRow(entry, index, showTopHint=false){
@@ -1129,7 +1225,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     const move = movementMarkup(row?.movement || 0);
     const extra = showTopHint ? '<div style="font-size:13px;color:rgba(225,225,225,.9);margin-top:2px;">This could be you</div>' : '';
     const hintText = extra ? escapeHtml(String(extra).replace(/<[^>]+>/g,'').trim()) : '';
-    return `<div class="overall-entry ${rank===1?'top-1':rank===2?'top-2':rank===3?'top-3':''}" style="animation-delay:${(index*0.04).toFixed(2)}s"><span class="overall-rank">#${rank}</span><span class="overall-name">${carModelPreview(savedCarStyle,safeUserId)}<span class="overall-name-label"><span class="overall-name-main">${safeName}</span>${hintText?`<span class="overall-name-hint">${hintText}</span>`:''}</span></span><div class="overall-mid">${move}<div class="overall-best">${best}</div></div><div class="overall-stats"><div class="overall-score">${score.toFixed(3)}</div><div class="overall-races">${races}/${totalTracks} tracks</div></div></div>`;
+    return `<div class="overall-entry ${rank===1?'top-1':rank===2?'top-2':rank===3?'top-3':''}" style="animation-delay:${(index*0.045).toFixed(3)}s"><span class="overall-rank">#${rank}</span><span class="overall-name">${carModelPreview(savedCarStyle,safeUserId)}<span class="overall-name-label"><span class="overall-name-main">${safeName}</span>${hintText?`<span class="overall-name-hint">${hintText}</span>`:''}</span></span><div class="overall-mid">${move}<div class="overall-best">${best}</div></div><div class="overall-stats"><div class="overall-score">${score.toFixed(3)}</div><div class="overall-races">${races} of ${totalTracks} tracks complete</div></div></div>`;
   }
 
   function renderEntries(entries){
@@ -1147,7 +1243,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     const panel = document.getElementById('overallLeaderboardPanel');
     const listEl = document.getElementById('overallLeaderboardList');
     if (!panel || !listEl) return;
-    panel.style.display='block';
+    panel.style.display='flex';
     listEl.innerHTML = `<div class="overall-entry"><span class="overall-name">${tr('loading')}</span></div>`;
     renderEntries(await fetchOverallEntries());
   }
@@ -1564,7 +1660,11 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
       button.addEventListener('click', (event)=>{ event.preventDefault(); event.stopPropagation(); openPanel(); });
       rankingsButtonRef = button;
     }
-    button.innerHTML = `<img src="images/trophy.svg"><p>${tRankedWord()}</p>`;
+    const rankedLabel = tRankedWord();
+    if (button.dataset.rankedLabel !== rankedLabel || !button.querySelector('img[src="images/trophy.svg"]')) {
+      button.dataset.rankedLabel = rankedLabel;
+      button.innerHTML = `<img src="images/trophy.svg"><p>${rankedLabel}</p>`;
+    }
     button.style.pointerEvents = 'auto';
     button.style.zIndex = '5';
     button.style.order = '999';
@@ -1705,8 +1805,13 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
   function hookMultiplayerNetworking(){
     const NativeWebSocket = window.WebSocket;
     function PolytrackWebSocket(url,protocols){
-      const target = String(url || '');
-      if (/^wss?:\/\/vps\.kodub\.com\/v6\/multiplayer\/(host|join)(?:[/?#]|$)/i.test(target)) return new FirebaseSignalingSocket(target);
+      const target = String(url || '').trim();
+      const normalized = target.toLowerCase();
+      const isKodubMultiplayer = normalized.includes('vps.kodub.com') && (normalized.includes('/multiplayer/host') || normalized.includes('/multiplayer/join'));
+      if (isKodubMultiplayer) {
+        log('info','[MP100] Firebase multiplayer socket intercepted',{url:target});
+        return new FirebaseSignalingSocket(target);
+      }
       return protocols === undefined ? new NativeWebSocket(url) : new NativeWebSocket(url,protocols);
     }
     PolytrackWebSocket.prototype = NativeWebSocket.prototype;
@@ -1723,6 +1828,8 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     injectRankingsButton();
     setUnofficialMessage();
     ensurePersistentInfoBranding();
+    ensureStaticDiscordLink();
+    ensureLobbyHotkeyHints();
   }
 
   function hideVerifiedOnlyToggle(){
@@ -1739,21 +1846,27 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     injectRankingsButton();
     setUnofficialMessage();
     ensurePersistentInfoBranding();
+    ensureStaticDiscordLink();
+    ensureLobbyHotkeyHints();
     hideVerifiedOnlyToggle();
   }
 
 
   function isElementVisible(el){
-    return !!(el && el.isConnected && getComputedStyle(el).display !== 'none' && getComputedStyle(el).visibility !== 'hidden');
+    if (!el || !el.isConnected) return false;
+    const style = getComputedStyle(el);
+    return style.display !== 'none' && style.visibility !== 'hidden' && Number(style.opacity || '1') > 0 && el.getClientRects().length > 0;
   }
 
   function isStartMenuHotkeyContext(){
-    const menu = document.querySelector('.menu');
+    const menu = document.querySelector('.menu-ui, .menu');
     if (!isElementVisible(menu)) return false;
     const container = document.querySelector('.main-buttons-container');
     if (!isElementVisible(container)) return false;
-    const play = Array.from(container.querySelectorAll('button')).find((b)=>/play/i.test((b.textContent||'').trim()));
+    const play = Array.from(container.querySelectorAll('button,a')).find((button)=>/play\.svg|\bplay\b/i.test(`${button.textContent||''} ${Array.from(button.querySelectorAll('img')).map((img)=>img.getAttribute('src')||'').join(' ')}`));
     if (!isElementVisible(play)) return false;
+    const rankedPanel = document.getElementById('overallLeaderboardPanel');
+    if (rankedPanel && rankedPanel.style.display !== 'none' && isElementVisible(rankedPanel)) return false;
     const profileInputOpen = !!document.querySelector('.profile-menu input:focus, .profile input:focus, input[type="text"]:focus');
     if (profileInputOpen) return false;
     const overlayCandidates = Array.from(document.querySelectorAll('.settings,.settings-menu,.popup,.dialog,[role="dialog"]'));
@@ -1780,20 +1893,9 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
         const panel = document.getElementById('overallLeaderboardPanel');
         const help = document.getElementById('overallHelpPopup');
         if (help && help.style.display !== 'none') { help.style.display='none'; event.preventDefault(); return; }
-        if (panel && panel.style.display === 'block') { panel.style.display='none'; event.preventDefault(); return; }
+        if (panel && panel.style.display !== 'none') { panel.style.display='none'; event.preventDefault(); return; }
       }
-      if ([' ','Spacebar'].includes(event.key)) {
-        if (isStartMenuHotkeyContext()) {
-          const play = Array.from(document.querySelectorAll('.main-buttons-container button')).find((b)=>/play/i.test((b.textContent||'').trim()));
-          if (play) { play.click(); event.preventDefault(); }
-        }
-      }
-      if (['e','r','l','E','R','L'].includes(event.key)) {
-        if (isStartMenuHotkeyContext()) {
-          const rb = document.getElementById('injectedRankingsBtn');
-          if (rb) { rb.click(); event.preventDefault(); }
-        }
-      }
+      handleLobbyShortcut(event);
     });
   }
 
