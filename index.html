@@ -69,14 +69,6 @@
         text-decoration:none;
         font-family: ForcedSquare, system-ui, sans-serif !important;
       }
-      #closeStaticMenu{
-        display:flex;align-items:center;justify-content:center;
-        min-width:27px;margin-left:-2px;color:rgba(220,234,255,.72);cursor:pointer;
-        border:0;background:rgba(20,31,67,.92);
-        clip-path:polygon(6px 0,100% 0,100% 100%,0 100%);
-        font-family: ForcedSquare, system-ui, sans-serif !important;
-        font-weight: 800 !important;
-      }
       @keyframes menuEnter{ from{opacity:0; transform:translateY(-8px)} to{opacity:1; transform:translateY(0)} }
 
       @media (max-width:600px){
@@ -97,25 +89,10 @@
 
     <div id="staticMenu" role="region" aria-label="StaticQuasar menu">
       <a href="https://sites.google.com/view/staticquasar931/gm3z" target="_blank" rel="noopener">STATIC / GAMES</a>
-      <span id="closeStaticMenu" title="Hide temporarily">X</span>
     </div>
 
     <script>
       window.onbeforeunload = () => "Are you sure you want to leave? Your session may be interrupted.";
-
-      (function(){
-        const menu = document.getElementById("staticMenu");
-        const btn = document.getElementById("closeStaticMenu");
-        const KEY = "sq931_staticMenu_hidden_until";
-        const hideFor3m = () => {
-          if (!menu) return;
-          menu.style.display = "none";
-          const until = Date.now() + 180000;
-          localStorage.setItem(KEY, String(until));
-          window.dispatchEvent(new Event('sq-preferences-changed'));
-        };
-        if (btn) btn.onclick = hideFor3m;
-      })();
 
       (function(){
         const idsToToggle = ["staticMenu"];
@@ -140,7 +117,6 @@
     <noscript>PolyTrack 0.6.2 Ranked requires JavaScript. Race 17 official and 61 bundled community tracks, save personal best replays, and compete in StaticQuasar931 community rankings.</noscript>
     <script>
       (function(){
-        const MENU_KEY = 'sq931_staticMenu_hidden_until';
         const menu = document.getElementById('staticMenu');
         if (!menu) return;
 
@@ -159,15 +135,10 @@
           return isVisible(menuRoot) && isVisible(mainButtons) && isVisible(play);
         }
 
-        function staticMenuAllowed(){
-          const until = parseInt(localStorage.getItem(MENU_KEY) || '0', 10);
-          return !until || Date.now() >= until;
-        }
-
         function syncLobbyWidgets(){
           const lobby = inLobby();
           const extrasEnabled = localStorage.getItem('polytrack-0.6.2-lobby-extras') !== '0';
-          menu.style.display = lobby && extrasEnabled && staticMenuAllowed() ? 'flex' : 'none';
+          menu.style.display = lobby && extrasEnabled ? 'flex' : 'none';
         }
 
         syncLobbyWidgets();

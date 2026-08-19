@@ -129,7 +129,8 @@
     const CarStyle = __pt062CarStyleClass();
     if (!CarStyle) return null;
     const serializedPrimary = __pt062NormalizeStyle(primaryArg);
-    if (serializedPrimary && serializedPrimary.length > 24 && typeof CarStyle.deserializeSafe === 'function') {
+    const isLegacyColorId = /^[0-9a-fA-F]{24}$/.test(serializedPrimary);
+    if (serializedPrimary && !isLegacyColorId && typeof CarStyle.deserializeSafe === 'function') {
       try { return CarStyle.deserializeSafe(serializedPrimary); } catch {}
     }
     const secondary = String(secondaryArg || '');
@@ -310,27 +311,74 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     const track = official[seed % official.length] || {id:'',name:'Official track'};
     let state = {};
     try { state = JSON.parse(localStorage.getItem('polytrack-0.6.2-daily-streak-v1') || '{}') || {}; } catch {}
-    return {track,day,streak:Number(state.streak||0)||0,completed:state.completedDay===day};
+    const isToday = state.activityDay === day;
+    return {
+      track,
+      day,
+      streak:Number(state.streak||0)||0,
+      completed:state.completedDay===day,
+      runs:isToday ? Math.max(0,Number(state.runs||0)||0) : 0,
+      pbs:isToday ? Math.max(0,Number(state.pbs||0)||0) : 0,
+      bestPbImprovementMs:isToday ? Math.max(0,Number(state.bestPbImprovementMs||0)||0) : 0,
+      bestRunTimeMs:isToday ? Math.max(0,Number(state.bestRunTimeMs||0)||0) : 0
+    };
   }
-  function recordDailySpotlightRun(trackId){
-    const daily = dailySpotlight();
-    if (String(trackId || '') !== daily.track.id || daily.completed) return;
+  function recordDailyActivity(trackId, timeMs, isPb, improvementMs=0){
+    const day = utcDayKey();
     let state = {};
     try { state = JSON.parse(localStorage.getItem('polytrack-0.6.2-daily-streak-v1') || '{}') || {}; } catch {}
-    const streak = state.completedDay === utcDayKey(-1) ? (Number(state.streak||0)+1) : 1;
-    try { localStorage.setItem('polytrack-0.6.2-daily-streak-v1',JSON.stringify({completedDay:daily.day,streak})); } catch {}
+    const previousCompletedDay = String(state.completedDay || '');
+    const sameDay = state.activityDay === day;
+    const runs = (sameDay ? Math.max(0,Number(state.runs||0)||0) : 0) + 1;
+    const pbs = (sameDay ? Math.max(0,Number(state.pbs||0)||0) : 0) + (isPb ? 1 : 0);
+    const wasComplete = previousCompletedDay === day;
+    const completed = wasComplete || (runs >= 3 && pbs >= 1);
+    let streak = Math.max(0,Number(state.streak||0)||0);
+    if (completed && !wasComplete) streak = previousCompletedDay === utcDayKey(-1) ? Math.min(10000,streak + 1) : 1;
+    const next = {
+      activityDay:day,
+      completedDay:completed ? day : previousCompletedDay,
+      streak,
+      runs,
+      pbs,
+      bestPbImprovementMs:Math.max(sameDay ? Number(state.bestPbImprovementMs||0)||0 : 0,isPb ? Math.max(0,Number(improvementMs||0)||0) : 0),
+      bestRunTimeMs:Math.min(...[sameDay ? Number(state.bestRunTimeMs||0)||0 : 0,Number(timeMs||0)||0].filter((value)=>value > 0)),
+      lastTrackId:String(trackId || '').slice(0,80)
+    };
+    if (!Number.isFinite(next.bestRunTimeMs)) next.bestRunTimeMs = 0;
+    try { localStorage.setItem('polytrack-0.6.2-daily-streak-v1',JSON.stringify(next)); } catch {}
+    return {...next,shouldCloudSync:runs <= 3 || Boolean(isPb)};
   }
-  async function syncDailySpotlightStreak(d, accountId, ownerUid, trackId, name){
-    const daily = dailySpotlight();
-    if (!accountId || !ownerUid || String(trackId || '') !== daily.track.id) return null;
+  async function syncDailyActivity(d, accountId, ownerUid, trackId, name, timeMs, isPb, improvementMs=0){
+    if (!accountId || !ownerUid) return null;
+    const day = utcDayKey();
     const ref = d.collection(COLLECTIONS.dailyStreaks).doc(String(accountId).slice(0,128));
     let result = null;
     await d.runTransaction(async (tx)=>{
       const snap = await tx.get(ref);
       const current = snap.exists ? (snap.data() || {}) : {};
-      if (current.lastDay === daily.day) { result=current; return; }
-      const nextStreak = current.lastDay === utcDayKey(-1) ? Math.min(10000,Number(current.currentStreak||0)+1) : 1;
-      result = {accountId:String(accountId).slice(0,128),ownerUid,name:safeDisplayName(name,accountId),currentStreak:nextStreak,bestStreak:Math.max(nextStreak,Number(current.bestStreak||0)),lastDay:daily.day,lastTrackId:daily.track.id,updatedAt:Date.now()};
+      const sameDay = current.activityDay === day;
+      const runs = (sameDay ? Math.max(0,Number(current.dayRuns||0)||0) : 0) + 1;
+      const pbs = (sameDay ? Math.max(0,Number(current.dayPbs||0)||0) : 0) + (isPb ? 1 : 0);
+      const alreadyComplete = current.completedDay === day;
+      const goalCompleted = alreadyComplete || (runs >= 3 && pbs >= 1);
+      let currentStreak = Math.max(0,Number(current.currentStreak||0)||0);
+      let completedDay = String(current.completedDay || '');
+      if (goalCompleted && !alreadyComplete) {
+        currentStreak = completedDay === utcDayKey(-1) ? Math.min(10000,currentStreak + 1) : 1;
+        completedDay = day;
+      }
+      const previousBestRun = sameDay ? Math.max(0,Number(current.bestRunTimeMs||0)||0) : 0;
+      const validTime = Math.max(0,Number(timeMs||0)||0);
+      const bestRunTimeMs = previousBestRun > 0 && validTime > 0 ? Math.min(previousBestRun,validTime) : Math.max(previousBestRun,validTime);
+      result = {
+        accountId:String(accountId).slice(0,128),ownerUid,name:safeDisplayName(name,accountId),
+        currentStreak,bestStreak:Math.max(currentStreak,Number(current.bestStreak||0)),
+        activityDay:day,completedDay,lastTrackId:String(trackId || '').slice(0,80),
+        dayRuns:runs,dayPbs:pbs,
+        bestPbImprovementMs:Math.max(sameDay ? Number(current.bestPbImprovementMs||0)||0 : 0,isPb ? Math.max(0,Number(improvementMs||0)||0) : 0),
+        bestRunTimeMs,goalCompleted,updatedAt:Date.now()
+      };
       tx.set(ref,result,{merge:false});
     });
     return result;
@@ -345,7 +393,10 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
   }
   function dailySpotlightMarkup(){
     const daily = dailySpotlight();
-    return `<div class="overall-daily"><span class="overall-daily-label">DAILY</span><strong>${escapeHtml(daily.track.name)}</strong><span>${daily.completed?'Completed today':`Finish today · ${daily.streak} day streak`}</span><span id="overallStreakLeader">Top streak loading...</span></div>`;
+    const runProgress = `${Math.min(3,daily.runs)}/3 finishes`;
+    const pbProgress = `${Math.min(1,daily.pbs)}/1 PB`;
+    const improvement = daily.bestPbImprovementMs > 0 ? ` · best gain ${(daily.bestPbImprovementMs/1000).toFixed(3)}s` : '';
+    return `<div class="overall-daily"><span class="overall-daily-label">DAILY GRID</span><strong>${escapeHtml(daily.track.name)} spotlight</strong><span>${daily.completed?'Goal complete':`${runProgress} · ${pbProgress}`}${improvement} · ${daily.streak} day streak</span><span id="overallStreakLeader">Top streak loading...</span></div>`;
   }
   function normalizeCarColorId(colors){
     const fallback = 'ffffff8ec7ff28346a212b58';
@@ -379,10 +430,10 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     if (value && typeof value.dataUrl === 'string') return value.dataUrl;
     return '';
   }
-  function carModelPreview(carStyle, userId=''){
-    const serializedStyle = __pt062NormalizeStyle(carStyle || __pt062GetRememberedStyle(userId) || getDefaultCarStyle());
+  function carModelPreview(carStyle, carColorId, userId=''){
+    const renderArg = __pt062NormalizeStyle(carStyle || __pt062GetRememberedStyle(userId) || normalizeCarColorId(carColorId || ''));
     const safeUserId = cleanUserId(userId);
-    return `<span class="overall-car-model image-container" data-carstyle="${escapeHtml(serializedStyle)}" data-userid="${safeUserId}" title="Saved car for ${safeUserId}"><img class="show" src="images/car_thumbnail_placeholder.png" alt="Loading car"/><img alt="${safeUserId}'s car"/></span>`;
+    return `<span class="overall-car-model image-container" data-renderarg="${escapeHtml(renderArg)}" data-userid="${safeUserId}" title="Saved car for ${safeUserId}"><img class="show" src="images/car_thumbnail_placeholder.png" alt="Loading car"/><img alt="${safeUserId}'s car"/></span>`;
   }
   const overallCarRenderCache = new Map();
   function getCarThumbRenderer(){
@@ -400,8 +451,8 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     const nodes = Array.from(root.querySelectorAll('.overall-car-model.image-container'));
     nodes.forEach((node)=>{
       const userId = cleanUserId(node.dataset.userid || '');
-      const carStyle = __pt062NormalizeStyle(node.dataset.carstyle || __pt062GetRememberedStyle(userId) || getDefaultCarStyle());
-      const key = carStyle;
+      const renderArg = __pt062NormalizeStyle(node.dataset.renderarg || __pt062GetRememberedStyle(userId) || normalizeCarColorId(''));
+      const key = renderArg;
       const imgs = node.querySelectorAll('img');
       const placeholder = imgs[0];
       const rendered = imgs[1];
@@ -415,11 +466,11 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
         return;
       }
       Promise.resolve()
-        .then(()=>renderThumb(carStyle, userId ? `u.${userId}` : ''))
+        .then(()=>renderThumb(renderArg, userId ? `u.${userId}` : ''))
         .then((out)=>normalizeThumbResult(out))
         .then((src)=>{
           if ((!src || typeof src !== 'string') && userId) {
-            return Promise.resolve(renderThumb(__pt062GetRememberedStyle(userId) || getDefaultCarStyle(),'')).then((fallback)=>normalizeThumbResult(fallback));
+            return Promise.resolve(renderThumb(__pt062GetRememberedStyle(userId) || renderArg,'')).then((fallback)=>normalizeThumbResult(fallback));
           }
           return src;
         })
@@ -575,7 +626,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
       const userId = String(entry?.userId || entry?.accountId || entry?.id || `user-${rank}`);
       const recordingId = buildRecordingId(entry, rank);
       const safeName = String(entry?.nickname || entry?.name || getLastKnownName(userId) || 'Guest').slice(0, 24);
-      const carStyle = __pt062NormalizeStyle(entry?.carStyle || __pt062GetRememberedStyle(userId) || getDefaultCarStyle());
+      const carStyle = __pt062NormalizeStyle(entry?.carStyle || __pt062GetRememberedStyle(userId) || entry?.carColorId || entry?.carColors || '');
       const createdAt = Number(entry?.createdAt || Date.now());
       return {
         id: safeRecordingId(entry?.id) || recordingId,
@@ -819,15 +870,13 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
       #injectedRankingsBtn{animation:none!important;will-change:transform,opacity,filter;position:relative}
       #injectedRankingsBtn.button-spawn{animation:rankedButtonSpawn .72s cubic-bezier(.16,.78,.2,1.06) both!important}
       #injectedRankingsBtn.button-spawn img{animation:rankedIconPop .72s cubic-bezier(.16,.78,.2,1.06) both}
-      .static-discord-link{position:absolute;left:calc(16px + var(--safe-area-horizontal));top:62px;z-index:8;display:flex;align-items:center;gap:7px;width:auto!important;height:30px!important;min-width:0!important;max-width:210px;padding:0 10px!important;color:rgba(244,249,255,.9)!important;background:#26396f!important;border:0!important;border-left:3px solid #86c9ff!important;clip-path:polygon(0 0,100% 0,calc(100% - 7px) 100%,0 100%);text-decoration:none!important;font-size:12px!important;line-height:30px!important;letter-spacing:.35px;pointer-events:auto;transition:transform .14s ease,filter .14s ease}
-      .static-discord-link:hover{transform:translateY(-1px);filter:brightness(1.12)}.static-discord-link img{width:17px!important;height:17px!important;margin:0!important;padding:0!important}.static-discord-link span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
       .sq-has-hotkey{position:relative}.sq-hotkey-hint{position:absolute;right:5px;top:5px;z-index:3;min-width:19px;height:19px;padding:0 4px;display:flex;align-items:center;justify-content:center;background:#f0f6ff;color:#253768;clip-path:polygon(3px 0,100% 0,calc(100% - 3px) 100%,0 100%);font:11px/19px ForcedSquare,Arial,sans-serif;letter-spacing:.2px;pointer-events:none}
       #sqRankedSettings{position:relative;margin:0 0 14px;padding:0 0 10px;border-bottom:3px solid var(--text-color);color:var(--text-color);font-family:ForcedSquare,Arial,sans-serif}#sqRankedSettings>h2{margin:10px;padding:4px;font-size:24px;font-weight:normal;border-bottom:2px solid var(--text-color)}.sq-settings-note{margin:8px 15px;color:rgba(235,244,255,.72);font-size:16px}.sq-setting-row{margin:10px;display:flex}.sq-setting-row>p{display:inline-block;margin:10px;min-width:0;flex-grow:1;font-size:25px}.sq-setting-row>.button-wrapper{display:flex;justify-content:end}.sq-setting-row .button{height:48px;min-width:150px}.sq-moderator-tools{display:grid;grid-template-columns:1.2fr 1fr 1fr auto;gap:7px;margin:13px 10px 0;padding-top:12px;border-top:1px solid rgba(255,255,255,.16)}.sq-moderator-tools strong,.sq-mod-status{grid-column:1/-1}.sq-moderator-tools input{min-width:0;padding:7px 9px;background:#111a3d;border:1px solid rgba(142,199,255,.45);color:#fff;font:inherit}.sq-mod-save{font-size:14px}.sq-mod-status{font-size:13px;color:#78e4ff}
       .sq-mod-challenge{position:fixed;inset:0;z-index:12000;display:flex;align-items:center;justify-content:center;background:rgba(8,12,30,.88)}.sq-mod-card{width:min(430px,calc(100vw - 30px));padding:24px;background:#2b407c;clip-path:polygon(12px 0,calc(100% - 12px) 0,100% 12px,100% calc(100% - 12px),calc(100% - 12px) 100%,12px 100%,0 calc(100% - 12px),0 12px);text-align:center}.sq-mod-card>strong{font-size:28px}.sq-mod-card>p{font-size:15px;color:rgba(240,247,255,.72)}.sq-mod-entry{margin:14px 0;font-size:25px;color:#7ee7ff;letter-spacing:3px}.sq-mod-keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.sq-mod-keypad .button{min-width:0}.sq-mod-challenge-status{display:block;margin-top:12px;color:#ffd27e;font-size:14px}
-      .sq-hide-lobby-extras .static-discord-link,.sq-hide-lobby-extras #staticMenu{display:none!important}.sq-reduced-effects .staticFunPill,.sq-reduced-effects .staticFunText,.sq-reduced-effects .staticFunChar{animation:none!important}.sq-reduced-effects #injectedRankingsBtn.button-spawn{animation-duration:.01ms!important}
+      .sq-hide-lobby-extras #staticMenu{display:none!important}.sq-reduced-effects .staticFunPill,.sq-reduced-effects .staticFunText,.sq-reduced-effects .staticFunChar{animation:none!important}.sq-reduced-effects #injectedRankingsBtn.button-spawn{animation-duration:.01ms!important}
       .sq-hide-racer-codes .overall-racer-code{display:none!important}
       @media (max-width:1100px){#overallLeaderboardPanel{--rank-columns:80px minmax(300px,1.5fr) minmax(170px,.8fr) minmax(170px,.7fr)}.overall-rank{width:80px}.overall-car-model{width:108px;height:88px}.overall-name{font-size:25px}.overall-score{font-size:30px}}
-      @media (max-width:760px){#overallLeaderboardPanel{padding:0;--rank-columns:62px 1fr auto}.overall-shell{width:100vw;height:100vh;clip-path:none}.overall-top{padding:16px 14px 11px}.overall-title-group{gap:8px}.overall-beta{display:none}.overall-actions{gap:5px}.overall-action-btn{min-width:76px;font-size:16px}.overall-sub{padding:10px 14px;font-size:15px}.overall-daily{padding:7px 12px;gap:7px}.overall-daily span:last-child{display:none}.overall-columns{display:none}#overallLeaderboardList{padding:7px}.overall-entry{grid-template-columns:62px 1fr auto;grid-template-areas:'rank name stats' 'rank mid stats';min-height:94px;padding-right:12px;gap:7px}.overall-rank{grid-area:rank;width:62px}.overall-name{grid-area:name;font-size:20px}.overall-mid{grid-area:mid}.overall-stats{grid-area:stats}.overall-car-model{width:76px;height:78px;margin-right:8px}.overall-entry.top-1 .overall-car-model{width:82px;height:86px}.overall-score{font-size:24px}.overall-races,.overall-best{font-size:12px}.overall-move{font-size:15px}.static-discord-link{left:10px;top:54px;max-width:170px}.sq-moderator-tools{grid-template-columns:1fr}.overall-help-card p{font-size:18px}.overall-help-content{padding:18px}}
+      @media (max-width:760px){#overallLeaderboardPanel{padding:0;--rank-columns:62px 1fr auto}.overall-shell{width:100vw;height:100vh;clip-path:none}.overall-top{padding:16px 14px 11px}.overall-title-group{gap:8px}.overall-beta{display:none}.overall-actions{gap:5px}.overall-action-btn{min-width:76px;font-size:16px}.overall-sub{padding:10px 14px;font-size:15px}.overall-daily{padding:7px 12px;gap:7px}.overall-daily span:last-child{display:none}.overall-columns{display:none}#overallLeaderboardList{padding:7px}.overall-entry{grid-template-columns:62px 1fr auto;grid-template-areas:'rank name stats' 'rank mid stats';min-height:94px;padding-right:12px;gap:7px}.overall-rank{grid-area:rank;width:62px}.overall-name{grid-area:name;font-size:20px}.overall-mid{grid-area:mid}.overall-stats{grid-area:stats}.overall-car-model{width:76px;height:78px;margin-right:8px}.overall-entry.top-1 .overall-car-model{width:82px;height:86px}.overall-score{font-size:24px}.overall-races,.overall-best{font-size:12px}.overall-move{font-size:15px}.sq-moderator-tools{grid-template-columns:1fr}.overall-help-card p{font-size:18px}.overall-help-content{padding:18px}}
       @media (prefers-reduced-motion:reduce){.overall-shell,.overall-entry,#injectedRankingsBtn.button-spawn,#injectedRankingsBtn.button-spawn img{animation-duration:.01ms!important;animation-delay:0s!important}}
       .menu-ui .info,.menu .info{text-align:center!important;pointer-events:auto!important;user-select:text!important}.staticFunPill{display:inline-block;cursor:pointer;pointer-events:auto;user-select:none;font-family:ForcedSquare,Arial,sans-serif;font-size:18px;font-weight:normal;letter-spacing:.8px;text-decoration:none;padding:6px 12px;border:1px solid rgba(255,255,255,.14);background:rgba(9,17,45,.34);clip-path:polygon(6px 0,100% 0,calc(100% - 6px) 100%,0 100%);text-shadow:0 0 9px rgba(255,255,255,.18);position:relative;z-index:5;animation:staticGlowPulse 1.8s ease-in-out infinite}.staticFunHover{transition:transform .16s ease, filter .16s ease, box-shadow .16s ease}
       .staticFunHover:hover{transform:translateY(-2px) scale(1.05);filter:brightness(1.18);box-shadow:0 0 18px rgba(255,255,255,0.20),0 0 30px rgba(0,255,255,0.18)}
@@ -935,24 +984,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
   }
 
   function ensureStaticDiscordLink(){
-    const menu = document.querySelector('.menu-ui, .menu');
-    if (!menu) return;
-    const existing = menu.querySelector('.static-discord-link');
-    if (existing) {
-      existing.style.display = isStartMenuHotkeyContext() && localStorage.getItem('polytrack-0.6.2-lobby-extras') !== '0' ? 'flex' : 'none';
-      return;
-    }
-    const link = document.createElement('a');
-    link.className = 'static-discord-link';
-    link.href = 'https://discord.gg/DP2hM7RRhR';
-    link.target = '_blank';
-    link.rel = 'noopener noreferrer';
-    link.setAttribute('aria-label','StaticQuasar931 Discord');
-    link.innerHTML = '<img src="images/discord.svg" alt=""><span>StaticQuasar931 Discord</span>';
-    const officialDiscord = menu.querySelector(':scope > .discord-link');
-    if (officialDiscord) officialDiscord.insertAdjacentElement('beforebegin',link);
-    else menu.appendChild(link);
-    link.style.display = isStartMenuHotkeyContext() && localStorage.getItem('polytrack-0.6.2-lobby-extras') !== '0' ? 'flex' : 'none';
+    document.querySelectorAll('.static-discord-link').forEach((link)=>link.remove());
   }
 
   function applyUiPreferences(){
@@ -1109,9 +1141,9 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     if (!settings || !container || container.querySelector('#sqRankedSettings')) return;
     const section = document.createElement('section');
     section.id = 'sqRankedSettings';
-    section.innerHTML = '<h2>Static Ranked</h2><p class="sq-settings-note">Quality-of-life options for this community edition.</p>';
-    section.appendChild(settingsToggle('Keyboard shortcuts','polytrack-0.6.2-hotkeys-enabled',true));
-    section.appendChild(settingsToggle('Shortcut badges on menu buttons','polytrack-0.6.2-shortcut-badges',true));
+    section.innerHTML = '<h2>Static Options</h2><p class="sq-settings-note">Ranked display and optional menu controls.</p>';
+    section.appendChild(settingsToggle('Menu keyboard shortcuts','polytrack-0.6.2-hotkeys-enabled',false));
+    section.appendChild(settingsToggle('Show shortcut labels','polytrack-0.6.2-shortcut-badges',false));
     section.appendChild(settingsToggle('Public racer codes in Ranked','polytrack-0.6.2-show-racer-codes',true));
     section.appendChild(settingsToggle('Lobby links and community widgets','polytrack-0.6.2-lobby-extras',true));
     section.appendChild(settingsToggle('Full menu animations','polytrack-0.6.2-reduced-effects',true,true));
@@ -1148,7 +1180,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     if (existingLegend) existingLegend.remove();
     document.querySelectorAll('.sq-hotkey-hint').forEach((hint)=>hint.remove());
     document.querySelectorAll('.sq-has-hotkey').forEach((button)=>button.classList.remove('sq-has-hotkey'));
-    if (localStorage.getItem('polytrack-0.6.2-hotkeys-enabled') === '0' || localStorage.getItem('polytrack-0.6.2-shortcut-badges') === '0' || !isStartMenuHotkeyContext()) return;
+    if (localStorage.getItem('polytrack-0.6.2-hotkeys-enabled') !== '1' || localStorage.getItem('polytrack-0.6.2-shortcut-badges') !== '1' || !isStartMenuHotkeyContext()) return;
     const buttons = lobbyShortcutButtons();
     buttons.forEach((button,index)=>{
       const letter = buttonShortcutLetter(button);
@@ -1166,7 +1198,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
   }
 
   function handleLobbyShortcut(event){
-    if (localStorage.getItem('polytrack-0.6.2-hotkeys-enabled') === '0' || event.defaultPrevented || event.repeat || event.ctrlKey || event.altKey || event.metaKey || !isStartMenuHotkeyContext()) return false;
+    if (localStorage.getItem('polytrack-0.6.2-hotkeys-enabled') !== '1' || event.defaultPrevented || event.repeat || event.ctrlKey || event.altKey || event.metaKey || !isStartMenuHotkeyContext()) return false;
     const target = event.target;
     if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement || target?.isContentEditable) return false;
     const key = String(event.key || '').toLowerCase();
@@ -1239,7 +1271,8 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
       communityCount: Number(entry.communityCount || 0) || 0,
       weightedTracks: Number(entry.weightedTracks || 0) || 0,
       movement: Number(entry.movement || 0) || 0,
-      carStyle: __pt062NormalizeStyle(entry.carStyle || __pt062GetRememberedStyle(entry.userId || entry.accountId) || getDefaultCarStyle())
+      carStyle: __pt062NormalizeStyle(entry.carStyle || __pt062GetRememberedStyle(entry.userId || entry.accountId) || ''),
+      rankModel: String(entry.rankModel || '')
     })).sort((a,b)=>a.rank-b.rank).slice(0, 50);
   }
 
@@ -1257,7 +1290,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
       const prev = bestByUser.get(userId);
       if (!prev || timeMs < prev.timeMs) {
         const safeName = safeDisplayName(row.nickname || row.name || getLastKnownName(userId) || 'Guest', userId);
-        const carStyle = __pt062NormalizeStyle(row.carStyle || __pt062GetRememberedStyle(userId) || getDefaultCarStyle());
+        const carStyle = __pt062NormalizeStyle(row.carStyle || __pt062GetRememberedStyle(userId) || row.carColors || '');
         bestByUser.set(userId, {
           accountId: userId,
           userId,
@@ -1296,8 +1329,8 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
         entry.name = n;
         entry.nickname = n;
         entry.countryCode = typeof profile.countryCode === 'string' ? profile.countryCode.slice(0, 8) : entry.countryCode ?? null;
-        entry.carStyle = __pt062NormalizeStyle(profile.carStyle || entry.carStyle || getDefaultCarStyle());
-        __pt062RememberStyle(id, entry.carStyle);
+        entry.carStyle = __pt062NormalizeStyle(profile.carStyle || entry.carStyle || profile.carColors || entry.carColorId || entry.carColors || '');
+        if (profile.carStyle) __pt062RememberStyle(id, profile.carStyle);
         setLastKnownName(id, n);
       }));
     } catch {}
@@ -1351,7 +1384,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
           id: buildRecordingId(row, bestByTrackAndUser.size + 1),
           carId: extractCarId(row) || null,
           carColors: normalizeCarColorId(row.carColors || ''),
-          carStyle: __pt062NormalizeStyle(row.carStyle || __pt062GetRememberedStyle(userId) || getDefaultCarStyle())
+          carStyle: __pt062NormalizeStyle(row.carStyle || __pt062GetRememberedStyle(userId) || '')
         });
       }
     }
@@ -1399,7 +1432,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
       const experienceBonus = Math.min(4, Math.log2(1 + played) * 0.75);
       const uidTiebreak = ((String(u.userId).split('').reduce((acc, ch)=>acc + ch.charCodeAt(0), 0) % 997) + 1) / 1000000;
       const score = Math.max(1.000001, averagePlacement + confidencePenalty - experienceBonus + uidTiebreak);
-      return {userId:u.userId,name:safeDisplayName(getLastKnownName(u.userId)||u.name,u.userId),carId:String(u.carId||'').slice(0,64)||null,carColors:normalizeCarColorId(u.carColors||'ffffff8ec7ff28346a212b58'),carColorId:normalizeCarColorId(u.carColors||'ffffff8ec7ff28346a212b58'),carStyle:__pt062NormalizeStyle(u.carStyle||__pt062GetRememberedStyle(u.userId)||getDefaultCarStyle()),score,raceCount:played,totalTracks:TOTAL_TRACKS,officialCount:u.officialCount,communityCount:u.communityCount,weightedTracks:Number(u.weightSum.toFixed(3)),bestTrackId:u.bestTrackId||null,bestTrackRank:Number(u.bestTrackRank||0)||0,bestTrackField:Number(u.bestTrackField||0)||0,rankModel:'participation-v2'};
+      return {userId:u.userId,name:safeDisplayName(getLastKnownName(u.userId)||u.name,u.userId),carId:String(u.carId||'').slice(0,64)||null,carColors:normalizeCarColorId(u.carColors||'ffffff8ec7ff28346a212b58'),carColorId:normalizeCarColorId(u.carColors||'ffffff8ec7ff28346a212b58'),carStyle:__pt062NormalizeStyle(u.carStyle||__pt062GetRememberedStyle(u.userId)||''),score,raceCount:played,totalTracks:TOTAL_TRACKS,officialCount:u.officialCount,communityCount:u.communityCount,weightedTracks:Number(u.weightSum.toFixed(3)),bestTrackId:u.bestTrackId||null,bestTrackRank:Number(u.bestTrackRank||0)||0,bestTrackField:Number(u.bestTrackField||0)||0,rankModel:'participation-v2'};
     }).sort((a,b)=>a.score-b.score || b.raceCount-a.raceCount || String(a.userId).localeCompare(String(b.userId)))
       .slice(0,50)
       .map((row, idx)=>({ rank: idx + 1, ...row }));
@@ -1444,6 +1477,16 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
         builtRevision:Math.min(latestRevision,Number(capturedRevision || 0) || 0)
       },{merge:false});
     });
+  }
+
+  function mergeOverallSnapshots(previousEntries, rebuiltEntries){
+    const byUser = new Map();
+    for (const entry of normalizeEntries(previousEntries || [])) byUser.set(String(entry.userId),entry);
+    for (const entry of normalizeEntries(rebuiltEntries || [])) byUser.set(String(entry.userId),entry);
+    return Array.from(byUser.values())
+      .sort((a,b)=>Number(a.score||Infinity)-Number(b.score||Infinity) || Number(b.raceCount||0)-Number(a.raceCount||0) || String(a.userId).localeCompare(String(b.userId)))
+      .slice(0,50)
+      .map((entry,index)=>({...entry,rank:index+1,rankModel:'participation-v2'}));
   }
 
   async function hydrateOverallProfiles(entries){
@@ -1497,9 +1540,15 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
       const boardsSnap = await d.collection(COLLECTIONS.leaderboardsTrack).get();
       const rebuilt = computeOverallFromTrackBoardDocs(boardsSnap.docs);
       if (rebuilt.length) {
-        await commitOverallSnapshot(d,d.collection(COLLECTIONS.leaderboardsOverall).doc('main'),rebuilt,revision,'polytrack-0.6.2-panel-rebuild');
+        const complete = validDirect ? mergeOverallSnapshots(direct,rebuilt) : rebuilt;
+        await commitOverallSnapshot(d,d.collection(COLLECTIONS.leaderboardsOverall).doc('main'),complete,revision,'polytrack-0.6.2-panel-rebuild');
         overallLoadState={status:'cloud',message:''};
-        return annotateOverallMovement(rebuilt);
+        return annotateOverallMovement(complete);
+      }
+      if (validDirect) {
+        await commitOverallSnapshot(d,d.collection(COLLECTIONS.leaderboardsOverall).doc('main'),direct.map((entry)=>({...entry,rankModel:'participation-v2'})),revision,'polytrack-0.6.2-preserved-snapshot');
+        overallLoadState={status:'cloud',message:'Using the last complete ranked snapshot while track caches recover.'};
+        return annotateOverallMovement(direct);
       }
       overallLoadState={status:'empty-cloud',message:'The ranked service is connected, but no shared snapshot exists yet.'};
       return [];
@@ -1548,7 +1597,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     const totalTracks = Number(row?.totalTracks || TOTAL_TRACKS) || TOTAL_TRACKS;
     const safeUserId = cleanUserId(row?.userId || row?.accountId || '');
     const safeName = escapeHtml(safeDisplayName(row?.nickname || row?.name || 'Guest',safeUserId));
-    const savedCarStyle = __pt062NormalizeStyle(row?.carStyle || __pt062GetRememberedStyle(safeUserId) || getDefaultCarStyle());
+    const savedCarStyle = __pt062NormalizeStyle(row?.carStyle || __pt062GetRememberedStyle(safeUserId) || '');
     const best = bestTrackMarkup(row);
     const move = movementMarkup(row?.movement || 0);
     const extra = showTopHint ? '<div style="font-size:13px;color:rgba(225,225,225,.9);margin-top:2px;">This could be you</div>' : '';
@@ -1556,7 +1605,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     const racerCode = safeUserId ? `R-${safeUserId.slice(-8).toUpperCase()}` : 'R-UNKNOWN';
     const officialCount = Number(row?.officialCount || 0) || 0;
     const communityCount = Number(row?.communityCount || 0) || 0;
-    return `<div class="overall-entry ${rank===1?'top-1':rank===2?'top-2':rank===3?'top-3':''}" style="animation-delay:${(index*0.045).toFixed(3)}s"><span class="overall-rank">#${rank}</span><span class="overall-name">${carModelPreview(savedCarStyle,safeUserId)}<span class="overall-name-label"><span class="overall-name-main">${safeName}</span>${hintText?`<span class="overall-name-hint">${hintText}</span>`:''}<button class="overall-racer-code" type="button" data-racer-code="${racerCode}" data-label="${racerCode}" title="Copy public racer code">${racerCode}</button></span></span><div class="overall-mid">${move}<div class="overall-best">${best}</div></div><div class="overall-stats"><div class="overall-score">${score.toFixed(2)}</div><div class="overall-score-unit">RP · LOWER IS BETTER</div><div class="overall-races">${races}/${totalTracks} · ${officialCount} official · ${communityCount} community</div></div></div>`;
+    return `<div class="overall-entry ${rank===1?'top-1':rank===2?'top-2':rank===3?'top-3':''}" style="animation-delay:${(index*0.045).toFixed(3)}s"><span class="overall-rank">#${rank}</span><span class="overall-name">${carModelPreview(savedCarStyle,row?.carColorId||row?.carColors,safeUserId)}<span class="overall-name-label"><span class="overall-name-main">${safeName}</span>${hintText?`<span class="overall-name-hint">${hintText}</span>`:''}<button class="overall-racer-code" type="button" data-racer-code="${racerCode}" data-label="${racerCode}" title="Copy public racer code">${racerCode}</button></span></span><div class="overall-mid">${move}<div class="overall-best">${best}</div></div><div class="overall-stats"><div class="overall-score">${score.toFixed(2)}</div><div class="overall-score-unit">RP · LOWER IS BETTER</div><div class="overall-races">${races}/${totalTracks} · ${officialCount} official · ${communityCount} community</div></div></div>`;
   }
 
   function renderEntries(entries){
@@ -1620,10 +1669,10 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     };
   }
 
-  function makeLeaderboardPayload(method, entries=[], position=1, previousPosition=1, forcedUploadId=null, forcedUserEntryId=null, forcedUserEntry=null){
+  function makeLeaderboardPayload(method, entries=[], position=0, previousPosition=0, forcedUploadId=null, forcedUserEntryId=null, forcedUserEntry=null){
     const normalizedEntries = enrichLegacyLeaderboardEntries(entries);
-    const pos = safePositiveInt(position, 1);
-    const prevPos = safePositiveInt(previousPosition, pos);
+    const pos = Number.isSafeInteger(Number(position)) && Number(position) > 0 ? Number(position) : 0;
+    const prevPos = Number.isSafeInteger(Number(previousPosition)) && Number(previousPosition) > 0 ? Number(previousPosition) : pos;
     const isPost = String(method).toUpperCase() === 'POST';
     const displayPos = isPost ? prevPos : pos;
     const resolvedUploadId = isPost ? (safeRecordingId(forcedUploadId) || nextUploadId()) : null;
@@ -1837,7 +1886,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
       return {accountId,trackId,uploadId:null,timeMs,frames,name,carStyle};
     }
     const createdAt = Date.now();
-    recordDailySpotlightRun(trackId);
+    let dailyRecorded = false;
     const uploadId = nextUploadId();
     const resultDocId = `${accountId}_${trackId}`;
     const raceRow = {accountId,ownerUid:'',trackId,name,nickname:name,countryCode,timeMs,replay:replayData,replayHash:await sha256Hex(replayData),carStyle,raceTimeFrames:frames,frames,uploadId,verified:false,verifiedState:0,createdAt,updatedAt:createdAt,source:String(url||'').slice(0,500)};
@@ -1854,10 +1903,12 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
       const ref = d.collection(COLLECTIONS.raceResults).doc(resultDocId);
       let savedRow = raceRow;
       let saved = false;
+      let previousBestMs = 0;
       await d.runTransaction(async (tx)=>{
         const currentSnap = await tx.get(ref);
         const current = currentSnap.exists ? (currentSnap.data() || {}) : null;
         const currentFrames = safePositiveInt(current?.frames || current?.raceTimeFrames,0);
+        previousBestMs = currentFrames > 0 ? Math.round((currentFrames * 1000) / 60) : Math.max(0,Number(current?.timeMs||0)||0);
         if (current && currentFrames > 0 && currentFrames <= frames) {
           savedRow = current;
           return;
@@ -1872,6 +1923,9 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
       } else if (savedRow.replay) {
         writeRecordingStore(resolvedUploadId,{recording:savedRow.replay,frames:savedRow.frames||savedRow.raceTimeFrames,verifiedState:savedRow.verifiedState||0,carStyle:savedRow.carStyle});
       }
+      const pbImprovementMs = saved && previousBestMs > timeMs ? previousBestMs - timeMs : 0;
+      const dailyActivity = recordDailyActivity(trackId,timeMs,saved,pbImprovementMs);
+      dailyRecorded = true;
       lastMirrorSig = mirrorSig;
       lastMirrorAt = Date.now();
       log('info','[FB202] profiles_public.set start',{accountId});
@@ -1880,7 +1934,8 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
       } catch (profileError) {
         log('warn','[FB402] Profile update denied; continuing PB sync',String(profileError&&(profileError.message||profileError)));
       }
-      const postRaceTasks = [syncDailySpotlightStreak(d,accountId,ownerUid,trackId,name).catch((error)=>log('warn','[STREAK400] Streak sync failed',String(error&&(error.message||error))))];
+      const postRaceTasks = [];
+      if (dailyActivity?.shouldCloudSync) postRaceTasks.push(syncDailyActivity(d,accountId,ownerUid,trackId,name,timeMs,saved,pbImprovementMs).catch((error)=>log('warn','[STREAK400] Daily activity sync failed',String(error&&(error.message||error)))));
       if (saved) postRaceTasks.push(rebuildCachedLeaderboards(d,trackId,raceRow).catch((error)=>log('warn','[FB403] Race saved, but ranked cache refresh failed',String(error&&(error.message||error)))));
       await Promise.all(postRaceTasks);
       try {
@@ -1891,6 +1946,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
       return {accountId,trackId,uploadId:resolvedUploadId,timeMs,frames,name,carStyle,saved};
 
     } catch (error) {
+      if (!dailyRecorded) recordDailyActivity(trackId,timeMs,false,0);
       addLocalRaceRow(raceRow);
       writeRecordingStore(uploadId,{recording:replayData,frames,verifiedState:0,carStyle});
       log('error','[FB499] Race mirror failed; cached locally',{error:String(error&&(error.message||error)),trackId,accountId});
@@ -2230,6 +2286,14 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
   }
 
   function install(){
+    try {
+      const migrationKey = 'polytrack-0.6.2-shortcuts-default-off-v1';
+      if (localStorage.getItem(migrationKey) !== '1') {
+        localStorage.setItem('polytrack-0.6.2-hotkeys-enabled','0');
+        localStorage.setItem('polytrack-0.6.2-shortcut-badges','0');
+        localStorage.setItem(migrationKey,'1');
+      }
+    } catch {}
     ensureStyles();
     applyUiPreferences();
     ensurePanel();
@@ -2298,11 +2362,15 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     const revisionNow = Date.now();
     let shouldRebuildNow = false;
     let capturedRevision = 0;
+    let previousOverallEntries = [];
+    let previousOverallValid = false;
     await d.runTransaction(async (tx)=>{
       const overallSnap = await tx.get(overallRef);
       const current = overallSnap.exists ? (overallSnap.data() || {}) : {};
       const currentEntries = Array.isArray(current.entries) ? current.entries : [];
       const validCurrent = currentEntries.length > 0 && currentEntries[0]?.rankModel === 'participation-v2';
+      previousOverallEntries = currentEntries;
+      previousOverallValid = validCurrent;
       const previousRevision = Math.max(0,Number(current.revision || 0) || 0);
       capturedRevision = previousRevision + 1;
       shouldRebuildNow = !validCurrent || revisionNow - Number(current.updatedAt || 0) >= 90 * 1000;
@@ -2319,7 +2387,8 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
       return;
     }
     const boardsSnap = await d.collection(COLLECTIONS.leaderboardsTrack).get();
-    const overallEntries = computeOverallFromTrackBoardDocs(boardsSnap.docs);
+    const rebuiltOverall = computeOverallFromTrackBoardDocs(boardsSnap.docs);
+    const overallEntries = previousOverallValid ? mergeOverallSnapshots(previousOverallEntries,rebuiltOverall) : rebuiltOverall;
     await commitOverallSnapshot(d,overallRef,overallEntries,capturedRevision,'polytrack-0.6.2-race-rebuild');
     log('info','[FB204] Cached leaderboards rebuilt',{trackId,participants:trackEntries.length,boards:boardsSnap.size,overall:overallEntries.length});
   }
