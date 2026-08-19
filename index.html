@@ -48,8 +48,8 @@
         position:fixed; left:12px; top:12px; z-index:9999;
         display:none; gap:0; align-items:stretch; user-select:none;
         padding:0;
-        color:#e8f3ff;
-        font-size:15px; animation:menuEnter .35s ease .1s both;
+        color:#dceaff;
+        font-size:11px; animation:menuEnter .28s ease .08s both;
         font-family: ForcedSquare, system-ui, sans-serif !important;
         font-weight: 700 !important;
         letter-spacing: .1px;
@@ -59,19 +59,21 @@
       }
       #staticMenu a{
         display:flex;align-items:center;
-        min-height:38px;padding:0 14px;
-        color:#fff;
-        background:#2b3e7a;
-        clip-path:polygon(0 0,100% 0,calc(100% - 8px) 100%,0 100%);
+        min-height:28px;padding:0 10px;
+        color:#eaf4ff;
+        background:rgba(30,45,91,.9);
+        border-left:3px solid #86c9ff;
+        clip-path:polygon(0 0,100% 0,calc(100% - 6px) 100%,0 100%);
+        letter-spacing:.55px;
         font-weight:normal !important;
         text-decoration:none;
         font-family: ForcedSquare, system-ui, sans-serif !important;
       }
       #closeStaticMenu{
         display:flex;align-items:center;justify-content:center;
-        min-width:34px;margin-left:-3px;color:#dceaff;cursor:pointer;
-        border:0;background:#1c2a59;
-        clip-path:polygon(8px 0,100% 0,100% 100%,0 100%);
+        min-width:27px;margin-left:-2px;color:rgba(220,234,255,.72);cursor:pointer;
+        border:0;background:rgba(20,31,67,.92);
+        clip-path:polygon(6px 0,100% 0,100% 100%,0 100%);
         font-family: ForcedSquare, system-ui, sans-serif !important;
         font-weight: 800 !important;
       }
@@ -79,7 +81,7 @@
 
       @media (max-width:600px){
         #staticMenu{ left:8px;top:8px;font-size:12px }
-        #staticMenu a{min-height:32px;padding:0 10px}
+        #staticMenu a{min-height:27px;padding:0 8px}
       }
     </style>
 
@@ -94,7 +96,7 @@
     <div id="transition-layer"></div>
 
     <div id="staticMenu" role="region" aria-label="StaticQuasar menu">
-      <a href="https://sites.google.com/view/staticquasar931/gm3z" target="_blank" rel="noopener">Static's Games</a>
+      <a href="https://sites.google.com/view/staticquasar931/gm3z" target="_blank" rel="noopener">STATIC / GAMES</a>
       <span id="closeStaticMenu" title="Hide temporarily">X</span>
     </div>
 
