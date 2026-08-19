@@ -4,14 +4,20 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,viewport-fit=cover,user-scalable=no">
     <meta name="robots" content="index, follow, max-image-preview:large">
-    <meta name="theme-color" content="#000000">
+    <meta name="theme-color" content="#202d60">
 
-    <title>PolyTrack 0.6.2 | Ranked Leaderboards</title>
+    <title>PolyTrack 0.6.2 Ranked | Race, Replays and Firebase Multiplayer</title>
 
-    <meta name="description" content="Play PolyTrack 0.6.2 with persistent ranked leaderboards, accurate car previews, race replays, and Firebase multiplayer hosting.">
-    <meta property="og:title" content="PolyTrack 0.6.2 Ranked">
-    <meta property="og:description" content="Race, set personal bests, and compete on persistent PolyTrack rankings.">
+    <meta name="description" content="Play the StaticQuasar931 PolyTrack 0.6.2 community edition with participation-weighted ranked leaderboards, accurate saved cars, race replays, daily track spotlights and Firebase multiplayer invites.">
+    <meta name="keywords" content="PolyTrack 0.6.2, PolyTrack ranked, PolyTrack multiplayer, racing game, unblocked racing game, StaticQuasar931">
+    <meta name="author" content="StaticQuasar931">
+    <meta property="og:title" content="PolyTrack 0.6.2 Ranked by StaticQuasar931">
+    <meta property="og:description" content="Set personal bests, climb participation-weighted rankings, race daily spotlights and host Firebase multiplayer games.">
     <meta property="og:type" content="website">
+    <meta property="og:url" content="https://staticquasar931.github.io/Polytrack-0.6.2/">
+    <meta property="og:image" content="https://staticquasar931.github.io/Polytrack-0.6.2/images/logo.svg">
+    <meta name="twitter:card" content="summary_large_image">
+    <link rel="canonical" href="https://staticquasar931.github.io/Polytrack-0.6.2/">
     <link rel="icon" type="image/svg+xml" href="./images/icon.svg">
     <link rel="shortcut icon" type="image/svg+xml" href="./images/icon.svg">
     <link rel="apple-touch-icon" href="./images/icon.svg">
@@ -20,25 +26,29 @@
     <link rel="preload" href="./images/logo.svg" as="image" type="image/svg+xml">
     <link rel="preload" href="./images/discord.svg" as="image" type="image/svg+xml">
     <link rel="manifest" href="./manifest.json">
+    <script type="application/ld+json">
+      {"@context":"https://schema.org","@type":"VideoGame","name":"PolyTrack 0.6.2 Ranked by StaticQuasar931","url":"https://staticquasar931.github.io/Polytrack-0.6.2/","description":"A community PolyTrack edition with persistent participation-weighted rankings, replays, saved car previews, daily track spotlights and Firebase multiplayer invites.","genre":["Racing","Time trial"],"gamePlatform":["Web browser","Windows"],"author":{"@type":"Person","name":"StaticQuasar931"}}
+    </script>
 
     <style>
+      @font-face{font-family:ForcedSquare;src:url('./forced_square.woff2') format('woff2');font-display:swap}
       :root{
         --brand:#5ee1ff;
         --glow:0 0 12px rgba(94,225,255,.65), 0 0 32px rgba(155,255,183,.35);
         --shadow:0 10px 30px rgba(0,0,0,.4);
       }
-      html, body{ margin:0; height:100%; background:#000; color:#eaf4ff; font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; }
+      html, body{ margin:0; height:100%; background:#000; color:#eaf4ff; font-family:ForcedSquare,system-ui,sans-serif; }
       body{ overflow:hidden; }
 
       #staticMenu{
         position:fixed; left:12px; top:12px; z-index:9999;
-        display:flex; gap:10px; align-items:center; user-select:none;
-        padding:10px 14px; border-radius:12px;
-        background:linear-gradient(135deg, rgba(20,20,28,.9), rgba(20,20,28,.6));
-        border:1px solid rgba(94,225,255,.35);
+        display:none; gap:10px; align-items:center; user-select:none;
+        padding:11px 16px;
+        background:linear-gradient(135deg, rgba(32,45,96,.96), rgba(23,34,77,.9));
+        border-left:5px solid #78e4ff;
         color:#e8f3ff; box-shadow:var(--glow), var(--shadow);
         font-size:14px; animation:menuEnter .6s ease .15s both;
-        font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif !important;
+        font-family: ForcedSquare, system-ui, sans-serif !important;
         font-weight: 700 !important;
         letter-spacing: .1px;
         text-rendering: geometricPrecision;
@@ -49,12 +59,12 @@
         color:#5ee1ff;
         font-weight:800 !important;
         text-decoration:none;
-        font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif !important;
+        font-family: ForcedSquare, system-ui, sans-serif !important;
       }
       #closeStaticMenu{
         color:#f55; cursor:pointer; padding:2px 6px; border-radius:6px;
         border:1px solid rgba(255,255,255,.15); background:rgba(255,255,255,.06);
-        font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif !important;
+        font-family: ForcedSquare, system-ui, sans-serif !important;
         font-weight: 800 !important;
       }
       @keyframes menuEnter{ from{opacity:0; transform:translateY(-8px)} to{opacity:1; transform:translateY(0)} }
@@ -114,21 +124,13 @@
         const menu = document.getElementById("staticMenu");
         const btn = document.getElementById("closeStaticMenu");
         const KEY = "sq931_staticMenu_hidden_until";
-        const show = () => { if (menu) menu.style.display = "flex"; };
         const hideFor3m = () => {
           if (!menu) return;
           menu.style.display = "none";
           const until = Date.now() + 180000;
           localStorage.setItem(KEY, String(until));
-          setTimeout(show, 180000);
+          window.dispatchEvent(new Event('sq-preferences-changed'));
         };
-        const until = parseInt(localStorage.getItem(KEY) || "0", 10);
-        if (until && Date.now() < until){
-          if (menu) menu.style.display = "none";
-          setTimeout(show, until - Date.now());
-        } else {
-          show();
-        }
         if (btn) btn.onclick = hideFor3m;
       })();
 
@@ -205,10 +207,7 @@
       })();
     </script>
 
-    <div class="seo-hidden" aria-hidden="true">
-      <h1>PolyTrack Version 0.6.2 Ranked</h1>
-      <p>Top-left Static Menu and bottom-right rotating widget by StaticQuasar931. Unblocked games, school safe games, StaticQuasar931, staticquasar931, static 931, staticq, staticq931.</p>
-    </div>
+    <noscript>PolyTrack 0.6.2 Ranked requires JavaScript. Race 17 official and 61 bundled community tracks, save personal best replays, and compete in StaticQuasar931 community rankings.</noscript>
     <script>
       (function(){
         const MENU_KEY = 'sq931_staticMenu_hidden_until';
@@ -225,9 +224,10 @@
         }
 
         function inLobby(){
-          const menuRoot = document.querySelector('.menu');
-          const mainButtons = document.querySelector('.menu .main-buttons-container, .menu .buttons, .menu .main-buttons');
-          return isVisible(menuRoot) && (!mainButtons || isVisible(mainButtons));
+          const menuRoot = document.querySelector('.menu-ui, .menu');
+          const mainButtons = document.querySelector('.main-buttons-container');
+          const play = mainButtons && Array.from(mainButtons.querySelectorAll('button,a')).find((button)=>/play/i.test(`${button.textContent||''} ${Array.from(button.querySelectorAll('img')).map((image)=>image.src||'').join(' ')}`));
+          return isVisible(menuRoot) && isVisible(mainButtons) && isVisible(play);
         }
 
         function staticMenuAllowed(){
@@ -237,8 +237,9 @@
 
         function syncLobbyWidgets(){
           const lobby = inLobby();
-          menu.style.display = lobby && staticMenuAllowed() ? 'flex' : 'none';
-          slide.style.display = lobby ? 'block' : 'none';
+          const extrasEnabled = localStorage.getItem('polytrack-0.6.2-lobby-extras') !== '0';
+          menu.style.display = lobby && extrasEnabled && staticMenuAllowed() ? 'flex' : 'none';
+          slide.style.display = lobby && extrasEnabled ? 'block' : 'none';
           if (!lobby) slide.style.pointerEvents = 'none';
         }
 
@@ -247,6 +248,7 @@
         const observer = new MutationObserver(syncLobbyWidgets);
         observer.observe(document.documentElement, { subtree:true, childList:true, attributes:true, attributeFilter:['class','style'] });
         window.addEventListener('focus', syncLobbyWidgets);
+        window.addEventListener('sq-preferences-changed', syncLobbyWidgets);
       })();
     </script>
   </body>

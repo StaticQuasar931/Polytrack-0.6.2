@@ -18,7 +18,8 @@
     system: '0.6.2_system',
     multiplayerInvites: '0.6.2_multiplayer_invites',
     multiplayerSessions: '0.6.2_multiplayer_sessions',
-    multiplayerMessages: '0.6.2_multiplayer_messages'
+    multiplayerMessages: '0.6.2_multiplayer_messages',
+    moderationNames: '0.6.2_moderation_names'
   });
 
   function __pt062WebpackRequire(){
@@ -185,7 +186,9 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
   const PROFILE_NAME_WORD_A = ['swift','neon','alpha','turbo','sonic','pixel','nova','lucky','sunny','frost','ember','quantum','crystal','midnight','solar','lunar','hyper','ultra','aero','rapid','vivid','thunder','cosmic','silver','golden','shadow','arc','vector','iron','onyx','starlit','cobalt','ripple','granite','jungle','desert','arctic','magenta','scarlet','violet','teal','sable','amber','jade','ivory','obsidian','cinder','stellar','orbital','zen','rogue','prime','apex','summit','embered','misty','horizon','aurora','glitch','byte','laser','prism','halo','north','south','east','west','tempo','axle','torque','nitro','clutch','summoner','phantom','eclipse','cyclone','monsoon','titan','pegasus','raven','falcon','lynx','otter','comfy','bouncy','cheery','zippy','daring','brisk','fuzzy','mellow','witty','snappy'];
   const PROFILE_NAME_WORD_B = ['racer','drift','pulse','track','echo','comet','storm','shift','vault','spark','dash','glide','runner','rocket','flare','nexus','voyage','blaze','orbit','flux','drive','streak','zenith','quartz','radar','pilot','charger','phantom','matrix','engine','jumper','hopper','sprinter','raider','seeker','keeper','walker','slider','cruiser','strider','booster','chaser','panther','falcon','otter','fox','rhino','yak','wizard','knight','samurai','sage','ranger','captain','doctor','baron','duke','rookie','veteran','legend','maverick','stomper','breaker','spirit','beacon','anchor','vector','module','kernel','vortex','quasar','galaxy','planet','meteor','asteroid','volcano','tsunami','whirl','tempest','charge','vertex','pixel','bit','byte','gear','piston','engineer','driver','rider','climber','surfer','skater','sniper','ace'];
   const DEFAULT_NAME_BLOCKLIST = ["admin","moderator","owner","staff","support","system","dev","developer","verified","helper","official","security","abuse","abuser","anal","anus","arse","arsehole","ass","assbag","assclown","assface","assfuck","assfucker","asshat","asshole","assholes","asslicker","asswipe","ballsack","bastard","bastards","beaner","bitch","bitches","bitchy","blowjob","blowjobs","bollock","bollocks","boner","boob","boobs","booty","brothel","bullshit","buttfuck","butthole","cameltoe","chink","clit","clitoris","cock","cocks","coon","crap","cum","cumming","cunt","cunts","dick","dicks","dildo","dildos","dipshit","doggystyle","douche","douchebag","dyke","fag","faggot","faggots","feck","fellatio","fingerbang","fuck","fucked","fucker","fuckers","fuckface","fucking","fuckoff","fuckwit","fuk","gangbang","gaylord","genitals","gook","handjob","hardcore","hentai","hitler","hoe","hoes","horny","incest","jackass","jerkoff","jizz","kike","kkk","kunt","lesbo","lesbian","loli","masturbate","masturbation","milf","motherfucker","motherfucking","muff","nazi","nazism","negro","nigga","nigger","niggers","nipple","nipples","nutjob","orgasm","orgy","pedo","pedophile","penis","piss","pissed","pisser","playboy","poon","poop","porn","porno","pornhub","prostitute","pussy","queef","queer","raped","raper","rapist","rape","retard","rimjob","scrotum","sex","sexy","shit","shits","shitty","shota","sissy","skank","slut","sluts","smegma","spic","spunk","strapon","suck","sucks","testicle","threesome","tit","tits","titties","titty","tranny","twat","vag","vagina","vibrator","virgin","voyeur","wank","wanker","whore","whores","wtf","xxx","xrated","yaoi","zoophile","zoophilia","alqaeda","isis","terrorist","swastika","1488","molest","molester","underage","childporn","cp","suicide","killyourself","kys","racist","racism","whitepower","wetback","spick","gimp","cripple","idiot","moron","stupid","dumbass","shithead","cumshot","cumslut","deepthroat","fisting","gangrape","gfy","goatse","groomer","hooker","hotsex","humping","jackoff","motherfucker","nutsack","pecker","peehole","peeing","pussylicking","rectum","scat","semen","sexcam","sexchat","sexworker","shemale","slapper","sodomize","sodomy","tard","teabagging","towelhead","tubgirl","unclefucker","upskirt","urethra","urine","vulva","wigger","willy","yid"];
-  let dynamicNameBlocklistPromise = null;
+  const MODERN_HIGH_RISK_TERMS = ['gooning','gooner','goonette','edging','edgeplay','gyatt','gyat','onlyfans','ofans','discordmod','heilhitler','gasjews','killall','kms','killyourself','kys','unaliveyourself','csam','cporn','childlover','minorlover','lolicon','shotacon'];
+  const COMPACT_SEVERE_TERMS = ['nigger','nigga','faggot','chink','kike','spic','wetback','beaner','coon','gook','tranny','fuck','bitch','cunt','rape','rapist','pedophile','molester','childporn','csam','killyourself','whitepower','heilhitler','pornhub','onlyfans','gooning'];
+  const RESERVED_NAME_TERMS = ['admin','administrator','moderator','modteam','owner','staff','support','system','developer','devteam','verified','official','staticquasar931'];
 
   function readProfileMap(){
     try {
@@ -251,7 +254,14 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
 
   const BRAND_FP = `${q0}${q1}${q2}${q3}`;
   const WARN_FP = `${p0}${p1}`;
-  const TOTAL_TRACKS = 47;
+  const OFFICIAL_TRACK_COUNT = 17;
+  const COMMUNITY_TRACK_COUNT = 61;
+  const TOTAL_TRACKS = OFFICIAL_TRACK_COUNT + COMMUNITY_TRACK_COUNT;
+  const TRACK_CATALOG = new Map([{"id":"5803f9e963625804e3de3246d043dc7dde847aa32e991f7f7326b0453f1fa038","name":"Summer 1","type":"official"},{"id":"7eac4fee1111152cfba4d3737410264ca0f22c7f5a2211e79f0099589b8b48c0","name":"Summer 2","type":"official"},{"id":"148826aa16ffaa23dbc453b32cff05e025ddbce1773fc7733cc13d218926515a","name":"Summer 3","type":"official"},{"id":"93c7363dfea7fb09ca1d23b72cad5df43a30841d41c8ff25fb544c85bb03c7ae","name":"Summer 4","type":"official"},{"id":"7603aaeffa1989a649dfaa8e1804bed4481b49df233e377687d0669899566e52","name":"Summer 5","type":"official"},{"id":"c117823cf6788e3247b9ee63a0c091c07352bbe352c650a7790dc6718148c2fa","name":"Summer 6","type":"official"},{"id":"e4bcaca3a583bb0eb62a700a69d14e89c852f0c5bf740fca76e0519ebdfc9ab1","name":"Summer 7","type":"official"},{"id":"7239b17057127936907a805b0caa5d8c6f6c97eca9bdabf1a5312dce479629b7","name":"Winter 1","type":"official"},{"id":"99864b635d1891d22e17eb9267527a07a92c49c0f02893729fa2ded90e3ca0f9","name":"Winter 2","type":"official"},{"id":"a5341fe706097cff2a3812a3fc0d87399254557328351ae8e5c882700fc1a196","name":"Winter 3","type":"official"},{"id":"7d134c939df80c676a258266201beedd3b93572d5603f3ff4339ff8679803715","name":"Winter 4","type":"official"},{"id":"2fe4bd46b0075cc25fc770ce50adbb68447cf493c999635bb272d231811dd264","name":"Winter 5","type":"official"},{"id":"c20b4ee3cd517ca6cae7e43f047548757287fbd08ba81b97892a3ef520159a34","name":"Desert 1","type":"official"},{"id":"88647ea04145fbbbb19b55f1590e038fb0378acb2571110f02cb545cc46b0d57","name":"Desert 2","type":"official"},{"id":"2806030c503abb41a1a26fa9a570888be14296172bb273798ef0ad87a108a2ec","name":"Desert 3","type":"official"},{"id":"4697ea67b18c3f49b30a3d8884602115536650bc5435c88e3732e64d21a72d33","name":"Desert 4","type":"official"},{"id":"e5d084e06db4ab71196fea44efeceb23c8561266a78669c324a38f92581fe2db","name":"Desert 5","type":"official"},{"id":"5159a8dac6a1f397407a7b5233ad570613531f6609f7dc897490c28c9f2c7a4e","name":"Apostle","type":"community"},{"id":"1783b7b6c30e7fddf7ffb7c8a4a8a3b65c1ef6ec317d908d6eb05e6c905a57f6","name":"Stardust","type":"community"},{"id":"ddfe00045807e2786552d1e31e1363384c365487180f65d4eff1aa41e334a8e8","name":"Overclocked","type":"community"},{"id":"4058e3616fbd79b848e70037adde4f12b4413011050aaf1c9d875cdbe2e33d68","name":"Amberbound","type":"community"},{"id":"2ec74a179c8aba94354e3c6dee2a2920bedd7d84adf4d0a691f4a7453afdb1e8","name":"The Eldritch Estate","type":"community"},{"id":"76e1920a3ca015033a0b21156848def2c248c95d97ccf4aab2312a0302beefe0","name":"Star Bound","type":"community"},{"id":"81cede50724b1ee0c2ebcef973c37d620680766bd75771c5ae2728b8732c7a66","name":"Natsu","type":"community"},{"id":"76269faf38e8726671c05b2b9044f7aa3e66c4313cb4fa5d0fbb23fc8524fe9e","name":"Lenore","type":"community"},{"id":"151f12fd3ebc8942f7aaef669024a0fc149bc220f370753efe14d9371acc9c87","name":"sandy lanes II","type":"community"},{"id":"f9283607ecec9c89583205cf08715c8f504cc271eec51209bb6fc0cc37ddc915","name":"Planet 97","type":"community"},{"id":"64bf7efaed2a47dfb03a6b152e3aef637ac251b68a725a28352f3376ff1384d7","name":"Marvelous Marble","type":"community"},{"id":"520c4f511821ced30b99bceafbb02e6b7531e867126b0756e68d5e157691ef2f","name":"Arx Lucida","type":"community"},{"id":"315c9e95c567cce4feca78f5ad6e8d08d0a22dac0d56061af567b43eea3d4fa8","name":"Koselig","type":"community"},{"id":"a8913b96daceb5b615fe45aad2bb104e04eb7db140242934657111e1d1f55b89","name":"Sky Bound","type":"community"},{"id":"66f43b2d2a17f3cee05a127040ca409795058510bd3d1ac7eee224512ec532f5","name":"ShardMir","type":"community"},{"id":"fcbba504800751b0fb404a7cd1c9591befdf688ad5451ab2bc1f3651590cc5fc","name":"𝔖𝔱𝔢𝔦𝔫𝔴𝔞𝔩𝔩𝔟𝔲𝔯𝔤","type":"community"},{"id":"9ba44e8eafd0158e7e1f63e7d609db308c53f337b79e86bd0b630225451eef34","name":"𝕻𝖆𝖗𝖆𝖉𝖎𝖘𝖊 𝕻𝖆𝖑𝖆𝖈𝖊","type":"community"},{"id":"b3889905b6df31cbe302e58e975988385607771605bf6e8e8e8e31b3d2dc8aa1","name":"Sunken Glyphs","type":"community"},{"id":"3cd94552b12fb3a8ac45ca3a5e21a882b71b31c788989b396ab382afc69414ac","name":"Grimspyre","type":"community"},{"id":"3125a5f98c3b43cf1e2604e25e8504bffd714ea5843200fa8ddf0b4c58842f16","name":"Magenta Mines","type":"community"},{"id":"a2137c20c03ad1848098b47f70417cc0b0bf169010c825dc6fb82f37066808a0","name":"Cruising Altitude","type":"community"},{"id":"d03b9f7c10c95f40eed389458be51bdf2437febd5673d028da134e59e503c10b","name":"Termite Terror","type":"community"},{"id":"f68a709a296a60f6e6f73a2da670f95aca424be0f2fda5d6b608ece71f339b7c","name":"4 seasons","type":"community"},{"id":"a1f41dc9e884d5d4b1b6025158d70f0934dc4d892076e6c4b32dc3f3846b882e","name":"Lost at sea","type":"community"},{"id":"b430aad5e481caa4588e30f46352b876b62f1ba0cf7730a15efd026c91a8f32e","name":"Frosted Fjords 寒い","type":"community"},{"id":"95d8f7cbe11053dbdfaeeb2f3c3d8f53f0d45fb6abeb411a74949a4cf52f427f","name":"〜✧〜Ḽevitation〜✧〜","type":"community"},{"id":"409f26b9faf55bd0ad748177bf85ebdcfc0ddd572190e7f464f38b4a60587b7e","name":"Frozen Ramparts","type":"community"},{"id":"c1a2c5aef1029d7bbf946f08cd087dd25bad6e019a41694a48a0024c27627dc8","name":"Tangled Cliffs","type":"community"},{"id":"9e53d03f4efe86834c49ce202b528d769d9aa7a6e17732d0fc56440463956a1b","name":"Sludge Pipe Circuit","type":"community"},{"id":"b77ec520a40c4b38d3d7d653b747b1f8627c98709096568db22cd1bfec534ba6","name":"Zealot","type":"community"},{"id":"9f827673c4132828009237a03e12ead73eae87504b4708a79c6cc0858212262d","name":"Shrouded Oasis","type":"community"},{"id":"9acd9aef650c4ccc41bb01f72ed44dfaa13f2e4404d2e3466f09cc1adcd9a9c0","name":"⚙︎Cogware⚙︎","type":"community"},{"id":"62d9989187e4508f7866e7b30aa187ddbee2595df21ff5988d7fec3589f9048d","name":"Land of the Rising Sun","type":"community"},{"id":"b36162623435dc90a54f57590d2baa9f2d67a51cb12c393531f4b6d5e5528ebf","name":"Midas Metropolis","type":"community"},{"id":"74ae56c0f278a19f3b69f3903198c7b9de09981133205856b53bf6bdf8db4211","name":"Frozen In Time","type":"community"},{"id":"9f4597449906aa0c2baf9a4737406385c829533e64e9e972b25b4189f4593a54","name":"Winterfell","type":"community"},{"id":"28b658c7d10eb8b5de6f465e034e87e40f70b37e4534d8c37d1f2af06b5a36d7","name":"Launch Control","type":"community"},{"id":"470af92ed4c0a6f62028d7dea4dbc7765d1db16a3698d6a0c271be582a20a7c6","name":"Fractured Shores","type":"community"},{"id":"a6b990137e404c9ef2cb4399c463acbed8ebfa3bb82ab5315027118604c4ec03","name":"Starry Tropisx","type":"community"},{"id":"35fe02bf18312713c05528f0b7b8fd15c83dac50bcdcbd373040a16e8bfcc138","name":"Flying Dreams","type":"community"},{"id":"18b69f54f119cfb2867abded9a1574f0799a750ef94aa744d9ec8ef6b4d565ae","name":"Ghost City","type":"community"},{"id":"5aafb733c264d51b09beedc7bd7eabb5e65bdded338980fcb14ae5ce36955572","name":"Asguardia","type":"community"},{"id":"5ea46b3ae268a0196dcc59dabe88926400b56e29814658bfed06a284f837cefd","name":"MOS ESPA","type":"community"},{"id":"ab8e1c13ddf394102be1cb04adcff8411127f1e7140a216d27a94fc19b7d0428","name":"Joenail Jones","type":"community"},{"id":"86335d78d1a06d3dc81d80f84b8ac2e8f6359e9a206826e2c36f7d3f4351bea4","name":"Anubis","type":"community"},{"id":"a510bbd3341f2992a12db8a3780cb8943b6087538345d58d16602d6129742df0","name":"Natsujō","type":"community"},{"id":"8cf99166f12cbb56a9df4e022a0e9b8c78973adb929dbf1e265ebb9f99f01163","name":"Arabica","type":"community"},{"id":"33d99aad2ad5cef45b1d3afb8735c5229cfd98ac7cc24916e0da7283f7a545ce","name":"Hyperion's Sanctuary","type":"community"},{"id":"5c00f2c90bcf8230183484225d1a417e45b0ad310379acfafd4c8f1dc7345dd7","name":"Winter Hollow","type":"community"},{"id":"009fad7fcc215022c6b2dbb2b6de622f07cd88d4930b8e2b6a6b74c1f5de9e44","name":"Clay temples","type":"community"},{"id":"1ad53694ee3e96aea27afa7b64d5c29d115de88a17b69cf3fe3f5609c52b040b","name":"Las Calles","type":"community"},{"id":"2ed125037366052871fbb97da6e1bda49cfeb471f6b9c8fa799d520bdb3683e2","name":"DESERT STALLION","type":"community"},{"id":"f79b1d863d50f9e3b4489988698065c6d775ff3ec90bf91085bad05ad5ec8316","name":"Last Remnant","type":"community"},{"id":"27429a1d1bf05770851e3919af70f47c6cd7a269c67032b084fb4345f6c271ce","name":"lu muvimento","type":"community"},{"id":"f5c327cf09b90e4de8c3c1f9c910dbb7988cf15485d2e4beec3cc03aef408c5c","name":"90*RESET","type":"community"},{"id":"7451c2128cb96bc28195cf0ca0f83a46c3b55d78d434232d9de085dd1cf0ab36","name":"Opal Palace - Repolished","type":"community"},{"id":"af6ef508e1f6e47a462a6998b950ef535d1e8a38fe67ead891bf5f2de1346f43","name":"Re : Akina","type":"community"},{"id":"089f2aebcfe4f24d8dda3a8a630172d2bd13793e78c5247adfaa760743a377e1","name":"Sandline Ultimatum","type":"community"},{"id":"5e40f730509204c77e9c610839ed43addddbe0f8aa007168447f7fde38583905","name":"Malformations","type":"community"},{"id":"191737cc4d1b74949e992d99371e5c7f5fc446a716af571c6e5449b23e9f4558","name":"Snow Park","type":"community"},{"id":"39bd3fa6c3c769b298c219aee7561af35a6d856bfee14b46b0b48499e7a57ed5","name":"concrete jungle","type":"community"}]
+.map((track)=>[track.id, Object.freeze(track)]));
+  function trackInfo(trackId){
+    return TRACK_CATALOG.get(String(trackId || '')) || { id:String(trackId || ''), name:'Unknown track', type:'community' };
+  }
   const LOG_PREFIX='[polytrack-data-0.6.2]';
   const log=(type,msg,data)=>{
     const rec={ts:Date.now(),type,msg,data:data||null};
@@ -270,7 +280,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     close: { en:'Close', es:'Cerrar', fr:'Fermer', de:'Schließen', it:'Chiudi', pt:'Fechar', ru:'Закрыть', tr:'Kapat', pl:'Zamknij', ja:'閉じる', ko:'닫기', zh:'关闭' },
     loading: { en:'Loading rankings…', es:'Cargando clasificación…', fr:'Chargement du classement…', de:'Lade Rangliste…', it:'Caricamento classifica…', pt:'Carregando classificação…', ru:'Загрузка рейтинга…', tr:'Sıralama yükleniyor…', ja:'ランキングを読み込み中…', ko:'랭킹 불러오는 중…', zh:'正在加载排行榜…' },
     placeholderNote: { en:'Showing placeholder names and placeholder scores until real race data is available.', es:'Mostrando nombres y puntajes de ejemplo hasta que haya datos reales.', fr:'Affichage d’exemples tant que les données réelles ne sont pas disponibles.', de:'Platzhalter werden angezeigt, bis echte Renndaten verfügbar sind.', it:'Mostra dati di esempio finché non sono disponibili dati reali.', pt:'Mostrando dados de exemplo até haver dados reais.', ru:'Показаны примерные данные до появления реальных результатов.', tr:'Gerçek veriler gelene kadar örnek veriler gösteriliyor.', ja:'実データが揃うまでサンプルを表示しています。', ko:'실제 데이터가 생길 때까지 예시를 표시합니다.', zh:'在真实数据可用前显示示例数据。' },
-    overallSub: { en:'Ranked score across all tracks. Lower is better. Progress shows tracks played out of 47.', es:'Puntuación clasificada en todas las pistas. Menor es mejor. El progreso muestra pistas jugadas de 47.', fr:'Score classé sur toutes les pistes. Plus bas est meilleur. Progression: pistes jouées sur 47.', de:'Ranglistenwert über alle Strecken. Niedriger ist besser. Fortschritt zeigt gespielte Strecken von 47.', it:'Punteggio classificato su tutte le piste. Più basso è meglio. Progresso: piste giocate su 47.', pt:'Pontuação ranqueada em todas as pistas. Menor é melhor. Progresso: pistas jogadas de 47.' },
+    overallSub: { en:'Rank points across 17 official and 61 community tracks. Lower is better.', es:'Puntos de rango en 17 pistas oficiales y 61 comunitarias. Menor es mejor.', fr:'Points classés sur 17 pistes officielles et 61 communautaires. Plus bas est meilleur.', de:'Rangpunkte über 17 offizielle und 61 Community-Strecken. Niedriger ist besser.', it:'Punti classificati su 17 piste ufficiali e 61 community. Più basso è meglio.', pt:'Pontos de ranking em 17 pistas oficiais e 61 comunitárias. Menor é melhor.' },
     helpBody: { en:'Need help? Contact us via Google Forms or email.', es:'¿Necesitas ayuda? Contáctanos por Google Forms o correo.', fr:'Besoin d\'aide ? Contactez-nous via Google Forms ou email.', de:'Hilfe benötigt? Kontaktiere uns via Google Forms oder E-Mail.', it:'Serve aiuto? Contattaci tramite Google Forms o email.', pt:'Precisa de ajuda? Fale conosco via Google Forms ou email.' },
     helpSmall: { en:'Refresh after updates, keep storage enabled, and verify network access if rankings do not update.', es:'Actualiza después de cambios, mantén el almacenamiento habilitado y verifica la red si no actualiza.', fr:'Actualisez après les changements, gardez le stockage activé et vérifiez le réseau si besoin.', de:'Nach Updates neu laden, Speicher aktiviert lassen und Netzwerkzugriff prüfen, falls es nicht aktualisiert.', it:'Aggiorna dopo le modifiche, mantieni lo storage attivo e verifica la rete se non aggiorna.', pt:'Recarregue após atualizações, mantenha o armazenamento ativo e verifique a rede se não atualizar.' },
     unofficialLine1: { en:'This is an unofficial community recreation made by Static.', es:'Esta es una recreación comunitaria no oficial hecha por Static.', fr:'Ceci est une recréation communautaire non officielle réalisée par Static.', de:'Dies ist eine inoffizielle Community-Neuauflage von Static.' },
@@ -284,6 +294,31 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
   }
   function tRankedWord(){ return tr('ranked'); }
   function tRankingsTitle(){ return tr('overallTitle'); }
+  function utcDayKey(offsetDays=0){
+    const date = new Date(Date.now() + offsetDays * 86400000);
+    return date.toISOString().slice(0,10);
+  }
+  function dailySpotlight(){
+    const official = Array.from(TRACK_CATALOG.values()).filter((track)=>track.type === 'official');
+    const day = utcDayKey();
+    const seed = Number(day.replace(/-/g,'')) || 0;
+    const track = official[seed % official.length] || {id:'',name:'Official track'};
+    let state = {};
+    try { state = JSON.parse(localStorage.getItem('polytrack-0.6.2-daily-streak-v1') || '{}') || {}; } catch {}
+    return {track,day,streak:Number(state.streak||0)||0,completed:state.completedDay===day};
+  }
+  function recordDailySpotlightRun(trackId){
+    const daily = dailySpotlight();
+    if (String(trackId || '') !== daily.track.id || daily.completed) return;
+    let state = {};
+    try { state = JSON.parse(localStorage.getItem('polytrack-0.6.2-daily-streak-v1') || '{}') || {}; } catch {}
+    const streak = state.completedDay === utcDayKey(-1) ? (Number(state.streak||0)+1) : 1;
+    try { localStorage.setItem('polytrack-0.6.2-daily-streak-v1',JSON.stringify({completedDay:daily.day,streak})); } catch {}
+  }
+  function dailySpotlightMarkup(){
+    const daily = dailySpotlight();
+    return `<div class="overall-daily"><span class="overall-daily-label">DAILY SPOTLIGHT</span><strong>${escapeHtml(daily.track.name)}</strong><span>${daily.completed?'Completed today':`Finish it today · ${daily.streak} day streak`}</span></div>`;
+  }
   function normalizeCarColorId(colors){
     const fallback = 'ffffff8ec7ff28346a212b58';
     const cleaned = String(colors || '').replace(/[^0-9a-fA-F]/g,'').toLowerCase();
@@ -539,33 +574,40 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
   let lastMirrorAt = 0;
 
   function sanitizeDisplayName(value){
-    const n = String(value || '').trim().slice(0, 24);
+    const n = String(value || '').normalize('NFKC').replace(/[\u0000-\u001f\u007f-\u009f\u200b-\u200f\u202a-\u202e\u2060-\u206f]/g, '').replace(/\s+/g, ' ').trim().slice(0, 24);
     return n || 'Guest';
   }
 
   function normalizeNameForCheck(v){
-    return String(v || '').toLowerCase().replace(/[^a-z0-9Ѐ-ӿ぀-ヿ一-鿿]+/g, '');
+    return String(v || '').normalize('NFKC').toLowerCase()
+      .replace(/[@4]/g,'a').replace(/[8]/g,'b').replace(/[3]/g,'e')
+      .replace(/[1!|]/g,'i').replace(/[0]/g,'o').replace(/[5$]/g,'s')
+      .replace(/[7+]/g,'t').replace(/[^a-z0-9Ѐ-ӿ぀-ヿ一-鿿]+/g, ' ')
+      .replace(/\s+/g, ' ').trim();
   }
 
-  async function getNameBlocklist(){
-    if (dynamicNameBlocklistPromise) return dynamicNameBlocklistPromise;
-    dynamicNameBlocklistPromise = (async ()=>{
-      const base = new Set(DEFAULT_NAME_BLOCKLIST.map(normalizeNameForCheck).filter(Boolean));
-      try {
-        const res = await fetch('https://raw.githubusercontent.com/StaticQuasar931/Statics-Live-Chat-2.0/codex/fix-app-logic-and-stability-issues-vd8oso/name-blocklist.js', { cache: 'no-store' });
-        if (res.ok) {
-          const text = await res.text();
-          const matches = text.match(/"([^"\\]{2,})"|'([^'\\]{2,})'/g) || [];
-          for (const item of matches) {
-            const raw = item.slice(1, -1);
-            const normalized = normalizeNameForCheck(raw);
-            if (normalized.length >= 2) base.add(normalized);
-          }
-        }
-      } catch {}
-      return Array.from(base);
-    })();
-    return dynamicNameBlocklistPromise;
+  function moderationDecision(value){
+    const clean = sanitizeDisplayName(value);
+    const normalized = normalizeNameForCheck(clean);
+    const tokens = normalized.split(' ').filter(Boolean);
+    const compact = tokens.join('');
+    const sourceLooksObfuscated = /[^a-zA-Z\s]/.test(clean) || tokens.length > 1;
+    const terms = DEFAULT_NAME_BLOCKLIST.concat(MODERN_HIGH_RISK_TERMS).map(normalizeNameForCheck).filter(Boolean);
+    for (const reserved of RESERVED_NAME_TERMS) {
+      if (compact === normalizeNameForCheck(reserved).replace(/ /g,'')) return {blocked:true,reason:'reserved-name',clean};
+    }
+    for (const term of terms) {
+      const termTokens = term.split(' ');
+      if (termTokens.length > 1 && normalized.includes(term)) return {blocked:true,reason:'unsafe-phrase',clean};
+      if (termTokens.length === 1 && tokens.includes(term)) return {blocked:true,reason:'unsafe-word',clean};
+    }
+    for (const term of COMPACT_SEVERE_TERMS) {
+      const needle = normalizeNameForCheck(term).replace(/ /g,'');
+      if (needle.length >= 4 && compact.includes(needle) && (sourceLooksObfuscated || compact === needle || compact.startsWith(needle) || compact.endsWith(needle))) {
+        return {blocked:true,reason:'obfuscated-unsafe-word',clean};
+      }
+    }
+    return {blocked:false,reason:'',clean};
   }
 
   function makeFallbackName(seed){
@@ -576,12 +618,32 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
   }
 
   async function enforceSafeDisplayName(value, accountId=''){
-    const clean = sanitizeDisplayName(value);
-    const blocklist = await getNameBlocklist();
-    const normalized = normalizeNameForCheck(clean);
-    const blocked = blocklist.some((w)=>w && normalized.includes(w));
-    if (!blocked) return clean;
-    return makeFallbackName(accountId || clean) || 'Guest';
+    const decision = moderationDecision(value);
+    if (!decision.blocked) return decision.clean;
+    log('warn','[MOD100] Unsafe display name replaced',{accountId,reason:decision.reason});
+    return makeFallbackName(accountId || decision.clean) || 'Guest';
+  }
+
+  function safeDisplayName(value, accountId=''){
+    const decision = moderationDecision(value);
+    return decision.blocked ? (makeFallbackName(accountId || decision.clean) || 'Guest') : decision.clean;
+  }
+
+  const manualModerationCache = new Map();
+  async function resolveManualNameOverride(d, accountId, fallbackName){
+    const id = String(accountId || '').slice(0,128);
+    const cached = manualModerationCache.get(id);
+    if (cached && cached.expiresAt > Date.now()) return cached.name || fallbackName;
+    try {
+      const snap = await d.collection(COLLECTIONS.moderationNames).doc(id).get();
+      const data = snap.exists ? (snap.data() || {}) : {};
+      const name = data.active === true ? (sanitizeDisplayName(data.replacement) || fallbackName) : fallbackName;
+      manualModerationCache.set(id,{name,expiresAt:Date.now()+60000});
+      return name;
+    } catch {
+      manualModerationCache.set(id,{name:fallbackName,expiresAt:Date.now()+30000});
+      return fallbackName;
+    }
   }
 
   function getLastKnownName(accountId){
@@ -596,7 +658,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     try {
       const raw = localStorage.getItem('polytrack-0.6.2-profile-last-names-v1');
       const map = raw ? JSON.parse(raw) : {};
-      map[accountId] = sanitizeDisplayName(name);
+      map[accountId] = safeDisplayName(name,accountId);
       localStorage.setItem('polytrack-0.6.2-profile-last-names-v1', JSON.stringify(map));
     } catch {}
   }
@@ -678,7 +740,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     style.id = 'polytrack-ext-style';
     style.textContent = `
       #overallLeaderboardPanel{--rank-bg:#202d60;--rank-surface:#2a3a77;--rank-surface-2:#17224d;--rank-blue:#8ec7ff;--rank-cyan:#78e4ff;display:none;position:fixed;inset:0;z-index:10001;background:rgba(12,17,39,.86);backdrop-filter:blur(8px);padding:clamp(10px,2vw,26px);overflow:hidden;color:var(--text-color,#fff);font-family:ForcedSquare,Arial,sans-serif}
-      .overall-shell{width:min(1360px,calc(100vw - 32px));height:min(900px,calc(100vh - 32px));margin:auto;display:flex;flex-direction:column;overflow:hidden;position:relative;background:var(--rank-bg);clip-path:polygon(0 0,calc(100% - 24px) 0,100% 24px,100% 100%,24px 100%,0 calc(100% - 24px));box-shadow:0 24px 80px rgba(0,0,0,.58);animation:rankPanelIn .32s cubic-bezier(.16,.78,.2,1) both}
+      .overall-shell{width:min(1420px,calc(100vw - 32px));height:min(930px,calc(100vh - 32px));margin:auto;display:flex;flex-direction:column;overflow:hidden;position:relative;background:var(--rank-bg);clip-path:polygon(18px 0,calc(100% - 18px) 0,100% 18px,100% calc(100% - 18px),calc(100% - 18px) 100%,18px 100%,0 calc(100% - 18px),0 18px);box-shadow:0 24px 80px rgba(0,0,0,.58);animation:rankPanelIn .32s cubic-bezier(.16,.78,.2,1) both}
       .overall-top{display:flex;justify-content:space-between;align-items:center;padding:22px 28px 14px;background:linear-gradient(90deg,#263a7b 0%,#1d2c61 65%,#17234f 100%);border-bottom:4px solid var(--rank-blue);position:relative;z-index:2}
       .overall-title-group{display:flex;align-items:center;gap:16px;min-width:0}
       .overall-top h2{margin:0;font-size:clamp(36px,4vw,58px);font-weight:normal;line-height:.95;color:#fff;letter-spacing:.5px;text-shadow:3px 3px 0 rgba(0,0,0,.22)}
@@ -688,11 +750,12 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
       .overall-action-btn:hover,.overall-action-btn:focus-visible{transform:translateY(-2px);filter:brightness(1.12)}
       .overall-sub{margin:0;padding:13px 28px 10px;background:var(--rank-surface-2);color:rgba(240,248,255,.82);font-size:20px;line-height:1.25}
       .overall-sub strong{color:var(--rank-cyan);font-weight:normal}
+      .overall-daily{display:flex;align-items:center;gap:14px;padding:9px 28px;background:linear-gradient(90deg,#31518b,#21376f);color:rgba(235,245,255,.74);font-size:15px}.overall-daily-label{padding:4px 7px;background:#78e4ff;color:#162651;font-size:12px;letter-spacing:.8px}.overall-daily strong{font-size:19px;color:#fff;font-weight:normal}.overall-daily span:last-child{margin-left:auto}
       .overall-columns{display:grid;grid-template-columns:94px minmax(380px,1.7fr) minmax(220px,.85fr) minmax(210px,.75fr);gap:12px;padding:9px 36px 8px 22px;background:#121b3f;color:rgba(220,235,255,.62);font-size:14px;text-transform:uppercase;letter-spacing:1.2px}
       .overall-columns span:last-child{text-align:right}
       #overallLeaderboardList{padding:10px 14px 18px;display:flex;flex-direction:column;gap:7px;overflow-y:auto;overflow-x:hidden;flex:1;background:linear-gradient(180deg,#182450,#131c40);scrollbar-color:#526da9 #121a3b}
       #overallHelpPopup{display:none;position:absolute;inset:0;background:rgba(8,12,31,.9);backdrop-filter:blur(5px);align-items:center;justify-content:center;padding:24px;z-index:4}
-      .overall-help-card{width:min(860px,calc(100% - 30px));background:#26366f;clip-path:polygon(0 0,calc(100% - 18px) 0,100% 18px,100% 100%,18px 100%,0 calc(100% - 18px));box-shadow:0 18px 60px rgba(0,0,0,.45)}
+      .overall-help-card{width:min(1020px,calc(100% - 30px));max-height:min(820px,calc(100vh - 50px));overflow:auto;background:#26366f;clip-path:polygon(16px 0,calc(100% - 16px) 0,100% 16px,100% calc(100% - 16px),calc(100% - 16px) 100%,16px 100%,0 calc(100% - 16px),0 16px);box-shadow:0 18px 60px rgba(0,0,0,.45)}
       .overall-help-head{padding:22px 26px 16px;border-bottom:4px solid var(--rank-blue);background:#1c2959}
       .overall-help-card h3{margin:0;font-size:38px;color:#fff;font-weight:normal}
       .overall-help-content{padding:22px 26px}
@@ -704,7 +767,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
       .overall-discord-cta:hover{filter:brightness(1.12);transform:translateY(-2px)}
       .overall-discord-cta img{width:25px;height:25px}
       #overallHelpClose{cursor:pointer;min-width:100px}
-      .overall-entry{position:relative;display:grid;grid-template-columns:94px minmax(380px,1.7fr) minmax(220px,.85fr) minmax(210px,.75fr);gap:12px;align-items:center;min-height:106px;padding:0 22px 0 0;background:var(--rank-surface);clip-path:polygon(0 0,100% 0,calc(100% - 10px) 100%,0 100%);opacity:0;transform:translateX(-34px);animation:overallEntryIn .38s cubic-bezier(.16,.78,.2,1) forwards;transition:filter .14s ease,transform .14s ease}
+      .overall-entry{position:relative;display:grid;grid-template-columns:94px minmax(380px,1.7fr) minmax(220px,.85fr) minmax(210px,.75fr);gap:12px;align-items:center;min-height:106px;padding:0 22px 0 0;background:var(--rank-surface);clip-path:polygon(8px 0,calc(100% - 8px) 0,100% 8px,100% calc(100% - 8px),calc(100% - 8px) 100%,8px 100%,0 calc(100% - 8px),0 8px);opacity:0;transform:translateX(-34px);animation:overallEntryIn .38s cubic-bezier(.16,.78,.2,1) forwards;transition:filter .14s ease,transform .14s ease}
       .overall-entry::after{content:'';position:absolute;left:0;bottom:0;width:0;height:4px;background:var(--rank-cyan);animation:rankLineIn .45s ease-out forwards;animation-delay:inherit}
       .overall-entry:hover{filter:brightness(1.08);transform:translateX(3px)}
       .overall-entry.top-1{min-height:122px;background:linear-gradient(90deg,#806b27 0%,#4d4a3a 42%,#2c3764 100%)}
@@ -718,21 +781,24 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
       .overall-car-model > img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center;opacity:0;filter:none!important;transition:opacity .24s ease,transform .24s ease;transform:scale(.94)}
       .overall-car-model > img.show{opacity:1;transform:scale(1.08)}
       .overall-name{font-size:29px;white-space:normal;overflow:hidden;display:flex;align-items:center;min-width:0}
-      .overall-name-label{display:flex;flex-direction:column;gap:5px;min-width:0}.overall-name-main{line-height:1.05;overflow:hidden;text-overflow:ellipsis}.overall-name-hint{font-size:13px;color:rgba(226,239,255,.66);text-transform:uppercase;letter-spacing:.9px}
+      .overall-name-label{display:flex;flex-direction:column;gap:5px;min-width:0}.overall-name-main{line-height:1.05;overflow:hidden;text-overflow:ellipsis}.overall-name-hint{font-size:13px;color:rgba(226,239,255,.66);text-transform:uppercase;letter-spacing:.9px}.overall-racer-code{border:0;background:transparent;color:rgba(185,215,255,.52);padding:0;text-align:left;font:inherit;font-size:12px;letter-spacing:.7px;cursor:pointer}.overall-racer-code:hover{color:var(--rank-cyan)}
       .overall-mid{min-width:0;text-align:left;display:flex;flex-direction:column;gap:7px}
       .overall-move{font-size:20px}.overall-move.up{color:#78ff9a}.overall-move.down{color:#ff8c8c}.overall-move.flat{color:rgba(230,240,255,.55)}
       .overall-best{font-size:15px;color:rgba(218,233,255,.72);line-height:1.2}
-      .overall-stats{text-align:right;min-width:0}.overall-score{font-size:34px;color:#fff}.overall-races{font-size:16px;color:var(--rank-cyan);margin-top:3px}
+      .overall-stats{text-align:center;min-width:0}.overall-score{font-size:37px;color:#fff;line-height:1}.overall-score-unit{font-size:14px;color:var(--rank-cyan);letter-spacing:1px;margin-top:3px}.overall-races{font-size:15px;color:rgba(215,236,255,.76);margin-top:5px}
+      .overall-loading{margin:auto;width:min(520px,calc(100% - 30px));padding:30px 26px;text-align:center;background:#26366f;clip-path:polygon(10px 0,calc(100% - 10px) 0,100% 10px,100% calc(100% - 10px),calc(100% - 10px) 100%,10px 100%,0 calc(100% - 10px),0 10px)}.overall-loading strong{display:block;font-size:28px;font-weight:normal;color:#fff}.overall-loading span{display:block;margin-top:8px;color:var(--rank-cyan);font-size:16px}.overall-loading-bar{height:5px;margin-top:18px;background:#121b3f;overflow:hidden}.overall-loading-bar::after{content:'';display:block;width:38%;height:100%;background:var(--rank-cyan);animation:rankLoading 1.05s ease-in-out infinite}
       .overall-empty{margin:auto;padding:50px 30px;display:flex;flex-direction:column;gap:10px;text-align:center;font-size:21px;color:rgba(233,244,255,.68)}.overall-empty strong{font-size:34px;color:#fff;font-weight:normal}
       #injectedRankingsBtn{animation:none!important;will-change:transform,opacity,filter;position:relative}
       #injectedRankingsBtn.button-spawn{animation:rankedButtonSpawn .72s cubic-bezier(.16,.78,.2,1.06) both!important}
       #injectedRankingsBtn.button-spawn img{animation:rankedIconPop .72s cubic-bezier(.16,.78,.2,1.06) both}
-      .static-discord-link{position:absolute;right:calc(30px + var(--safe-area-horizontal));bottom:126px;z-index:8;display:flex;align-items:center;gap:9px;padding:7px 12px;color:#fff!important;background:#5865f2;text-decoration:none!important;font-size:15px;pointer-events:auto;clip-path:polygon(6px 0,100% 0,calc(100% - 6px) 100%,0 100%);transition:transform .14s ease,filter .14s ease}
-      .static-discord-link:hover{transform:translateY(-2px);filter:brightness(1.15)}.static-discord-link img{width:22px;height:22px;margin:0!important;padding:0!important}
-      .sq-has-hotkey{position:relative!important}.sq-hotkey-hint{position:absolute!important;left:7px!important;top:7px!important;z-index:12!important;display:flex!important;align-items:center!important;justify-content:center!important;min-width:19px!important;height:19px!important;padding:0 4px!important;margin:0!important;background:rgba(10,16,40,.86)!important;border:1px solid rgba(183,220,255,.72)!important;color:#fff!important;font-family:ForcedSquare,Arial,sans-serif!important;font-size:12px!important;line-height:19px!important;pointer-events:none!important;clip-path:polygon(3px 0,100% 0,calc(100% - 3px) 100%,0 100%)!important;box-sizing:border-box!important;opacity:.78!important}
-      #startHotkeyLegend{position:absolute;left:calc(26px + var(--safe-area-horizontal));bottom:74px;z-index:7;color:rgba(225,238,255,.58);font-size:13px;letter-spacing:.3px;pointer-events:none}
+      .static-discord-link{position:absolute;left:calc(26px + var(--safe-area-horizontal));bottom:58px;z-index:8;display:flex;align-items:center;gap:11px;min-width:210px;padding:10px 16px;color:#fff!important;background:linear-gradient(90deg,#5865f2,#4752c4);text-decoration:none!important;font-size:17px;pointer-events:auto;clip-path:polygon(8px 0,calc(100% - 8px) 0,100% 8px,100% calc(100% - 8px),calc(100% - 8px) 100%,8px 100%,0 calc(100% - 8px),0 8px);transition:transform .14s ease,filter .14s ease}
+      .static-discord-link:hover{transform:translateY(-2px);filter:brightness(1.15)}.static-discord-link img{width:28px;height:28px;margin:0!important;padding:0!important}
+      #startHotkeyLegend{position:absolute;left:calc(26px + var(--safe-area-horizontal));bottom:24px;z-index:7;color:rgba(225,238,255,.64);font-size:13px;letter-spacing:.3px;pointer-events:none}
+      #sqRankedSettings{order:-9999;margin:10px 12px 16px;padding:14px 16px;background:#1d2b5d;border-left:5px solid #78e4ff;color:#fff;font-family:ForcedSquare,Arial,sans-serif}.sq-settings-title{display:flex;justify-content:space-between;gap:12px;margin-bottom:10px}.sq-settings-title strong{font-size:23px}.sq-settings-title span{color:rgba(225,238,255,.62);font-size:14px}.sq-setting-row{display:flex;align-items:center;gap:9px;margin:7px 0;font-size:16px;cursor:pointer}.sq-setting-row input{width:18px;height:18px}.sq-moderator-tools{display:grid;grid-template-columns:1.2fr 1fr 1fr auto;gap:7px;margin-top:13px;padding-top:12px;border-top:1px solid rgba(255,255,255,.16)}.sq-moderator-tools strong,.sq-mod-status{grid-column:1/-1}.sq-moderator-tools input{min-width:0;padding:7px 9px;background:#111a3d;border:1px solid rgba(142,199,255,.45);color:#fff;font:inherit}.sq-mod-save{font-size:14px}.sq-mod-status{font-size:13px;color:#78e4ff}
+      .sq-mod-setup{margin-top:10px;color:rgba(225,238,255,.64);font-size:13px}.sq-mod-setup summary{cursor:pointer;color:#8ec7ff}.sq-mod-setup p{margin:7px 0 0}.sq-copy-uid{border:0;background:rgba(0,0,0,.25);color:#78e4ff;font:inherit;cursor:pointer;max-width:260px;overflow:hidden;text-overflow:ellipsis;vertical-align:bottom}
+      .sq-hide-lobby-extras .static-discord-link,.sq-hide-lobby-extras #staticMenu,.sq-hide-lobby-extras #staticSlideMenu{display:none!important}.sq-reduced-effects .staticFunPill,.sq-reduced-effects .staticFunText,.sq-reduced-effects .staticFunChar{animation:none!important}.sq-reduced-effects #injectedRankingsBtn.button-spawn{animation-duration:.01ms!important}
       @media (max-width:1100px){.overall-columns,.overall-entry{grid-template-columns:80px minmax(300px,1.5fr) minmax(170px,.8fr) minmax(170px,.7fr)}.overall-rank{width:80px}.overall-car-model{width:108px;height:88px}.overall-name{font-size:25px}.overall-score{font-size:30px}}
-      @media (max-width:760px){#overallLeaderboardPanel{padding:0}.overall-shell{width:100vw;height:100vh;clip-path:none}.overall-top{padding:16px 14px 11px}.overall-title-group{gap:8px}.overall-beta{display:none}.overall-actions{gap:5px}.overall-action-btn{min-width:76px;font-size:16px}.overall-sub{padding:10px 14px;font-size:16px}.overall-columns{display:none}#overallLeaderboardList{padding:7px}.overall-entry{grid-template-columns:62px 1fr auto;grid-template-areas:'rank name stats' 'rank mid stats';min-height:92px;padding-right:12px;gap:7px}.overall-rank{grid-area:rank;width:62px}.overall-name{grid-area:name;font-size:20px}.overall-mid{grid-area:mid}.overall-stats{grid-area:stats}.overall-car-model{width:76px;height:78px;margin-right:8px}.overall-entry.top-1 .overall-car-model{width:82px;height:86px}.overall-score{font-size:24px}.overall-races,.overall-best{font-size:12px}.overall-move{font-size:15px}.static-discord-link{right:18px;bottom:120px;font-size:0;padding:8px}.static-discord-link img{width:26px;height:26px}#startHotkeyLegend{display:none}.sq-hotkey-hint{display:none!important}}
+      @media (max-width:760px){#overallLeaderboardPanel{padding:0}.overall-shell{width:100vw;height:100vh;clip-path:none}.overall-top{padding:16px 14px 11px}.overall-title-group{gap:8px}.overall-beta{display:none}.overall-actions{gap:5px}.overall-action-btn{min-width:76px;font-size:16px}.overall-sub{padding:10px 14px;font-size:16px}.overall-daily{padding:7px 12px;gap:7px}.overall-daily span:last-child{display:none}.overall-columns{display:none}#overallLeaderboardList{padding:7px}.overall-entry{grid-template-columns:62px 1fr auto;grid-template-areas:'rank name stats' 'rank mid stats';min-height:92px;padding-right:12px;gap:7px}.overall-rank{grid-area:rank;width:62px}.overall-name{grid-area:name;font-size:20px}.overall-mid{grid-area:mid}.overall-stats{grid-area:stats}.overall-car-model{width:76px;height:78px;margin-right:8px}.overall-entry.top-1 .overall-car-model{width:82px;height:86px}.overall-score{font-size:24px}.overall-races,.overall-best{font-size:12px}.overall-move{font-size:15px}.static-discord-link{left:14px;bottom:48px;min-width:0;font-size:14px;padding:8px 11px}.static-discord-link img{width:24px;height:24px}#startHotkeyLegend{display:none}.sq-moderator-tools{grid-template-columns:1fr}}
       @media (prefers-reduced-motion:reduce){.overall-shell,.overall-entry,#injectedRankingsBtn.button-spawn,#injectedRankingsBtn.button-spawn img{animation-duration:.01ms!important;animation-delay:0s!important}}
       .staticFunPill{animation:staticGlowPulse 1.8s ease-in-out infinite}.staticFunHover{transition:transform .16s ease, filter .16s ease, box-shadow .16s ease}
       .staticFunHover:hover{transform:translateY(-2px) scale(1.05);filter:brightness(1.18);box-shadow:0 0 18px rgba(255,255,255,0.20),0 0 30px rgba(0,255,255,0.18)}
@@ -745,12 +811,13 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
       #polytrackHelpPanel a{color:#b7e2ff}
       #polytrackHelpClose{margin-top:4px;border:1px solid rgba(255,255,255,.24);background:rgba(255,255,255,.08);color:#fff;padding:5px 10px;cursor:pointer}
       @keyframes staticGlowPulse{0%{box-shadow:0 0 0 rgba(255,255,255,0.0),0 0 10px rgba(0,255,255,0.12)}50%{box-shadow:0 0 14px rgba(255,255,255,0.18),0 0 22px rgba(255,0,255,0.18)}100%{box-shadow:0 0 0 rgba(255,255,255,0.0),0 0 10px rgba(0,255,255,0.12)}}
+      @keyframes rankLoading{0%{transform:translateX(-130%)}55%{transform:translateX(120%)}100%{transform:translateX(310%)}}
       @keyframes staticSheen{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
       @keyframes staticFloat{0%{transform:translateY(0) scale(1)}50%{transform:translateY(-1px) scale(1.01)}100%{transform:translateY(0) scale(1)}}
       @keyframes staticWave{0%{transform:translateZ(0) rotateY(0deg)}50%{transform:translateZ(14px) rotateY(10deg)}100%{transform:translateZ(0) rotateY(0deg)}}
       @keyframes rankPanelIn{from{opacity:0;transform:translateY(24px) scale(.975)}to{opacity:1;transform:translateY(0) scale(1)}}
       @keyframes overallEntryIn{to{opacity:1;transform:translateX(0)}}@keyframes rankLineIn{to{width:100%}}
-      @keyframes rankedButtonSpawn{0%{opacity:0;transform:translateX(-48px) scaleX(.72);filter:brightness(1.7)}55%{opacity:1;transform:translateX(7px) scaleX(1.035);filter:brightness(1.2)}100%{opacity:1;transform:translateX(0) scaleX(1);filter:brightness(1)}}
+      @keyframes rankedButtonSpawn{0%{opacity:0;transform:translateY(24px) scale(.94);filter:brightness(1.35)}62%{opacity:1;transform:translateY(-3px) scale(1.015);filter:brightness(1.1)}100%{opacity:1;transform:translateY(0) scale(1);filter:brightness(1)}}
       @keyframes rankedIconPop{0%,24%{transform:scale(.45);opacity:0}68%{transform:scale(1.16);opacity:1}100%{transform:scale(1);opacity:1}}
     `;
     document.head.appendChild(style);
@@ -785,7 +852,10 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     const info = document.querySelector('.menu .info');
     if (!info) return;
     const lang = getUiLanguage();
-    if (info.dataset.fp === BRAND_FP && info.dataset.lang === lang && info.querySelector('.staticFunPill')) return;
+    if (info.dataset.fp === BRAND_FP && info.dataset.lang === lang && info.querySelector('.staticFunPill')) {
+      info.style.display = isStartMenuHotkeyContext() && localStorage.getItem('polytrack-0.6.2-lobby-extras') !== '0' ? '' : 'none';
+      return;
+    }
     info.dataset.fp = BRAND_FP;
     info.dataset.lang = lang;
     info.innerHTML = '';
@@ -795,7 +865,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     promo.rel = 'noopener noreferrer';
     promo.setAttribute('aria-label','More Unblocked Games by Static');
     promo.className = 'staticFunHover staticFunPill';
-    promo.style.cssText = 'display:inline-block;cursor:pointer;pointer-events:auto;user-select:text;font-family:Arial,sans-serif;font-size:22px;font-weight:900;letter-spacing:1px;text-decoration:none;padding:7px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.18);background:rgba(0,0,0,.18);text-shadow:0 0 10px rgba(255,255,255,.2);position:relative;z-index:5;filter:none;backdrop-filter:none;';
+    promo.style.cssText = 'display:inline-block;cursor:pointer;pointer-events:auto;user-select:text;font-family:ForcedSquare,sans-serif;font-size:22px;font-weight:900;letter-spacing:1px;text-decoration:none;padding:7px 14px;border:1px solid rgba(255,255,255,.18);background:rgba(0,0,0,.18);text-shadow:0 0 10px rgba(255,255,255,.2);position:relative;z-index:5;filter:none;backdrop-filter:none;';
     const label=tr('moreGames');
     const textWrap=document.createElement('span');
     textWrap.className='staticFunText';
@@ -833,16 +903,17 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     info.appendChild(credit);
     info.appendChild(document.createElement('br'));
     info.appendChild(privacy);
-    const container = document.querySelector('.main-buttons-container');
-    const rankingsPanel = document.getElementById('overallLeaderboardPanel');
-    const rankingsOpen = !!(rankingsPanel && rankingsPanel.style.display !== 'none' && isElementVisible(rankingsPanel));
-    const visible = !!(container && getComputedStyle(container).display !== 'none');
-    info.style.display = (visible && !rankingsOpen) ? '' : 'none';
+    info.style.display = isStartMenuHotkeyContext() && localStorage.getItem('polytrack-0.6.2-lobby-extras') !== '0' ? '' : 'none';
   }
 
   function ensureStaticDiscordLink(){
     const menu = document.querySelector('.menu-ui, .menu');
-    if (!menu || menu.querySelector('.static-discord-link')) return;
+    if (!menu) return;
+    const existing = menu.querySelector('.static-discord-link');
+    if (existing) {
+      existing.style.display = isStartMenuHotkeyContext() && localStorage.getItem('polytrack-0.6.2-lobby-extras') !== '0' ? 'flex' : 'none';
+      return;
+    }
     const link = document.createElement('a');
     link.className = 'static-discord-link';
     link.href = 'https://discord.gg/DP2hM7RRhR';
@@ -853,11 +924,110 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     const officialDiscord = menu.querySelector(':scope > .discord-link');
     if (officialDiscord) officialDiscord.insertAdjacentElement('beforebegin',link);
     else menu.appendChild(link);
+    link.style.display = isStartMenuHotkeyContext() && localStorage.getItem('polytrack-0.6.2-lobby-extras') !== '0' ? 'flex' : 'none';
+  }
+
+  function applyUiPreferences(){
+    const reduced = localStorage.getItem('polytrack-0.6.2-reduced-effects') === '1';
+    document.documentElement.classList.toggle('sq-reduced-effects', reduced);
+    const showExtras = localStorage.getItem('polytrack-0.6.2-lobby-extras') !== '0';
+    const extrasWereHidden = document.documentElement.classList.contains('sq-hide-lobby-extras');
+    document.documentElement.classList.toggle('sq-hide-lobby-extras', !showExtras);
+    if (extrasWereHidden !== !showExtras) window.dispatchEvent(new Event('sq-preferences-changed'));
+  }
+
+  function settingsToggle(label, storageKey, defaultEnabled=true, inverted=false){
+    const row = document.createElement('label');
+    row.className = 'sq-setting-row';
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    const stored = localStorage.getItem(storageKey);
+    input.checked = stored == null ? defaultEnabled : (inverted ? stored !== '1' : stored !== '0');
+    const text = document.createElement('span');
+    text.textContent = label;
+    row.append(input,text);
+    input.addEventListener('change',()=>{
+      localStorage.setItem(storageKey,inverted ? (input.checked?'0':'1') : (input.checked?'1':'0'));
+      applyUiPreferences();
+    });
+    return row;
+  }
+
+  async function currentUserIsModerator(){
+    try {
+      await db();
+      const user = window.firebase.auth().currentUser;
+      if (!user) return false;
+      const token = await user.getIdTokenResult();
+      return token?.claims?.moderator === true || (Array.isArray(window.POLYTRACK_MODERATOR_UIDS) && window.POLYTRACK_MODERATOR_UIDS.includes(user.uid));
+    } catch { return false; }
+  }
+
+  async function attachModeratorControls(section){
+    if (section.dataset.moderatorChecked === '1') return;
+    section.dataset.moderatorChecked = '1';
+    if (!(await currentUserIsModerator()) || !section.isConnected) {
+      if (!section.isConnected) return;
+      const setup = document.createElement('details');
+      setup.className = 'sq-mod-setup';
+      const uid = window.firebase?.auth?.().currentUser?.uid || 'unavailable';
+      setup.innerHTML = `<summary>Moderator access</summary><p>Protected controls require a Firebase <code>moderator: true</code> custom claim. This browser UID is <button type="button" class="sq-copy-uid">${escapeHtml(uid)}</button>.</p>`;
+      section.appendChild(setup);
+      setup.querySelector('.sq-copy-uid')?.addEventListener('click',()=>navigator.clipboard?.writeText(uid).catch(()=>{}));
+      return;
+    }
+    const admin = document.createElement('div');
+    admin.className = 'sq-moderator-tools';
+    admin.innerHTML = '<strong>Name moderation</strong><input class="sq-mod-id" maxlength="128" placeholder="Paste racer account ID"><input class="sq-mod-name" maxlength="24" placeholder="Replacement name"><input class="sq-mod-reason" maxlength="80" placeholder="Private reason"><button class="button sq-mod-save" type="button">Apply moderated name</button><span class="sq-mod-status"></span>';
+    section.appendChild(admin);
+    admin.querySelector('.sq-mod-save').addEventListener('click',async()=>{
+      const accountId = cleanUserId(admin.querySelector('.sq-mod-id').value);
+      const requested = admin.querySelector('.sq-mod-name').value;
+      const reason = String(admin.querySelector('.sq-mod-reason').value || 'manual moderation').trim().slice(0,80);
+      const status = admin.querySelector('.sq-mod-status');
+      if (!accountId) { status.textContent='Enter a valid racer ID.'; return; }
+      const requestedClean = sanitizeDisplayName(requested || makeFallbackName(accountId));
+      const isReservedOwnerName = normalizeNameForCheck(requestedClean).replace(/ /g,'') === 'staticquasar93i';
+      const replacement = isReservedOwnerName ? requestedClean : await enforceSafeDisplayName(requestedClean,accountId);
+      status.textContent='Saving...';
+      try {
+        const d = await db();
+        const moderatorUid = window.firebase.auth().currentUser?.uid || '';
+        await d.collection(COLLECTIONS.moderationNames).doc(accountId).set({accountId,replacement,reason,active:true,moderatorUid,updatedAt:Date.now()},{merge:false});
+        await d.collection(COLLECTIONS.profilesPublic).doc(accountId).set({accountId,name:replacement,nickname:replacement,updatedAt:Date.now()},{merge:true});
+        setLastKnownName(accountId,replacement);
+        await propagateDisplayName(d,accountId,replacement);
+        status.textContent=`Saved as ${replacement}.`;
+      } catch (error) {
+        status.textContent='Permission denied or Firebase unavailable.';
+        log('error','[MOD400] Manual moderation failed',String(error&&(error.message||error)));
+      }
+    });
+  }
+
+  function ensureSettingsEnhancements(){
+    const settings = Array.from(document.querySelectorAll('.settings-menu-ui,.settings-menu,.menu-settings,.settings')).find((element)=>element.isConnected && !element.matches('button,a'));
+    if (!settings || settings.querySelector('#sqRankedSettings')) return;
+    const section = document.createElement('section');
+    section.id = 'sqRankedSettings';
+    section.innerHTML = '<div class="sq-settings-title"><strong>Static Ranked</strong><span>Quality of life and moderation</span></div>';
+    section.appendChild(settingsToggle('Keyboard shortcuts','polytrack-0.6.2-hotkeys-enabled',true));
+    section.appendChild(settingsToggle('Lobby links and community widgets','polytrack-0.6.2-lobby-extras',true));
+    section.appendChild(settingsToggle('Full menu animations','polytrack-0.6.2-reduced-effects',true,true));
+    settings.prepend(section);
+    attachModeratorControls(section);
   }
 
   function lobbyShortcutButtons(){
     const candidates = Array.from(document.querySelectorAll('.main-buttons-container button,.main-buttons-container a,.menu-ui > .button-bar > button,.menu-ui > .button-bar > a'));
-    return candidates.filter((button,index)=>button.id !== 'overallHelpBtn' && button.id !== 'closeOverallLeaderboard' && isElementVisible(button) && candidates.indexOf(button) === index).slice(0,9);
+    const visible = candidates.filter((button,index)=>button.id !== 'overallHelpBtn' && button.id !== 'closeOverallLeaderboard' && isElementVisible(button) && candidates.indexOf(button) === index);
+    const signature = (button)=>`${button.id||''} ${button.className||''} ${button.getAttribute('aria-label')||''} ${button.getAttribute('title')||''} ${button.textContent||''} ${Array.from(button.querySelectorAll('img')).map((img)=>img.getAttribute('src')||'').join(' ')}`.toLowerCase();
+    const garage = visible.find((button)=>/customize|garage|car-menu/.test(signature(button))) || null;
+    const ranked = visible.find((button)=>button.id === 'injectedRankingsBtn' || /rank|trophy/.test(signature(button))) || null;
+    const rest = visible.filter((button)=>button !== garage && button !== ranked);
+    const ordered = garage ? [garage,...rest] : [...rest];
+    if (ranked) ordered.splice(Math.min(5,ordered.length),0,ranked);
+    return ordered.slice(0,9);
   }
 
   function buttonShortcutLetter(button){
@@ -874,27 +1044,18 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
   }
 
   function ensureLobbyHotkeyHints(){
-    if (!isStartMenuHotkeyContext()) return;
+    const existingLegend = document.getElementById('startHotkeyLegend');
+    if (!isStartMenuHotkeyContext()) { if (existingLegend) existingLegend.style.display='none'; return; }
     const buttons = lobbyShortcutButtons();
-    buttons.forEach((button,index)=>{
-      button.classList.add('sq-has-hotkey');
-      let hint = button.querySelector(':scope > .sq-hotkey-hint');
-      if (!hint) {
-        hint = document.createElement('span');
-        hint.className = 'sq-hotkey-hint';
-        button.appendChild(hint);
-      }
-      const letter = buttonShortcutLetter(button);
-      const hintText = letter ? `${index+1} / ${letter}` : String(index+1);
-      if (hint.textContent !== hintText) hint.textContent = hintText;
-    });
+    document.querySelectorAll('.sq-hotkey-hint').forEach((hint)=>hint.remove());
+    document.querySelectorAll('.sq-has-hotkey').forEach((button)=>button.classList.remove('sq-has-hotkey'));
     const menu = document.querySelector('.menu-ui, .menu');
     if (menu && !menu.querySelector('#startHotkeyLegend')) {
       const legend = document.createElement('div');
       legend.id = 'startHotkeyLegend';
-      legend.textContent = 'KEYS  1–9 menus  ·  P play  ·  R ranked  ·  G garage  ·  S settings';
+      legend.textContent = 'SHORTCUTS  1 Garage  ·  6 Ranked  ·  P Play  ·  G Garage  ·  S Settings  ·  M Multiplayer';
       menu.appendChild(legend);
-    }
+    } else if (existingLegend) existingLegend.style.display='block';
   }
 
   function findLobbyAction(pattern){
@@ -902,7 +1063,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
   }
 
   function handleLobbyShortcut(event){
-    if (event.defaultPrevented || event.repeat || event.ctrlKey || event.altKey || event.metaKey || !isStartMenuHotkeyContext()) return false;
+    if (localStorage.getItem('polytrack-0.6.2-hotkeys-enabled') === '0' || event.defaultPrevented || event.repeat || event.ctrlKey || event.altKey || event.metaKey || !isStartMenuHotkeyContext()) return false;
     const target = event.target;
     if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement || target?.isContentEditable) return false;
     const key = String(event.key || '').toLowerCase();
@@ -927,9 +1088,15 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     if (document.getElementById('overallLeaderboardPanel')) return;
     const panel = document.createElement('div');
     panel.id = 'overallLeaderboardPanel';
-    panel.innerHTML = `<div class="overall-shell"><div class="overall-top"><div class="overall-title-group"><h2>${tRankingsTitle()}</h2><span class="overall-beta">STATIC RANKED · BETA</span></div><div class="overall-actions"><button id="overallHelpBtn" class="button overall-action-btn" type="button">${tr('help')}</button><button id="closeOverallLeaderboard" class="button overall-action-btn" type="button">${tr('close')}</button></div></div><p class="overall-sub"><strong>Lower rank score is better.</strong> Complete more official tracks and improve your placements to climb.</p><div class="overall-columns" aria-hidden="true"><span>Place</span><span>Driver</span><span>Recent movement</span><span>Rank score</span></div><div id="overallLeaderboardList"></div><div id="overallHelpPopup"><div class="overall-help-card"><div class="overall-help-head"><h3>Static Ranked · Work in progress</h3></div><div class="overall-help-content"><p>This ranked leaderboard is an unofficial <strong>StaticQuasar931 Unblocked Games</strong> addition to PolyTrack. It is actively being improved and may change as bugs are fixed and more racers join.</p><p class="overall-help-note">Your rank score combines your placements across official tracks. Lower is better. Complete more tracks, then improve your best times to move up.</p><p>${tr('helpBody')} Contact <a href="mailto:StaticQuasar931Games@gmail.com" style="color:#9fe6ff">StaticQuasar931Games@gmail.com</a> if a score, replay, or car looks wrong.</p><p class="small">${tr('helpSmall')}</p><div class="overall-help-actions"><a class="overall-discord-cta" href="https://discord.gg/DP2hM7RRhR" target="_blank" rel="noopener noreferrer"><img src="images/discord.svg" alt="">Join the StaticQuasar931 Discord</a><button id="overallHelpClose" class="button overall-action-btn" type="button">${tr('close')}</button></div></div></div></div></div>`;
+    panel.innerHTML = `<div class="overall-shell"><div class="overall-top"><div class="overall-title-group"><h2>${tRankingsTitle()}</h2><span class="overall-beta">STATIC RANKED · BETA</span></div><div class="overall-actions"><button id="overallHelpBtn" class="button overall-action-btn" type="button">${tr('help')}</button><button id="closeOverallLeaderboard" class="button overall-action-btn" type="button">${tr('close')}</button></div></div><p class="overall-sub"><strong>Lower RP is better.</strong> Popular tracks are worth more, official tracks receive a 1.6x premium, and thin one-player fields carry less weight. Catalog: ${OFFICIAL_TRACK_COUNT} official + ${COMMUNITY_TRACK_COUNT} community.</p>${dailySpotlightMarkup()}<div class="overall-columns" aria-hidden="true"><span>Place</span><span>Driver</span><span>Recent movement + best track</span><span>Rank points</span></div><div id="overallLeaderboardList"></div><div id="overallHelpPopup"><div class="overall-help-card"><div class="overall-help-head"><h3>Static Ranked · Work in progress</h3></div><div class="overall-help-content"><p>This ranked leaderboard is an unofficial <strong>StaticQuasar931 Unblocked Games</strong> addition to PolyTrack. It is actively being improved and may change as bugs are fixed and more racers join.</p><p class="overall-help-note"><strong>How RP works:</strong> lower is better. Your placement is adjusted for field size, then weighted by track participation. Official tracks are worth 1.6x community tracks. Completing more tracks improves confidence, but repeating slower runs cannot hurt your personal best.</p><p><strong>Fastest contact:</strong> <a href="https://discord.gg/DP2hM7RRhR" target="_blank" rel="noopener noreferrer" style="color:#9fe6ff">StaticQuasar931 Discord</a>. Next: <a href="mailto:StaticQuasar931Games@gmail.com" style="color:#9fe6ff">StaticQuasar931Games@gmail.com</a>. You can also use the <a href="https://sites.google.com/view/staticquasar931/google-form" target="_blank" rel="noopener noreferrer" style="color:#9fe6ff">Google feedback form</a>.</p><p class="small">${tr('helpSmall')} Racer codes can be copied from each row when reporting a name or score.</p><div class="overall-help-actions"><a class="overall-discord-cta" href="https://discord.gg/DP2hM7RRhR" target="_blank" rel="noopener noreferrer"><img src="images/discord.svg" alt="">Join the StaticQuasar931 Discord</a><button id="overallHelpClose" class="button overall-action-btn" type="button">${tr('close')}</button></div></div></div></div></div>`;
     document.body.appendChild(panel);
-    panel.addEventListener('click', (event)=>{ if (event.target === panel) panel.style.display='none'; });
+    panel.addEventListener('click', (event)=>{
+      if (event.target === panel) panel.style.display='none';
+      const copy = event.target.closest?.('[data-racer-id]');
+      if (copy) {
+        navigator.clipboard?.writeText(copy.dataset.racerId || '').then(()=>{ copy.textContent='RACER ID COPIED'; setTimeout(()=>{ if(copy.isConnected) copy.textContent=copy.dataset.label||'RACER ID'; },1200); }).catch(()=>{});
+      }
+    });
     panel.querySelector('#closeOverallLeaderboard').addEventListener('click', ()=>{ panel.style.display='none'; });
     panel.querySelector('#overallHelpBtn').addEventListener('click', ()=>{
       const pop = panel.querySelector('#overallHelpPopup');
@@ -963,6 +1130,10 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
       carColorId: normalizeCarColorId(entry.carColors || 'ffffff8ec7ff28346a212b58'),
       bestTrackId: String(entry.bestTrackId || ''),
       bestTrackRank: Number(entry.bestTrackRank || 0) || 0,
+      bestTrackField: Number(entry.bestTrackField || 0) || 0,
+      officialCount: Number(entry.officialCount || 0) || 0,
+      communityCount: Number(entry.communityCount || 0) || 0,
+      weightedTracks: Number(entry.weightedTracks || 0) || 0,
       movement: Number(entry.movement || 0) || 0,
       carStyle: __pt062NormalizeStyle(entry.carStyle || __pt062GetRememberedStyle(entry.userId || entry.accountId) || getDefaultCarStyle())
     })).sort((a,b)=>a.rank-b.rank).slice(0, 50);
@@ -981,7 +1152,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
       if (!Number.isFinite(timeMs) || timeMs <= 0) continue;
       const prev = bestByUser.get(userId);
       if (!prev || timeMs < prev.timeMs) {
-        const safeName = sanitizeDisplayName(row.nickname || row.name || getLastKnownName(userId) || 'Guest');
+        const safeName = safeDisplayName(row.nickname || row.name || getLastKnownName(userId) || 'Guest', userId);
         const carStyle = __pt062NormalizeStyle(row.carStyle || __pt062GetRememberedStyle(userId) || getDefaultCarStyle());
         bestByUser.set(userId, {
           accountId: userId,
@@ -1017,7 +1188,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
         if (!id) return;
         const snap = await d.collection(COLLECTIONS.profilesPublic).doc(id).get();
         const profile = snap.data() || {};
-        const n = sanitizeDisplayName(profile.nickname || profile.name || getLastKnownName(id) || entry.name || 'Guest');
+        const n = safeDisplayName(profile.nickname || profile.name || getLastKnownName(id) || entry.name || 'Guest',id);
         entry.name = n;
         entry.nickname = n;
         entry.countryCode = typeof profile.countryCode === 'string' ? profile.countryCode.slice(0, 8) : entry.countryCode ?? null;
@@ -1036,10 +1207,10 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
       const doc = await d.collection(COLLECTIONS.leaderboardsTrack).doc(String(trackId)).get();
       const data = doc.data() || {};
       entries = Array.isArray(data.entries) ? data.entries : [];
-      const snap = await d.collection(COLLECTIONS.raceResults).orderBy('createdAt','desc').limit(3000).get();
-      const cloudRows = snap.docs.map((x)=>x.data() || {});
-      const computed = computeTrackTopEntries(cloudRows, trackId, Math.max(100, limit));
-      if (computed.length) entries = computed;
+      if (!entries.length) {
+        const snap = await d.collection(COLLECTIONS.raceResults).where('trackId','==',String(trackId)).limit(500).get();
+        entries = computeTrackTopEntries(snap.docs.map((x)=>x.data() || {}), trackId, Math.max(100, limit));
+      }
     } catch {
       const localRows = readLocalRaceRows().filter((row)=>String(row.trackId||'')===String(trackId||''));
       entries = computeTrackTopEntries(localRows, trackId, Math.max(100, limit));
@@ -1047,8 +1218,11 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     const ranked = entries
       .sort((a,b)=>Number(a.timeMs||Infinity)-Number(b.timeMs||Infinity))
       .map((entry, idx)=>({ ...entry, rank: idx + 1, position: idx + 1 }));
-    const hydrated = await hydrateDisplayNames(ranked);
-    return hydrated.slice(0, limit);
+    return enrichLegacyLeaderboardEntries(ranked).map((entry)=>{
+      const userId = String(entry.accountId || entry.userId || '');
+      const name = safeDisplayName(entry.nickname || entry.name || getLastKnownName(userId) || 'Guest', userId);
+      return {...entry,name,nickname:name};
+    }).slice(0, limit);
   }
 
   function computeOverallFromRaceRows(rows){
@@ -1087,30 +1261,41 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     const userAgg = new Map();
     for (const [trackId, entries] of tracks.entries()) {
       entries.sort((a,b)=>a.timeMs-b.timeMs);
+      const fieldSize = entries.length;
+      const info = trackInfo(trackId);
+      const typeWeight = info.type === 'official' ? 1.6 : 1;
+      const participationWeight = Math.min(2, 0.8 + Math.log2(fieldSize + 1) / 3);
+      const trackWeight = typeWeight * participationWeight;
       entries.forEach((entry, idx)=>{
         const rank = idx + 1;
-        const cur = userAgg.get(entry.userId) || { userId:entry.userId,name:entry.name,carColors:entry.carColors||null,carId:entry.carId||null,carStyle:entry.carStyle||'',rankSum:0,tracks:new Set(),bestTrackId:null,bestTrackRank:9999 };
+        const placementRatio = (rank - 0.5) / (fieldSize + 1);
+        const placementCost = 1 + 99 * placementRatio;
+        const cur = userAgg.get(entry.userId) || { userId:entry.userId,name:entry.name,carColors:entry.carColors||null,carId:entry.carId||null,carStyle:entry.carStyle||'',weightedCost:0,weightSum:0,tracks:new Set(),officialCount:0,communityCount:0,bestTrackId:null,bestTrackRank:9999,bestTrackField:0 };
         cur.name = entry.name || cur.name;
         cur.carColors = normalizeCarColorId(entry.carColors || cur.carColors || '');
         cur.carId = entry.carId || cur.carId;
         cur.carStyle = entry.carStyle || cur.carStyle;
-        cur.rankSum += rank;
+        cur.weightedCost += placementCost * trackWeight;
+        cur.weightSum += trackWeight;
         cur.tracks.add(trackId);
-        if (rank < cur.bestTrackRank) { cur.bestTrackRank = rank; cur.bestTrackId = trackId; }
+        if (info.type === 'official') cur.officialCount += 1; else cur.communityCount += 1;
+        if (rank < cur.bestTrackRank || (rank === cur.bestTrackRank && fieldSize > cur.bestTrackField)) {
+          cur.bestTrackRank = rank;
+          cur.bestTrackField = fieldSize;
+          cur.bestTrackId = trackId;
+        }
         userAgg.set(entry.userId, cur);
       });
     }
 
-    const totalTracks = Math.max(TOTAL_TRACKS, tracks.size || 1);
     const out = Array.from(userAgg.values()).map((u)=>{
       const played = u.tracks.size;
-      const avgRank = u.rankSum / Math.max(played, 1);
-      const coverage = Math.min(1, played / totalTracks);
-      const fieldWeight = 1 - Math.min(0.25, coverage * 0.12);
-      const trackDepthBonus = 1 / (1 + Math.log2(1 + played));
+      const averagePlacement = u.weightedCost / Math.max(u.weightSum, 1);
+      const confidencePenalty = 14 / Math.sqrt(1 + u.weightSum);
+      const experienceBonus = Math.min(4, Math.log2(1 + played) * 0.75);
       const uidTiebreak = ((String(u.userId).split('').reduce((acc, ch)=>acc + ch.charCodeAt(0), 0) % 997) + 1) / 1000000;
-      const score = Math.max(1.000001, 1 + (Math.max(0, avgRank - 1) * fieldWeight) + (trackDepthBonus * 0.2) + uidTiebreak);
-      return {userId:u.userId,name:getLastKnownName(u.userId)||u.name,carId:String(u.carId||'').slice(0,64)||null,carColors:normalizeCarColorId(u.carColors||'ffffff8ec7ff28346a212b58'),carColorId:normalizeCarColorId(u.carColors||'ffffff8ec7ff28346a212b58'),carStyle:__pt062NormalizeStyle(u.carStyle||__pt062GetRememberedStyle(u.userId)||getDefaultCarStyle()),score,raceCount:played,totalTracks,bestTrackId:u.bestTrackId||null,bestTrackRank:Number(u.bestTrackRank||0)||0};
+      const score = Math.max(1.000001, averagePlacement + confidencePenalty - experienceBonus + uidTiebreak);
+      return {userId:u.userId,name:safeDisplayName(getLastKnownName(u.userId)||u.name,u.userId),carId:String(u.carId||'').slice(0,64)||null,carColors:normalizeCarColorId(u.carColors||'ffffff8ec7ff28346a212b58'),carColorId:normalizeCarColorId(u.carColors||'ffffff8ec7ff28346a212b58'),carStyle:__pt062NormalizeStyle(u.carStyle||__pt062GetRememberedStyle(u.userId)||getDefaultCarStyle()),score,raceCount:played,totalTracks:TOTAL_TRACKS,officialCount:u.officialCount,communityCount:u.communityCount,weightedTracks:Number(u.weightSum.toFixed(3)),bestTrackId:u.bestTrackId||null,bestTrackRank:Number(u.bestTrackRank||0)||0,bestTrackField:Number(u.bestTrackField||0)||0,rankModel:'participation-v2'};
     }).sort((a,b)=>a.score-b.score || b.raceCount-a.raceCount || String(a.userId).localeCompare(String(b.userId)))
       .slice(0,50)
       .map((row, idx)=>({ rank: idx + 1, ...row }));
@@ -1132,6 +1317,16 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     return out;
   }
 
+  function computeOverallFromTrackBoardDocs(boardDocs){
+    const rows = [];
+    for (const boardDoc of boardDocs || []) {
+      const board = typeof boardDoc.data === 'function' ? (boardDoc.data() || {}) : (boardDoc || {});
+      const trackId = String(board.trackId || boardDoc.id || '').slice(0,80);
+      for (const entry of Array.isArray(board.entries) ? board.entries : []) rows.push({...entry,trackId});
+    }
+    return computeOverallFromRaceRows(rows);
+  }
+
   async function hydrateOverallProfiles(entries){
     const out = normalizeEntries(entries || []);
     if (!out.length) return out;
@@ -1143,7 +1338,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
         const snap = await d.collection(COLLECTIONS.profilesPublic).doc(id).get();
         const profile = snap.data() || {};
         if (profile.name) {
-          entry.name = sanitizeDisplayName(profile.name || entry.name || 'Guest');
+          entry.name = safeDisplayName(profile.name || entry.name || 'Guest',id);
           setLastKnownName(id, entry.name);
         }
         if (profile.carStyle) { entry.carStyle=__pt062NormalizeStyle(profile.carStyle); try { __pt062RememberStyle(id,profile.carStyle); } catch {} } if (profile.carColors) {
@@ -1161,19 +1356,21 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
   }
 
   async function fetchOverallEntries(){
-    let cloudRows = [];
     let direct = [];
     try {
       const d = await db();
       const snap = await d.collection(COLLECTIONS.leaderboardsOverall).doc('main').get();
       const data = snap.data() || {};
       direct = normalizeEntries(data.entries || []);
-      const racesSnap = await d.collection(COLLECTIONS.raceResults).orderBy('createdAt','desc').limit(5000).get();
-      cloudRows = racesSnap.docs.map((doc)=>doc.data() || {});
-      const computed = normalizeEntries(computeOverallFromRaceRows(cloudRows));
-      const best = computed.length ? computed : direct;
-      const hydrated = await hydrateOverallProfiles(best);
-      return annotateOverallMovement(hydrated);
+      if (direct.length && data.entries?.[0]?.rankModel === 'participation-v2') return annotateOverallMovement(direct);
+      const boardsSnap = await d.collection(COLLECTIONS.leaderboardsTrack).get();
+      const rebuilt = computeOverallFromTrackBoardDocs(boardsSnap.docs);
+      if (rebuilt.length) {
+        await d.collection(COLLECTIONS.leaderboardsOverall).doc('main').set({entries:rebuilt,updatedAt:Date.now(),seededBy:'polytrack-0.6.2-client'},{merge:false});
+        return annotateOverallMovement(rebuilt);
+      }
+      const localRows = readLocalRaceRows();
+      return annotateOverallMovement(computeOverallFromRaceRows(localRows));
     } catch (error) {
       if (isLocalApiCapableHost()) {
         try {
@@ -1206,7 +1403,9 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     const bestRank = Number(entry?.bestTrackRank || 0) || 0;
     const bestTrackId = String(entry?.bestTrackId || '');
     if (bestRank > 0 && bestTrackId) {
-      return `Best official-track finish: #${bestRank}`;
+      const info = trackInfo(bestTrackId);
+      const field = Number(entry?.bestTrackField || 0) || 0;
+      return `Best: #${bestRank}${field?` of ${field}`:''} on ${escapeHtml(info.name)} · ${info.type === 'official' ? 'Official' : 'Community'}`;
     }
     return 'Complete a track to set a best finish';
   }
@@ -1218,14 +1417,17 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     const score = Number(row?.score || 1.000001) || 1.000001;
     const races = Number(row?.raceCount || 0) || 0;
     const totalTracks = Number(row?.totalTracks || TOTAL_TRACKS) || TOTAL_TRACKS;
-    const safeName = escapeHtml(row?.nickname || row?.name || 'Guest');
     const safeUserId = cleanUserId(row?.userId || row?.accountId || '');
+    const safeName = escapeHtml(safeDisplayName(row?.nickname || row?.name || 'Guest',safeUserId));
     const savedCarStyle = __pt062NormalizeStyle(row?.carStyle || __pt062GetRememberedStyle(safeUserId) || getDefaultCarStyle());
     const best = bestTrackMarkup(row);
     const move = movementMarkup(row?.movement || 0);
     const extra = showTopHint ? '<div style="font-size:13px;color:rgba(225,225,225,.9);margin-top:2px;">This could be you</div>' : '';
     const hintText = extra ? escapeHtml(String(extra).replace(/<[^>]+>/g,'').trim()) : '';
-    return `<div class="overall-entry ${rank===1?'top-1':rank===2?'top-2':rank===3?'top-3':''}" style="animation-delay:${(index*0.045).toFixed(3)}s"><span class="overall-rank">#${rank}</span><span class="overall-name">${carModelPreview(savedCarStyle,safeUserId)}<span class="overall-name-label"><span class="overall-name-main">${safeName}</span>${hintText?`<span class="overall-name-hint">${hintText}</span>`:''}</span></span><div class="overall-mid">${move}<div class="overall-best">${best}</div></div><div class="overall-stats"><div class="overall-score">${score.toFixed(3)}</div><div class="overall-races">${races} of ${totalTracks} tracks complete</div></div></div>`;
+    const racerCode = safeUserId ? `R-${safeUserId.slice(-8).toUpperCase()}` : 'R-UNKNOWN';
+    const officialCount = Number(row?.officialCount || 0) || 0;
+    const communityCount = Number(row?.communityCount || 0) || 0;
+    return `<div class="overall-entry ${rank===1?'top-1':rank===2?'top-2':rank===3?'top-3':''}" style="animation-delay:${(index*0.045).toFixed(3)}s"><span class="overall-rank">#${rank}</span><span class="overall-name">${carModelPreview(savedCarStyle,safeUserId)}<span class="overall-name-label"><span class="overall-name-main">${safeName}</span>${hintText?`<span class="overall-name-hint">${hintText}</span>`:''}<button class="overall-racer-code" type="button" data-racer-id="${safeUserId}" data-label="${racerCode}" title="Copy full racer account ID">${racerCode}</button></span></span><div class="overall-mid">${move}<div class="overall-best">${best}</div></div><div class="overall-stats"><div class="overall-score">${score.toFixed(2)}</div><div class="overall-score-unit">RP · LOWER IS BETTER</div><div class="overall-races">${races}/${totalTracks} · ${officialCount} official · ${communityCount} community</div></div></div>`;
   }
 
   function renderEntries(entries){
@@ -1244,7 +1446,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     const listEl = document.getElementById('overallLeaderboardList');
     if (!panel || !listEl) return;
     panel.style.display='flex';
-    listEl.innerHTML = `<div class="overall-entry"><span class="overall-name">${tr('loading')}</span></div>`;
+    listEl.innerHTML = `<div class="overall-loading"><strong>${tr('loading')}</strong><span>Reading the cached ranked snapshot</span><div class="overall-loading-bar"></div></div>`;
     renderEntries(await fetchOverallEntries());
   }
 
@@ -1261,8 +1463,9 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
   }
 
   function makeUserPayload(profile={}){
-    const stickyName = sanitizeDisplayName(localStorage.getItem(LAST_ACTIVE_NAME_KEY) || 'Guest');
-    const name = sanitizeDisplayName(profile.nickname || profile.name || stickyName);
+    const accountId = String(profile.accountId || localStorage.getItem('polytrack-0.6.2-active-account-id') || guestAccountId);
+    const stickyName = safeDisplayName(localStorage.getItem(LAST_ACTIVE_NAME_KEY) || 'Guest',accountId);
+    const name = safeDisplayName(profile.nickname || profile.name || stickyName,accountId);
     const carStyle = __pt062NormalizeStyle(profile.carStyle || getDefaultCarStyle());
     return {
       nickname: name,
@@ -1314,7 +1517,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
       if (requestMethod === 'POST') {
         log('info','[NET201] /user POST intercepted');
         const accountId = await accountIdFromPayload(hinted, guestAccountId);
-        const safeName = await enforceSafeDisplayName(hinted.nickname || localStorage.getItem(LAST_ACTIVE_NAME_KEY) || 'Guest', accountId);
+        let safeName = await enforceSafeDisplayName(hinted.nickname || localStorage.getItem(LAST_ACTIVE_NAME_KEY) || 'Guest', accountId);
         const countryCode = typeof hinted.countryCode === 'string' ? hinted.countryCode.slice(0,8) : null;
         const carStyle = __pt062NormalizeStyle(hinted.carStyle || getDefaultCarStyle());
         try {
@@ -1326,10 +1529,14 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
         __pt062RememberStyle(accountId, carStyle);
         try {
           const d = await db();
+          safeName = await resolveManualNameOverride(d,accountId,safeName);
+          localStorage.setItem(LAST_ACTIVE_NAME_KEY,safeName);
+          setLastKnownName(accountId,safeName);
           const nowTs = Date.now();
           log('info','[FB202] profiles_public.set start',{accountId});
           const ownerUid = window.firebase.auth().currentUser?.uid || '';
           await d.collection(COLLECTIONS.profilesPublic).doc(accountId).set({accountId,ownerUid,name:safeName,nickname:safeName,countryCode,carStyle,isVerifier:false,updatedAt:nowTs},{merge:true});
+          await propagateDisplayName(d, accountId, safeName);
           log('info','[FB202] profiles_public.set ok',{accountId});
         } catch (err) { log('warn','[FB402] profiles_public.set failed', String(err && (err.message || err))); }
         return {};
@@ -1485,6 +1692,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
       return {accountId,trackId,uploadId:null,timeMs,frames,name,carStyle};
     }
     const createdAt = Date.now();
+    recordDailySpotlightRun(trackId);
     const uploadId = nextUploadId();
     const resultDocId = `${accountId}_${trackId}`;
     const raceRow = {accountId,ownerUid:'',trackId,name,nickname:name,countryCode,timeMs,replay:replayData,replayHash:await sha256Hex(replayData),carStyle,raceTimeFrames:frames,frames,uploadId,verified:false,verifiedState:0,createdAt,updatedAt:createdAt,source:String(url||'').slice(0,500)};
@@ -1492,6 +1700,10 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     log('info','[FB210] mirror payload normalized',{accountId,trackId,timeMs,frames,uploadId,name,carStyle,hasReplay:true,replayBytes:replayData.length});
     try {
       const d = await db();
+      name = await resolveManualNameOverride(d,accountId,name);
+      raceRow.name = name;
+      raceRow.nickname = name;
+      setLastKnownName(accountId,name);
       const ownerUid = window.firebase.auth().currentUser?.uid || '';
       raceRow.ownerUid = ownerUid;
       const ref = d.collection(COLLECTIONS.raceResults).doc(resultDocId);
@@ -1519,6 +1731,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
       lastMirrorAt = Date.now();
       log('info','[FB202] profiles_public.set start',{accountId});
       await d.collection(COLLECTIONS.profilesPublic).doc(accountId).set({accountId,ownerUid,name,nickname:name,countryCode,carStyle,isVerifier:false,updatedAt:createdAt},{merge:true});
+      if (saved) await rebuildCachedLeaderboards(d, trackId, raceRow);
       try {
         localStorage.setItem(LAST_ACTIVE_NAME_KEY, name);
         localStorage.setItem('polytrack-0.6.2-last-active-car-style',carStyle);
@@ -1613,7 +1826,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
 
   function syncRankingsButtonAnimation(button, container){
     if (!button || !container) return;
-    const containerVisible = getComputedStyle(container).display !== 'none' && getComputedStyle(container).visibility !== 'hidden';
+    const containerVisible = isElementVisible(container);
     if (containerVisible && !mainButtonsWereVisible) {
       mainButtonsWereVisible = true;
       mainButtonsShownAt = Date.now();
@@ -1705,6 +1918,8 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
       this.session = '';
       this.unsubscribers = [];
       this.seenMessages = new Set();
+      this.listeningTargets = new Set();
+      this.sessionRefs = new Set();
       this._connect();
     }
     _emit(type,event){
@@ -1720,14 +1935,18 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
       } catch (error) { this._fail(error); }
     }
     async _listen(targetUid){
+      if (this.listeningTargets.has(targetUid)) return;
+      this.listeningTargets.add(targetUid);
       const d = await db();
       const query = d.collection(COLLECTIONS.multiplayerMessages).where('targetUid','==',targetUid);
       const unsubscribe = query.onSnapshot((snapshot)=>{
         for (const change of snapshot.docChanges()) {
           if (change.type !== 'added' || this.seenMessages.has(change.doc.id)) continue;
           const message = change.doc.data() || {};
+          if (Number(message.expiresAt || 0) > 0 && Number(message.expiresAt) < Date.now()) { change.doc.ref.delete().catch(()=>{}); continue; }
           if (String(message.targetSocketId || '') !== this.socketId) continue;
           this.seenMessages.add(change.doc.id);
+          if (message.payload?.session) this.sessionRefs.add(String(message.payload.session));
           this._emit('message',new MessageEvent('message',{data:JSON.stringify(message.payload || {})}));
           change.doc.ref.delete().catch(()=>{});
         }
@@ -1737,7 +1956,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     async _relay(targetSocketId,targetUid,payload){
       const d = await db();
       const senderUid = window.firebase.auth().currentUser?.uid || '';
-      await d.collection(COLLECTIONS.multiplayerMessages).add({session:String(payload?.session||''),senderUid,targetUid,targetSocketId,payload,createdAt:Date.now()});
+      await d.collection(COLLECTIONS.multiplayerMessages).add({session:String(payload?.session||''),senderUid,targetUid,targetSocketId,payload,createdAt:Date.now(),expiresAt:Date.now()+2*60*1000});
     }
     async _handleHost(payload){
       const d = await db();
@@ -1745,10 +1964,12 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
       if (payload.type === 'createInvite') {
         const inviteCode = multiplayerCode();
         const expiresAt = Date.now() + 30 * 60 * 1000;
+        const censoredNickname = await enforceSafeDisplayName(payload.nickname || localStorage.getItem(LAST_ACTIVE_NAME_KEY) || 'Guest', uid);
+        if (this.inviteRef) this.inviteRef.delete().catch(()=>{});
         this.inviteRef = d.collection(COLLECTIONS.multiplayerInvites).doc(inviteCode);
-        await this.inviteRef.set({inviteCode,hostUid:uid,hostSocketId:this.socketId,key:String(payload.key||''),createdAt:Date.now(),expiresAt});
+        await this.inviteRef.set({inviteCode,hostUid:uid,hostSocketId:this.socketId,key:String(payload.key||''),hostNickname:censoredNickname,createdAt:Date.now(),expiresAt});
         await this._listen(uid);
-        this._emit('message',new MessageEvent('message',{data:JSON.stringify({type:'createInvite',inviteCode,key:String(payload.key||''),timeoutMilliseconds:30*60*1000,censoredNickname:null})}));
+        this._emit('message',new MessageEvent('message',{data:JSON.stringify({type:'createInvite',inviteCode,key:String(payload.key||''),timeoutMilliseconds:30*60*1000,censoredNickname})}));
         return;
       }
       if (!payload.session) return;
@@ -1769,10 +1990,12 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
           return;
         }
         this.session = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
+        this.sessionRefs.add(this.session);
         const session = {session:this.session,inviteCode,hostUid:invite.hostUid,hostSocketId:invite.hostSocketId,joinUid:uid,joinSocketId:this.socketId,createdAt:Date.now()};
         await d.collection(COLLECTIONS.multiplayerSessions).doc(this.session).set(session);
         await this._listen(uid);
-        await this._relay(invite.hostSocketId,invite.hostUid,{type:'joinInvite',session:this.session,offer:payload.offer,version:String(payload.version||'0.6.2'),mods:Array.isArray(payload.mods)?payload.mods:[],isModsVanillaCompatible:payload.isModsVanillaCompatible!==false,nickname:sanitizeDisplayName(payload.nickname||'Guest'),countryCode:typeof payload.countryCode==='string'?payload.countryCode:null,carStyle:__pt062NormalizeStyle(payload.carStyle||getDefaultCarStyle()),iceServers:MULTIPLAYER_ICE_SERVERS});
+        const guestName = await enforceSafeDisplayName(payload.nickname||'Guest',uid);
+        await this._relay(invite.hostSocketId,invite.hostUid,{type:'joinInvite',session:this.session,offer:payload.offer,version:String(payload.version||'0.6.2'),mods:Array.isArray(payload.mods)?payload.mods:[],isModsVanillaCompatible:payload.isModsVanillaCompatible!==false,nickname:guestName,countryCode:typeof payload.countryCode==='string'?payload.countryCode:null,carStyle:__pt062NormalizeStyle(payload.carStyle||getDefaultCarStyle()),iceServers:MULTIPLAYER_ICE_SERVERS});
         return;
       }
       if (!this.session) return;
@@ -1796,6 +2019,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
       this.readyState = 2;
       for (const unsubscribe of this.unsubscribers.splice(0)) { try { unsubscribe(); } catch {} }
       if (this.inviteRef) this.inviteRef.delete().catch(()=>{});
+      db().then((d)=>Promise.all(Array.from(this.sessionRefs,(session)=>d.collection(COLLECTIONS.multiplayerSessions).doc(session).delete().catch(()=>{})))).catch(()=>{});
       this.readyState = 3;
       this._emit('close',new CloseEvent('close',{code,reason,wasClean:true}));
     }
@@ -1821,6 +2045,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
 
   function install(){
     ensureStyles();
+    applyUiPreferences();
     ensurePanel();
     hookLegacyNetworking();
     hookMultiplayerNetworking();
@@ -1830,6 +2055,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     ensurePersistentInfoBranding();
     ensureStaticDiscordLink();
     ensureLobbyHotkeyHints();
+    ensureSettingsEnhancements();
   }
 
   function hideVerifiedOnlyToggle(){
@@ -1843,11 +2069,13 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
   }
 
   function reconcileUI(){
+    applyUiPreferences();
     injectRankingsButton();
     setUnofficialMessage();
     ensurePersistentInfoBranding();
     ensureStaticDiscordLink();
     ensureLobbyHotkeyHints();
+    ensureSettingsEnhancements();
     hideVerifiedOnlyToggle();
   }
 
@@ -1856,6 +2084,72 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     if (!el || !el.isConnected) return false;
     const style = getComputedStyle(el);
     return style.display !== 'none' && style.visibility !== 'hidden' && Number(style.opacity || '1') > 0 && el.getClientRects().length > 0;
+  }
+
+  async function rebuildCachedLeaderboards(d, changedTrackId, changedRow){
+    const trackId = String(changedTrackId || '').slice(0,80);
+    if (!trackId) return;
+    const trackRef = d.collection(COLLECTIONS.leaderboardsTrack).doc(trackId);
+    let trackEntries = [];
+    await d.runTransaction(async (tx)=>{
+      const boardSnap = await tx.get(trackRef);
+      const board = boardSnap.exists ? (boardSnap.data() || {}) : {};
+      const accountId = String(changedRow?.accountId || changedRow?.userId || '');
+      const current = (Array.isArray(board.entries) ? board.entries : []).filter((entry)=>String(entry.accountId || entry.userId || '') !== accountId);
+      trackEntries = computeTrackTopEntries([...current,{...changedRow,trackId}],trackId,500);
+      tx.set(trackRef,{trackId,entries:trackEntries,updatedAt:Date.now()},{merge:false});
+    });
+
+    const overallRef = d.collection(COLLECTIONS.leaderboardsOverall).doc('main');
+    const leaseNow = Date.now();
+    let ownsRebuildLease = false;
+    await d.runTransaction(async (tx)=>{
+      ownsRebuildLease = false;
+      const overallSnap = await tx.get(overallRef);
+      const current = overallSnap.exists ? (overallSnap.data() || {}) : {};
+      if (leaseNow - Number(current.updatedAt || 0) < 10 * 60 * 1000) return;
+      ownsRebuildLease = true;
+      tx.set(overallRef,{entries:Array.isArray(current.entries)?current.entries:[],updatedAt:leaseNow,seededBy:'polytrack-0.6.2-rebuild-lease'},{merge:false});
+    });
+    if (!ownsRebuildLease) {
+      log('info','[FB204] Track cache updated; overall cache is current',{trackId,participants:trackEntries.length});
+      return;
+    }
+    const boardsSnap = await d.collection(COLLECTIONS.leaderboardsTrack).get();
+    const overallEntries = computeOverallFromTrackBoardDocs(boardsSnap.docs);
+    await overallRef.set({
+      entries:overallEntries,
+      updatedAt:Date.now(),
+      seededBy:'polytrack-0.6.2-client'
+    },{merge:false});
+    log('info','[FB204] Cached leaderboards rebuilt',{trackId,participants:trackEntries.length,boards:boardsSnap.size,overall:overallEntries.length});
+  }
+
+  async function propagateDisplayName(d, accountId, nextName){
+    const safeId = String(accountId || '').slice(0,128);
+    const safeName = safeDisplayName(nextName, safeId);
+    if (!safeId) return;
+    const boardsSnap = await d.collection(COLLECTIONS.leaderboardsTrack).get();
+    const writes = [];
+    for (const boardDoc of boardsSnap.docs) {
+      const board = boardDoc.data() || {};
+      let changed = false;
+      const entries = (Array.isArray(board.entries) ? board.entries : []).map((entry)=>{
+        if (String(entry.accountId || entry.userId || '') !== safeId) return entry;
+        changed = true;
+        return {...entry,name:safeName,nickname:safeName};
+      });
+      if (changed) writes.push(boardDoc.ref.set({...board,entries,updatedAt:Date.now()},{merge:false}));
+    }
+    const overallRef = d.collection(COLLECTIONS.leaderboardsOverall).doc('main');
+    const overallSnap = await overallRef.get();
+    if (overallSnap.exists) {
+      const overall = overallSnap.data() || {};
+      const entries = (Array.isArray(overall.entries) ? overall.entries : []).map((entry)=>String(entry.userId || entry.accountId || '')===safeId ? {...entry,name:safeName,nickname:safeName} : entry);
+      writes.push(overallRef.set({...overall,entries,updatedAt:Date.now()},{merge:false}));
+    }
+    await Promise.all(writes);
+    log('info','[MOD201] Display name propagated',{accountId:safeId,boards:writes.length});
   }
 
   function isStartMenuHotkeyContext(){

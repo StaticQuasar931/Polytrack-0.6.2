@@ -1,5 +1,7 @@
 {
-	"name": "PolyTrack",
+	"name": "PolyTrack 0.6.2 Ranked by StaticQuasar931",
+	"short_name": "PolyTrack Ranked",
+	"description": "Community PolyTrack with persistent ranked leaderboards, daily track spotlights, replays and Firebase multiplayer invites.",
 	"icons": [
 		{
 			"src": "images/icons/cover1920x1080.png",
