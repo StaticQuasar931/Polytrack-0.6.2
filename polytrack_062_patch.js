@@ -159,7 +159,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
   const p0='c3e7',p1='8a14';
 
   let firestorePromise = null;
-  let rankingsSpawnedOnce = false;
+  let rankingsSpawnedOnce = window.__polytrackRankingsAnimated === true;
   let rankingsButtonRef = null;
   let localUploadCounter = Number(localStorage.getItem('polytrack-0.6.2-upload-counter') || '0') || 0;
   let nativeMenuButtonsAnimating = false;
@@ -194,7 +194,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
   const PROFILE_NAME_WORD_B = ['racer','drift','pulse','track','echo','comet','storm','shift','vault','spark','dash','glide','runner','rocket','flare','nexus','voyage','blaze','orbit','flux','drive','streak','zenith','quartz','radar','pilot','charger','phantom','matrix','engine','jumper','hopper','sprinter','raider','seeker','keeper','walker','slider','cruiser','strider','booster','chaser','panther','falcon','otter','fox','rhino','yak','wizard','knight','samurai','sage','ranger','captain','doctor','baron','duke','rookie','veteran','legend','maverick','stomper','breaker','spirit','beacon','anchor','vector','module','kernel','vortex','quasar','galaxy','planet','meteor','asteroid','volcano','tsunami','whirl','tempest','charge','vertex','pixel','bit','byte','gear','piston','engineer','driver','rider','climber','surfer','skater','sniper','ace'];
   const DEFAULT_NAME_BLOCKLIST = ["admin","moderator","owner","staff","support","system","dev","developer","verified","helper","official","security","abuse","abuser","anal","anus","arse","arsehole","ass","assbag","assclown","assface","assfuck","assfucker","asshat","asshole","assholes","asslicker","asswipe","ballsack","bastard","bastards","beaner","bitch","bitches","bitchy","blowjob","blowjobs","bollock","bollocks","boner","boob","boobs","booty","brothel","bullshit","buttfuck","butthole","cameltoe","chink","clit","clitoris","cock","cocks","coon","crap","cum","cumming","cunt","cunts","dick","dicks","dildo","dildos","dipshit","doggystyle","douche","douchebag","dyke","fag","faggot","faggots","feck","fellatio","fingerbang","fuck","fucked","fucker","fuckers","fuckface","fucking","fuckoff","fuckwit","fuk","gangbang","gaylord","genitals","gook","handjob","hardcore","hentai","hitler","hoe","hoes","horny","incest","jackass","jerkoff","jizz","kike","kkk","kunt","lesbo","lesbian","loli","masturbate","masturbation","milf","motherfucker","motherfucking","muff","nazi","nazism","negro","nigga","nigger","niggers","nipple","nipples","nutjob","orgasm","orgy","pedo","pedophile","penis","piss","pissed","pisser","playboy","poon","poop","porn","porno","pornhub","prostitute","pussy","queef","queer","raped","raper","rapist","rape","retard","rimjob","scrotum","sex","sexy","shit","shits","shitty","shota","sissy","skank","slut","sluts","smegma","spic","spunk","strapon","suck","sucks","testicle","threesome","tit","tits","titties","titty","tranny","twat","vag","vagina","vibrator","virgin","voyeur","wank","wanker","whore","whores","wtf","xxx","xrated","yaoi","zoophile","zoophilia","alqaeda","isis","terrorist","swastika","1488","molest","molester","underage","childporn","cp","suicide","killyourself","kys","racist","racism","whitepower","wetback","spick","gimp","cripple","idiot","moron","stupid","dumbass","shithead","cumshot","cumslut","deepthroat","fisting","gangrape","gfy","goatse","groomer","hooker","hotsex","humping","jackoff","motherfucker","nutsack","pecker","peehole","peeing","pussylicking","rectum","scat","semen","sexcam","sexchat","sexworker","shemale","slapper","sodomize","sodomy","tard","teabagging","towelhead","tubgirl","unclefucker","upskirt","urethra","urine","vulva","wigger","willy","yid"];
   const MODERN_HIGH_RISK_TERMS = ['gooning','gooner','goonette','edging','edgeplay','gyatt','gyat','onlyfans','ofans','discordmod','heilhitler','gasjews','killall','kms','killyourself','kys','unaliveyourself','csam','cporn','childlover','minorlover','lolicon','shotacon'];
-  const COMPACT_SEVERE_TERMS = ['nigger','nigga','faggot','chink','kike','spic','wetback','beaner','coon','gook','tranny','fuck','bitch','cunt','rape','rapist','pedophile','molester','childporn','csam','killyourself','whitepower','heilhitler','pornhub','onlyfans','gooning'];
+  const COMPACT_SEVERE_TERMS = ['nigger','nigga','faggot','chink','kike','spic','wetback','beaner','coon','gook','tranny','fuck','bitch','cunt','rape','rapist','pedophile','molester','childporn','csam','killyourself','whitepower','heilhitler','pornhub','onlyfans','gooning','masterbait','masterbaiting','masterofbaiting'];
   const RESERVED_NAME_TERMS = ['admin','administrator','moderator','modteam','owner','staff','support','system','developer','devteam','verified','official','staticquasar931'];
 
   function readProfileMap(){
@@ -481,7 +481,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     const runProgress = `${Math.min(3,daily.runs)}/3 finishes`;
     const pbProgress = `${Math.min(1,daily.pbs)}/1 PB`;
     const improvement = daily.bestPbImprovementMs > 0 ? ` · best gain ${(daily.bestPbImprovementMs/1000).toFixed(3)}s` : '';
-    return `<div class="overall-daily" id="overallDailyGrid"><span class="overall-daily-label">DAILY</span><strong>${escapeHtml(daily.track.name)}</strong><span>${daily.completed?'Goal complete':`${runProgress} · ${pbProgress}`}${improvement} · ${daily.streak} day streak</span><span class="weekly-cup" title="Weekly placement uses a ${escapeHtml(weekly.age)} saved track board"><b>WEEKLY CUP</b> ${escapeHtml(weekly.track.name)} · ${weekly.medal}${weekly.field?` · ${weekly.field} racers`:''} · ${escapeHtml(weekly.age)}</span><span id="overallStreakLeader">Top streak loading...</span></div>`;
+    return `<div class="overall-competition" id="overallDailyGrid"><section class="weekly-cup" title="Weekly placement uses a ${escapeHtml(weekly.age)} saved track board"><span class="competition-kicker">WEEKLY CUP</span><strong>${escapeHtml(weekly.track.name)}</strong><span>${weekly.medal}${weekly.field?` · ${weekly.field} racers`:''}</span><small>Improve your percentile on this featured track. Top 10% earns gold, top 25% silver, and top 50% bronze. Board ${escapeHtml(weekly.age)}.</small><div class="weekly-medal-key"><span class="gold"><img src="images/ranked-medal.svg" alt="">Top 10%</span><span class="silver"><img src="images/ranked-medal.svg" alt="">Top 25%</span><span class="bronze"><img src="images/ranked-medal.svg" alt="">Top 50%</span></div></section><section class="daily-card"><span class="competition-kicker">DAILY RUN</span><strong>${escapeHtml(daily.track.name)}</strong><span>${daily.completed?'Goal complete':`${runProgress} · ${pbProgress}`}${improvement}</span><small>${daily.streak} day streak · Finish 3 runs and set 1 PB today.</small><span id="overallStreakLeader">Top streak loading...</span></section><nav class="overall-pager" aria-label="Ranked pages"><button id="overallPrevPage" class="button" type="button">Previous</button><span id="overallPageStatus" class="overall-page-status">Page 1</span><button id="overallNextPage" class="button" type="button">Next</button></nav></div>`;
   }
   function normalizeCarColorId(colors){
     const fallback = 'ffffff8ec7ff28346a212b58';
@@ -781,6 +781,14 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     return `${a}${b}`.slice(0, 24);
   }
 
+  function getOrCreateDefaultDisplayName(accountId=guestAccountId){
+    const existing = sanitizeDisplayName(localStorage.getItem(LAST_ACTIVE_NAME_KEY) || '');
+    if (existing && existing.toLowerCase() !== 'guest') return existing;
+    const generated = makeFallbackName(accountId) || 'RookieRacer';
+    try { localStorage.setItem(LAST_ACTIVE_NAME_KEY,generated); } catch {}
+    return generated;
+  }
+
   async function enforceSafeDisplayName(value, accountId=''){
     const decision = moderationDecision(value);
     if (!decision.blocked) return decision.clean;
@@ -957,8 +965,8 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
       .overall-loading{margin:auto;width:min(520px,calc(100% - 30px));padding:30px 26px;text-align:center;background:#26366f;clip-path:polygon(10px 0,calc(100% - 10px) 0,100% 10px,100% calc(100% - 10px),calc(100% - 10px) 100%,10px 100%,0 calc(100% - 10px),0 10px)}.overall-loading strong{display:block;font-size:28px;font-weight:normal;color:#fff}.overall-loading span{display:block;margin-top:8px;color:var(--rank-cyan);font-size:16px}.overall-loading-bar{height:5px;margin-top:18px;background:#121b3f;overflow:hidden}.overall-loading-bar::after{content:'';display:block;width:38%;height:100%;background:var(--rank-cyan);animation:rankLoading 1.05s ease-in-out infinite}
       .overall-empty{margin:auto;width:min(650px,calc(100% - 40px));padding:42px 34px;display:flex;flex-direction:column;gap:12px;text-align:center;font-size:20px;color:rgba(239,247,255,.8);background:#2b407c;clip-path:polygon(12px 0,calc(100% - 12px) 0,100% 12px,100% calc(100% - 12px),calc(100% - 12px) 100%,12px 100%,0 calc(100% - 12px),0 12px)}.overall-empty strong{font-size:34px;color:#fff;font-weight:normal}.overall-empty .button{align-self:center;margin-top:8px;min-width:150px}
       #injectedRankingsBtn{animation:none!important;will-change:transform,opacity,filter;position:relative;opacity:1;pointer-events:auto!important}#injectedRankingsBtn.ranked-waiting{opacity:0;pointer-events:none!important}#injectedRankingsBtn.ranked-ready{opacity:1;pointer-events:auto!important}
-      #injectedRankingsBtn.button-spawn{animation:rankedButtonSpawn .72s cubic-bezier(.16,.78,.2,1.06) both!important}
-      #injectedRankingsBtn.button-spawn img{animation:rankedIconPop .72s cubic-bezier(.16,.78,.2,1.06) both}
+      #injectedRankingsBtn.button-spawn{animation:rankedButtonSpawn .42s cubic-bezier(.2,.72,.25,1) both!important}
+      #injectedRankingsBtn.button-spawn img{animation:rankedIconPop .42s cubic-bezier(.2,.72,.25,1) both}
       .sq-has-hotkey{position:relative}.sq-hotkey-hint{position:absolute;right:5px;top:5px;z-index:3;min-width:19px;height:19px;padding:0 4px;display:flex;align-items:center;justify-content:center;background:#f0f6ff;color:#253768;clip-path:polygon(3px 0,100% 0,calc(100% - 3px) 100%,0 100%);font:11px/19px ForcedSquare,Arial,sans-serif;letter-spacing:.2px;pointer-events:none}
       #sqRankedSettings{position:relative;margin:0 0 14px;padding:0 0 10px;border-bottom:3px solid var(--text-color);color:var(--text-color);font-family:ForcedSquare,Arial,sans-serif}#sqRankedSettings>h2{margin:10px;padding:4px;font-size:24px;font-weight:normal;border-bottom:2px solid var(--text-color)}.sq-settings-note{margin:8px 15px;color:rgba(235,244,255,.72);font-size:16px}.sq-setting-row{margin:10px;display:flex}.sq-setting-row>p{display:inline-block;margin:10px;min-width:0;flex-grow:1;font-size:25px}.sq-setting-row>.button-wrapper{display:flex;justify-content:end}.sq-setting-row .button{height:48px;min-width:150px}.sq-moderator-tools{display:grid;grid-template-columns:1.2fr 1fr 1fr auto;gap:7px;margin:13px 10px 0;padding-top:12px;border-top:1px solid rgba(255,255,255,.16)}.sq-moderator-tools strong,.sq-mod-status{grid-column:1/-1}.sq-moderator-tools input{min-width:0;padding:7px 9px;background:#111a3d;border:1px solid rgba(142,199,255,.45);color:#fff;font:inherit}.sq-mod-save{font-size:14px}.sq-mod-status{font-size:13px;color:#78e4ff}
       .sq-mod-challenge{position:fixed;inset:0;z-index:12000;display:flex;align-items:center;justify-content:center;background:rgba(8,12,30,.88)}.sq-mod-card{width:min(430px,calc(100vw - 30px));padding:24px;background:#2b407c;clip-path:polygon(12px 0,calc(100% - 12px) 0,100% 12px,100% calc(100% - 12px),calc(100% - 12px) 100%,12px 100%,0 calc(100% - 12px),0 12px);text-align:center}.sq-mod-card>strong{font-size:28px}.sq-mod-card>p{font-size:15px;color:rgba(240,247,255,.72)}.sq-mod-entry{margin:14px 0;font-size:25px;color:#7ee7ff;letter-spacing:3px}.sq-mod-keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.sq-mod-keypad .button{min-width:0}.sq-mod-challenge-status{display:block;margin-top:12px;color:#ffd27e;font-size:14px}
@@ -968,10 +976,8 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
       @media (max-width:760px){#overallLeaderboardPanel{padding:0;--rank-columns:62px 1fr auto}.overall-shell{width:100vw;height:100vh;clip-path:none}.overall-top{padding:16px 14px 11px}.overall-title-group{gap:8px}.overall-beta{display:none}.overall-actions{gap:5px}.overall-action-btn{min-width:70px;font-size:15px}.overall-sub{padding:10px 14px;font-size:15px}.overall-daily{padding:7px 12px;gap:7px}.overall-daily span:last-child{display:none}.overall-columns{display:none}#overallLeaderboardList{padding:7px}.overall-entry{grid-template-columns:62px 1fr auto;grid-template-areas:'rank name stats' 'rank mid stats';min-height:94px;padding-right:12px;gap:7px}.overall-rank{grid-area:rank;width:62px}.overall-name{grid-area:name;font-size:20px}.overall-mid{grid-area:mid}.overall-stats{grid-area:stats}.overall-car-model{width:76px;height:78px;margin-right:8px}.overall-entry.top-1 .overall-car-model{width:82px;height:86px}.overall-score{font-size:24px}.overall-races,.overall-best{font-size:12px}.overall-move{font-size:15px}.overall-pager{gap:6px}.overall-pager .button{min-width:70px;font-size:14px}.overall-page-status{min-width:110px;font-size:13px}.sq-moderator-tools{grid-template-columns:1fr}.overall-help-card p{font-size:18px}.overall-help-content{padding:18px}}
       @media (max-width:760px){.overall-top{flex-wrap:wrap}.overall-freshness{order:3;flex-basis:100%;max-width:none}.overall-summary{align-items:stretch;flex-direction:column;padding:7px 10px}.overall-sub{padding:0}.overall-categories{justify-content:center}.overall-opportunities{grid-template-columns:1fr;padding:5px 9px}.overall-insight{font-size:11px}.overall-daily{flex-wrap:wrap}.weekly-cup{order:3;width:100%}.profile-head{flex-direction:column;padding-right:70px}.profile-head h3{font-size:28px}.profile-results{grid-template-columns:1fr}.overall-profile-card{max-height:calc(100vh - 20px);overflow:auto}.ranked-testing-notice{bottom:8px;font-size:12px}}
       @media (prefers-reduced-motion:reduce){.overall-shell,.overall-entry,#injectedRankingsBtn.button-spawn,#injectedRankingsBtn.button-spawn img{animation-duration:.01ms!important;animation-delay:0s!important}}
-      .menu-ui .info,.menu .info{text-align:center!important;pointer-events:auto!important;user-select:text!important}.staticFunPill{display:inline-block;cursor:pointer;pointer-events:auto;user-select:none;font-family:ForcedSquare,Arial,sans-serif;font-size:18px;font-weight:normal;letter-spacing:.8px;text-decoration:none;padding:6px 12px;border:1px solid rgba(255,255,255,.14);background:rgba(9,17,45,.34);clip-path:polygon(6px 0,100% 0,calc(100% - 6px) 100%,0 100%);text-shadow:0 0 9px rgba(255,255,255,.18);position:relative;z-index:5;animation:staticGlowPulse 1.8s ease-in-out infinite}.staticFunHover{transition:transform .16s ease, filter .16s ease, box-shadow .16s ease}
-      .staticFunPill{margin:8px 16px!important;padding:8px 16px!important;border:2px solid rgba(165,235,255,.38)!important;clip-path:none!important;overflow:visible!important;filter:drop-shadow(0 0 8px rgba(0,225,255,.2))}.staticFunText,.staticFunChar{overflow:visible!important}.staticFunHover:hover{filter:brightness(1.18) drop-shadow(0 0 14px rgba(0,255,255,.42))}
-      a[href*="kodub.com/discord"],a[href*="discord/polytrack"]{pointer-events:auto!important;position:fixed!important;right:18px!important;bottom:16px!important;left:auto!important;top:auto!important;z-index:100!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;width:54px!important;height:54px!important;max-width:54px!important;margin:0!important}a[href*="kodub.com/discord"] img,a[href*="discord/polytrack"] img{display:block!important;width:42px!important;height:42px!important;max-width:42px!important;object-fit:contain!important}
-      .ranked-testing-notice{position:fixed;left:50%;bottom:16px;z-index:11000;width:min(680px,calc(100vw - 28px));transform:translateX(-50%);display:flex;align-items:center;gap:12px;padding:10px 12px 10px 16px;background:rgba(25,40,86,.96);color:#eaf4ff;border:1px solid rgba(126,231,255,.4);box-shadow:0 10px 32px rgba(0,0,0,.38);font-size:14px;line-height:1.25;animation:rankPanelIn .3s ease-out both}.ranked-testing-notice strong{color:#7ee7ff;font-weight:normal}.ranked-testing-notice .button{margin-left:auto;min-width:80px;flex:0 0 auto}
+      .menu-ui .info,.menu .info{position:fixed!important;left:50%!important;right:auto!important;bottom:8px!important;width:min(900px,calc(100vw - 150px))!important;transform:translateX(-50%)!important;text-align:center!important;pointer-events:none!important;user-select:text!important;overflow:visible!important}.menu-ui .info a,.menu .info a{pointer-events:auto}.staticFunPill{display:inline-block;cursor:pointer;user-select:none;font-family:ForcedSquare,Arial,sans-serif;font-size:19px;font-weight:normal;letter-spacing:.8px;text-decoration:none;padding:3px 10px;margin:4px auto!important;border:0!important;background:transparent!important;clip-path:none!important;text-shadow:0 0 10px rgba(110,235,255,.3);position:relative;z-index:5;overflow:visible!important;filter:drop-shadow(0 0 6px rgba(0,225,255,.18));transition:transform .16s ease,filter .16s ease}.staticFunText,.staticFunChar{overflow:visible!important}.staticFunHover:hover{transform:scale(1.035);filter:brightness(1.2) drop-shadow(0 0 12px rgba(0,255,255,.38))}
+      .ranked-testing-notice{position:fixed;left:50%;top:12px;bottom:auto;z-index:11000;width:min(760px,calc(100vw - 32px));translate:-50% 0;display:flex;align-items:center;gap:12px;padding:9px 12px 9px 16px;background:rgba(25,40,86,.96);color:#eaf4ff;border-bottom:3px solid #7ee7ff;box-shadow:0 10px 28px rgba(0,0,0,.32);font-size:13px;line-height:1.25;animation:rankPanelIn .25s ease-out both}.ranked-testing-notice strong{color:#7ee7ff;font-weight:normal}.ranked-testing-notice .button{margin-left:auto;min-width:82px;flex:0 0 auto}
       .overall-top{gap:14px;padding-top:16px;padding-bottom:12px}.overall-title-group{flex:0 1 auto}.overall-freshness{flex:1 1 330px;max-width:560px;min-width:190px;min-height:32px;padding:6px 11px;background:rgba(8,16,42,.52);clip-path:polygon(6px 0,100% 0,calc(100% - 6px) 100%,0 100%);font-size:12px;line-height:1.15}.overall-freshness.is-loading::before{background:#7ee7ff;animation:staticGlowPulse 1s infinite}.overall-summary{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 22px;background:#1b2859}.overall-sub{padding:0;background:transparent;font-size:16px}.overall-categories{display:flex;gap:5px;flex:0 0 auto}.overall-categories button{border:0;padding:6px 11px;background:#2b3f7b;color:#c8daf5;font-family:inherit;cursor:pointer}.overall-categories button.active{background:#7ee7ff;color:#10214b}.overall-opportunities{min-height:42px;padding:6px 22px;display:grid;grid-template-columns:1fr 1fr;gap:8px;background:#152047}.overall-insight{display:flex;gap:8px;min-width:0;padding:5px 9px;background:#21346c;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.overall-insight b{color:#7ee7ff;font-weight:normal}.overall-insight.personal{background:#24486b}.overall-entry{min-height:102px;cursor:pointer}.overall-entry.top-1{background:linear-gradient(90deg,#8b6a16 0%,#65562b 38%,#303b68 100%)}.overall-entry.top-2{background:linear-gradient(90deg,#75849b 0%,#53627b 40%,#2d3b68 100%)}.overall-entry.top-3{background:linear-gradient(90deg,#70442d 0%,#564044 40%,#2d3b68 100%)}.overall-flag{width:29px;height:19px;background:transparent;clip-path:none;border:1px solid rgba(255,255,255,.38);border-radius:2px}.overall-flag img{object-fit:contain;background:transparent}.overall-best-line b{color:#9feaff;font-weight:normal}.overall-best-line.muted{color:rgba(206,226,255,.55);font-size:13px}.weekly-cup{padding:4px 8px;background:#253a75}.weekly-cup b{color:#7ee7ff;font-weight:normal}.overall-daily{font-size:13px;gap:9px;padding:6px 18px}.overall-daily strong{font-size:16px}.overall-profile-card{position:relative;width:min(920px,calc(100% - 28px));padding:24px;background:#2d437e;clip-path:polygon(14px 0,calc(100% - 14px) 0,100% 14px,100% calc(100% - 14px),calc(100% - 14px) 100%,14px 100%,0 calc(100% - 14px),0 14px);box-shadow:0 20px 70px rgba(0,0,0,.5)}#overallProfilePopup{display:none;position:absolute;inset:0;z-index:5;align-items:center;justify-content:center;background:rgba(7,12,30,.9);backdrop-filter:blur(5px)}#overallProfileClose{position:absolute;right:18px;top:16px}.profile-head{display:flex;justify-content:space-between;gap:18px;padding:4px 95px 18px 0;border-bottom:3px solid #7ee7ff}.profile-kicker{font-size:12px;color:#7ee7ff;letter-spacing:1.4px}.profile-head h3{display:flex;align-items:center;gap:9px;margin:5px 0;font-size:38px;font-weight:normal}.profile-head p{margin:0;color:#c5d9f5}.profile-medals{display:flex;gap:6px;align-items:center}.profile-medals span{padding:7px 9px;color:#10182e}.profile-medals .gold{background:#e1b94c}.profile-medals .silver{background:#c7d0dc}.profile-medals .bronze{background:#bc7950}.profile-results{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}.profile-result{display:flex;flex-direction:column;gap:5px;padding:14px;background:#1d2d62}.profile-result b{color:#7ee7ff;font-weight:normal}.profile-result span{font-size:20px}.profile-result small{color:#b9cce9}.profile-result.muted{opacity:.65}.profile-target{display:flex;flex-direction:column;gap:5px;margin-top:10px;padding:14px;background:#203c65;border-left:5px solid #7ee7ff}.profile-target b{color:#7ee7ff;font-weight:normal}.profile-disclaimer{margin:12px 0 0;color:rgba(223,237,255,.6);font-size:13px}
       .staticFunText{display:inline-block;white-space:nowrap;perspective:600px;animation:staticFloat 2.2s ease-in-out infinite}
       .staticFunChar{display:inline-block;will-change:transform,filter;transform-style:preserve-3d;animation:staticWave 1.6s ease-in-out infinite;background:linear-gradient(90deg,#66f,#6ff,#6f6,#ff6,#f6f,#66f);background-size:300% 100%;background-position:0% 50%;-webkit-background-clip:text;background-clip:text;color:transparent;animation-name:staticWave,staticSheen;animation-duration:1.6s,2.4s;animation-timing-function:ease-in-out,ease-in-out;animation-iteration-count:infinite,infinite}
@@ -981,7 +987,11 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
       #polytrackHelpPanel .help-small{font-size:14px;color:rgba(255,255,255,.62)}
       #polytrackHelpPanel a{color:#b7e2ff}
       #polytrackHelpClose{margin-top:4px;border:1px solid rgba(255,255,255,.24);background:rgba(255,255,255,.08);color:#fff;padding:5px 10px;cursor:pointer}
-      .polytrack-track-freshness{position:fixed;left:50%;top:12px;z-index:9998;transform:translateX(-50%);max-width:min(620px,calc(100vw - 24px));padding:6px 12px;background:rgba(15,27,64,.93);border:1px solid rgba(126,231,255,.35);color:#cfe6ff;font-size:12px;letter-spacing:.3px;pointer-events:none}.polytrack-track-freshness.is-stale{border-color:#ffbd5d;color:#ffe0a4}
+      .polytrack-track-freshness{position:fixed;left:14px;bottom:14px;top:auto;z-index:9998;max-width:min(520px,calc(100vw - 28px));padding:7px 12px;background:#253a75;border-left:4px solid #7ee7ff;color:#dcecff;font-size:12px;letter-spacing:.3px;pointer-events:none;clip-path:polygon(0 0,100% 0,calc(100% - 7px) 100%,0 100%);box-shadow:0 8px 24px rgba(0,0,0,.3)}.polytrack-track-freshness.is-stale{border-left-color:#ffbd5d;color:#ffe0a4}
+      #overallLeaderboardPanel{padding:2px;--rank-columns:88px minmax(390px,1.5fr) minmax(300px,1fr) minmax(190px,.62fr)}.overall-shell{width:min(1540px,calc(100vw - 6px));height:calc(100vh - 4px)}.overall-top{padding:13px 20px 10px}.overall-freshness{appearance:none;border:0;color:inherit;text-align:left;cursor:pointer;transition:filter .15s ease}.overall-freshness:hover{filter:brightness(1.2)}.overall-summary{justify-content:center;padding:5px 14px}.overall-categories{flex-wrap:wrap;justify-content:center}.overall-categories button{min-width:92px}.overall-entry{min-height:94px}.overall-entry.top-1{min-height:108px}.overall-racer-meta{display:flex;align-items:center;gap:7px}.row-medals,.profile-medals{display:inline-flex;align-items:center;gap:5px}.row-medals>span,.profile-medals>span{display:inline-flex;align-items:center;gap:4px}.row-medals img{width:14px;height:14px}.row-medals .gold{color:#ffe27a}.row-medals .silver{color:#e4edff}.row-medals .bronze{color:#ffc095}.overall-flag{width:38px;height:26px;border:0;background:transparent;box-shadow:0 0 0 1px rgba(255,255,255,.24);clip-path:none}.overall-flag img{width:100%;height:100%;object-fit:contain;image-rendering:auto}.overall-score-unit{font-size:12px}.overall-competition{display:grid;grid-template-columns:minmax(420px,1.35fr) minmax(320px,1fr) minmax(300px,.9fr);gap:8px;padding:8px 14px;background:#111a3e;border-top:2px solid rgba(126,231,255,.26)}.overall-competition section{min-width:0;padding:11px 14px;background:#20336d;clip-path:polygon(8px 0,100% 0,calc(100% - 8px) 100%,0 100%)}.overall-competition section strong{display:block;margin:2px 0 4px;font-size:24px;font-weight:normal;color:#fff}.competition-kicker{font-size:11px;color:#7ee7ff;letter-spacing:1.5px}.overall-competition section>span:not(.competition-kicker){font-size:15px}.overall-competition section small{display:block;margin-top:5px;color:rgba(220,235,255,.68);font-size:12px;line-height:1.2}.weekly-cup{position:relative;background:linear-gradient(100deg,#5d4a1d,#2e447b)!important;border-left:5px solid #ffe27a}.weekly-medal-key{display:flex;gap:12px;margin-top:8px}.weekly-medal-key span{display:inline-flex;align-items:center;gap:4px;font-size:11px}.weekly-medal-key img{width:18px;height:18px}.weekly-medal-key .gold{color:#ffe27a}.weekly-medal-key .silver{color:#e4edff}.weekly-medal-key .bronze{color:#ffc095}.daily-card{border-left:5px solid #7ee7ff}.overall-competition .overall-pager{display:grid;grid-template-columns:1fr 1fr;align-content:center;gap:7px;min-height:0;padding:10px 12px;background:#1b2859;border:0}.overall-competition .overall-page-status{grid-column:1/-1;grid-row:1;min-width:0}.overall-competition .overall-pager .button{grid-row:2;min-width:0}.sq-weekly-track{position:relative!important;box-shadow:inset 0 0 0 4px #ffe27a,0 0 24px rgba(255,218,92,.5)!important;filter:brightness(1.08)}.sq-weekly-track::after{content:'WEEKLY CUP';position:absolute;right:8px;top:8px;padding:4px 7px;background:#ffe27a;color:#15204a;font:11px ForcedSquare,Arial,sans-serif;letter-spacing:.8px;z-index:4}.overall-profile-card{width:min(1120px,calc(100% - 24px));height:min(900px,calc(100vh - 20px));padding:24px 26px;overflow:auto}.profile-hero{display:grid;grid-template-columns:260px 1fr;gap:22px;align-items:center;padding:4px 80px 18px 0;border-bottom:3px solid #7ee7ff}.profile-hero>.overall-car-model{width:260px;height:180px;margin:0;background:#19285a}.profile-identity h3{display:flex;align-items:center;gap:10px;margin:4px 0 10px;font-size:44px;font-weight:normal}.profile-stat-strip{display:grid;grid-template-columns:repeat(4,minmax(95px,1fr));gap:7px;margin:8px 0}.profile-stat-strip span{display:flex;flex-direction:column;padding:9px 11px;background:#1b2c61;color:#bdd2ef;font-size:12px}.profile-stat-strip b{font-size:26px;color:#fff;font-weight:normal}.profile-medals{margin-top:10px}.profile-medals>span{padding:7px 10px;background:#1b2c61}.profile-medals img{width:22px;height:22px}.profile-medals .gold{color:#ffe27a}.profile-medals .silver{color:#e4edff}.profile-medals .bronze{color:#ffc095}.profile-no-medals{margin:10px 0 0;color:#b9cce8}.profile-results{grid-template-columns:repeat(3,1fr);gap:10px}.profile-result{min-height:80px}.profile-target{font-size:17px}.profile-track-history{margin-top:14px;padding:14px;background:#172554}.profile-track-history header{display:flex;justify-content:space-between;align-items:end;gap:12px;border-bottom:1px solid rgba(126,231,255,.28);padding-bottom:9px}.profile-track-history h4{margin:3px 0 0;font-size:24px;font-weight:normal}.profile-track-history header>span{color:#aabfdd;font-size:13px}.profile-track-list{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:9px}.profile-track-row{display:grid;grid-template-columns:1fr 92px 112px;align-items:center;gap:8px;padding:9px 11px;background:#20356e}.profile-track-row span{display:flex;flex-direction:column;min-width:0}.profile-track-row b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:normal;color:#fff}.profile-track-row small{color:#9fb6d6}.profile-track-row strong{text-align:center;color:#7ee7ff;font-weight:normal}.profile-track-row time{text-align:right;color:#dcecff}.profile-track-empty{padding:18px;color:#aabfdd}.overall-help-card{position:absolute;left:0;top:0;bottom:0;width:min(540px,calc(100vw - 24px));max-height:none;overflow:auto;padding:0;background:#253a75;clip-path:polygon(0 0,calc(100% - 16px) 0,100% 16px,100% 100%,0 100%);box-shadow:18px 0 70px rgba(0,0,0,.52);animation:guideSlideIn .28s ease-out both}.overall-help-head{padding:28px 28px 16px;background:#192755;border-bottom:4px solid #7ee7ff}.overall-help-head span{color:#7ee7ff;font-size:12px;letter-spacing:1.5px}.overall-help-head h3{margin:5px 0 0;font-size:36px;font-weight:normal}.overall-help-content{padding:22px 28px}.overall-help-content section{margin-bottom:14px;padding:12px 14px;background:#1d3068}.overall-help-content section>b{font-size:20px;color:#fff;font-weight:normal}.overall-help-content section p{margin:5px 0 0;font-size:16px}.overall-help-note{border-left:5px solid #ffe27a!important;background:#3d4167!important;padding:12px 14px!important}.overall-help-actions{justify-content:flex-start}.overall-help-content a{color:#9feaff}@keyframes guideSlideIn{from{transform:translateX(-40px);opacity:0}to{transform:translateX(0);opacity:1}}
+      .gold img{filter:sepia(1) saturate(4) hue-rotate(350deg) brightness(1.35)}.silver img{filter:brightness(1.7) saturate(.3)}.bronze img{filter:sepia(1) saturate(2.5) hue-rotate(335deg) brightness(1.05)}
+      @media(max-width:900px){.overall-competition{grid-template-columns:1fr 1fr}.overall-competition .overall-pager{grid-column:1/-1}.profile-hero{grid-template-columns:190px 1fr}.profile-hero>.overall-car-model{width:190px;height:145px}.profile-track-list{grid-template-columns:1fr}}
+      @media(max-width:620px){.menu-ui .info,.menu .info{width:calc(100vw - 30px)!important}.overall-competition{grid-template-columns:1fr}.overall-competition .overall-pager{grid-column:auto}.profile-hero{grid-template-columns:1fr;padding-right:50px}.profile-hero>.overall-car-model{width:100%;height:150px}.profile-stat-strip{grid-template-columns:1fr 1fr}.profile-identity h3{font-size:30px}.profile-track-row{grid-template-columns:1fr 70px}.profile-track-row time{display:none}}
       @keyframes staticGlowPulse{0%{box-shadow:0 0 0 rgba(255,255,255,0.0),0 0 10px rgba(0,255,255,0.12)}50%{box-shadow:0 0 14px rgba(255,255,255,0.18),0 0 22px rgba(255,0,255,0.18)}100%{box-shadow:0 0 0 rgba(255,255,255,0.0),0 0 10px rgba(0,255,255,0.12)}}
       @keyframes rankLoading{0%{transform:translateX(-130%)}55%{transform:translateX(120%)}100%{transform:translateX(310%)}}
       @keyframes staticSheen{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
@@ -1081,6 +1091,22 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     document.querySelectorAll('.static-discord-link').forEach((link)=>link.remove());
   }
 
+  function syncNativeDiscordVisibility(){
+    const lobby=isStartMenuHotkeyContext();
+    document.querySelectorAll('a.discord-link,a[href*="kodub.com/discord/polytrack"]').forEach((link)=>{
+      link.style.display=lobby?'':'none';
+    });
+  }
+
+  function ensureWeeklyTrackHighlight(){
+    const weeklyName=weeklyCup().track.name.trim().toLowerCase();
+    document.querySelectorAll('.sq-weekly-track').forEach((button)=>button.classList.remove('sq-weekly-track'));
+    for(const title of document.querySelectorAll('.track-title p')){
+      if(String(title.textContent||'').trim().toLowerCase()!==weeklyName)continue;
+      title.closest('button')?.classList.add('sq-weekly-track');
+    }
+  }
+
   function ensureReturningPlayerNotice(){
     const key='polytrack-0.6.2-ranked-recalculation-notice-v1';
     if(localStorage.getItem(key)==='1' || document.querySelector('.ranked-testing-notice') || !isStartMenuHotkeyContext()) return;
@@ -1088,7 +1114,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     if(!returning) return;
     const notice=document.createElement('div');
     notice.className='ranked-testing-notice';
-    notice.innerHTML='<span><strong>Ranked testing notice:</strong> track fields and scoring are still being corrected. Your position may move as older results are recalculated, even when your own PB has not changed.</span><button class="button" type="button">Understood</button>';
+    notice.innerHTML='<span><strong>You found Ranked early.</strong> Some older track fields are still waking up. A track may need another completed run before its updated field reaches the next snapshot, so positions can move without a new PB from you.</span><button class="button" type="button">Understood</button>';
     notice.querySelector('button').addEventListener('click',()=>{localStorage.setItem(key,'1');notice.remove();});
     document.body.appendChild(notice);
   }
@@ -1331,7 +1357,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     if (document.getElementById('overallLeaderboardPanel')) return;
     const panel = document.createElement('div');
     panel.id = 'overallLeaderboardPanel';
-    panel.innerHTML = `<div class="overall-shell"><div class="overall-top"><div class="overall-title-group"><h2>${tRankingsTitle()}</h2><span class="overall-beta">STATIC RANKED · BETA</span></div><div id="overallFreshness" class="overall-freshness">Checking ranked data</div><div class="overall-actions"><button id="overallFindMeBtn" class="button overall-action-btn" type="button">Find me</button><button id="overallHelpBtn" class="button overall-action-btn" type="button">${tr('help')}</button><button id="closeOverallLeaderboard" class="button overall-action-btn" type="button">${tr('close')}</button></div></div><div class="overall-summary"><p class="overall-sub"><strong>Lower RP is better.</strong> Place well on busy tracks and complete more of the ${TOTAL_TRACKS}-track catalog.</p><div class="overall-categories" aria-label="Ranking category"><button class="active" type="button" data-rank-category="overall">Overall</button><button type="button" data-rank-category="medals">Medals</button><button type="button" data-rank-category="tracks">Tracks</button></div></div><div id="overallOpportunities" class="overall-opportunities"><span>Building recommendations from the current snapshot</span></div><div class="overall-columns" aria-hidden="true"><span>Place</span><span>Driver</span><span>Recent movement and strongest results</span><span>Ranking</span></div><div id="overallLeaderboardList"></div><div class="overall-pager"><button id="overallPrevPage" class="button" type="button">Previous</button><span id="overallPageStatus" class="overall-page-status">Page 1</span><button id="overallNextPage" class="button" type="button">Next</button></div>${dailySpotlightMarkup()}<div id="overallProfilePopup"><div class="overall-profile-card"><button id="overallProfileClose" class="button" type="button">Close</button><div id="overallProfileContent"></div></div></div><div id="overallHelpPopup"><div class="overall-help-card"><div class="overall-help-head"><h3>Static Ranked · Work in progress</h3></div><div class="overall-help-content"><p>This is an unofficial <strong>StaticQuasar931 Unblocked Games</strong> addition to PolyTrack. Ranked is still being tuned, so positions can move while older track fields are corrected.</p><p class="overall-help-note"><strong>How RP works:</strong> lower is better. A field is everyone with a saved PB on that track. Finishing near the front of a larger field helps more than the same place in a tiny field. Official tracks receive extra weight, and completing more tracks improves confidence.</p><p><strong>Best</strong> is a racer’s highest finishing place. <strong>Strongest</strong> is the result currently helping their weighted ranking the most. Gold, silver, and bronze medals represent top 10%, top 25%, and top 50% finishes.</p><p><strong>Data status:</strong> the status beside the title continuously shows snapshot age and the next cloud check. When Firebase is slow or unavailable, saved data appears immediately and is clearly marked.</p><p><strong>Contact:</strong> <a href="https://discord.gg/DP2hM7RRhR" target="_blank" rel="noopener noreferrer" style="color:#9fe6ff">StaticQuasar931 Discord</a> is fastest, followed by <a href="mailto:StaticQuasar931Games@gmail.com" style="color:#9fe6ff">StaticQuasar931Games@gmail.com</a>.</p><div class="overall-help-actions"><a class="button overall-discord-cta" href="https://discord.gg/DP2hM7RRhR" target="_blank" rel="noopener noreferrer"><img src="images/discord.svg" alt="">Join Discord</a><button id="overallHelpClose" class="button overall-action-btn" type="button">${tr('close')}</button></div></div></div></div></div>`;
+    panel.innerHTML = `<div class="overall-shell"><div class="overall-top"><div class="overall-title-group"><h2>${tRankingsTitle()}</h2><span class="overall-beta">STATIC RANKED · BETA</span></div><button id="overallFreshness" class="overall-freshness" type="button">Checking ranked data</button><div class="overall-actions"><button id="overallFindMeBtn" class="button overall-action-btn" type="button">Find me</button><button id="overallHelpBtn" class="button overall-action-btn" type="button">How Ranked works</button><button id="closeOverallLeaderboard" class="button overall-action-btn" type="button">${tr('close')}</button></div></div><div class="overall-summary"><div class="overall-categories" aria-label="Ranking category"><button class="active" type="button" data-rank-category="overall">Overall</button><button type="button" data-rank-category="medals">Medals</button><button type="button" data-rank-category="tracks">Tracks</button><button type="button" data-rank-category="official">Official</button><button type="button" data-rank-category="community">Community</button></div></div><div class="overall-columns" aria-hidden="true"><span>Place</span><span>Driver</span><span>Form</span><span>Category</span></div><div id="overallLeaderboardList"></div>${dailySpotlightMarkup()}<div id="overallProfilePopup"><div class="overall-profile-card"><button id="overallProfileClose" class="button" type="button">Close</button><div id="overallProfileContent"></div></div></div><div id="overallHelpPopup"><div class="overall-help-card"><div class="overall-help-head"><span>STATIC RANKED GUIDE</span><h3>Race more. Place better.</h3></div><div class="overall-help-content"><section><b>Overall RP</b><p>Lower is better. Each finish is judged by your place, field size, track activity, and whether the track is official. More completed tracks make your ranking more dependable.</p></section><section><b>Track medals</b><p>Every ranked track can award a medal: top 10% is gold, top 25% is silver, and top 50% is bronze. Weekly Cup chooses one featured track to focus competition. It does not create separate medals.</p></section><section><b>Daily and Weekly</b><p>The daily goal asks for three finishes and one PB to build your streak. Weekly Cup highlights one track for seven days and shows your current medal pace from its saved field.</p></section><section><b>Snapshots and cache</b><p>Ranked uses periodic snapshots so opening the menu does not read every track. The status at the top shows when positions were calculated and when Firebase was last checked. Offline data stays usable and is labeled.</p></section><section><b>Profiles</b><p>Click any racer for their car, key results, personal comparison, and every relevant track already cached on this device. Profile viewing does not trigger dozens of track reads.</p></section><p class="overall-help-note">This unofficial StaticQuasar931 addition escaped into players’ hands before every old track field finished settling. A track may need another completed run before its recalculation becomes visible.</p><p><strong>Contact:</strong> <a href="https://discord.gg/DP2hM7RRhR" target="_blank" rel="noopener noreferrer">Discord</a> is fastest, followed by <a href="mailto:StaticQuasar931Games@gmail.com">email</a>.</p><div class="overall-help-actions"><button id="overallHelpClose" class="button overall-action-btn" type="button">Got it</button></div></div></div></div></div>`;
     document.body.appendChild(panel);
     panel.addEventListener('click', (event)=>{
       if (event.target === panel) panel.style.display='none';
@@ -1340,6 +1366,8 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
         navigator.clipboard?.writeText(copy.dataset.label || '').then(()=>{ copy.textContent='CODE COPIED'; setTimeout(()=>{ if(copy.isConnected) copy.textContent=copy.dataset.label||'RACER CODE'; },1200); }).catch(()=>{});
       }
       if (event.target.closest?.('[data-rank-retry]')) openPanel(true);
+      if (event.target.closest?.('#overallPrevPage')) changeOverallPage(-1);
+      if (event.target.closest?.('#overallNextPage')) changeOverallPage(1);
       const category=event.target.closest?.('[data-rank-category]');
       if(category){
         overallCategory=String(category.dataset.rankCategory||'overall');
@@ -1351,8 +1379,6 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
       if(racerRow) openRankedProfile(racerRow.dataset.userid);
     });
     panel.querySelector('#closeOverallLeaderboard').addEventListener('click', ()=>{ panel.style.display='none'; });
-    panel.querySelector('#overallPrevPage').addEventListener('click',()=>changeOverallPage(-1));
-    panel.querySelector('#overallNextPage').addEventListener('click',()=>changeOverallPage(1));
     panel.querySelector('#overallFindMeBtn').addEventListener('click',focusCurrentRacer);
     panel.querySelector('#overallHelpBtn').addEventListener('click', ()=>{
       const pop = panel.querySelector('#overallHelpPopup');
@@ -1361,7 +1387,9 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     panel.querySelector('#overallHelpClose').addEventListener('click', ()=>{
       const pop = panel.querySelector('#overallHelpPopup');
       if (pop) pop.style.display = 'none';
+      try { localStorage.setItem('polytrack-0.6.2-ranked-guide-seen-v1','1'); } catch {}
     });
+    panel.querySelector('#overallFreshness').addEventListener('click',()=>requestRankedRefresh());
     panel.querySelector('#overallProfileClose').addEventListener('click',()=>{panel.querySelector('#overallProfilePopup').style.display='none';});
     panel.addEventListener('keydown', (event)=>{
       if (event.key === 'Escape') {
@@ -1494,7 +1522,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     const cacheHit = !forceCloud && cached && Date.now()-Number(cached.fetchedAt||0) < TRACK_REFRESH_MS;
     if (cacheHit) {
       entries = cached.entries;
-      currentTrackLoadState={trackId:safeTrackId,status:'cache',fetchedAt:cached.serverUpdatedAt||cached.fetchedAt,nextRefreshAt:cached.fetchedAt+TRACK_REFRESH_MS};
+      currentTrackLoadState={trackId:safeTrackId,status:'cache',fetchedAt:cached.serverUpdatedAt||cached.fetchedAt,checkedAt:cached.fetchedAt,nextRefreshAt:cached.fetchedAt+TRACK_REFRESH_MS};
     }
     try {
       if (!cacheHit || forceCloud) {
@@ -1515,7 +1543,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
           }
         }
         writeTrackSnapshotCache(safeTrackId,entries,data.updatedAt||Date.now());
-        currentTrackLoadState={trackId:safeTrackId,status:'cloud',fetchedAt:Number(data.updatedAt||0)||Date.now(),nextRefreshAt:Date.now()+TRACK_REFRESH_MS};
+        currentTrackLoadState={trackId:safeTrackId,status:'cloud',fetchedAt:Number(data.updatedAt||0)||Date.now(),checkedAt:Date.now(),nextRefreshAt:Date.now()+TRACK_REFRESH_MS};
       }
     } catch (error) {
       if (cached) entries=cached.entries;
@@ -1629,19 +1657,20 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
   function annotateOverallMovement(entries, signature=''){
     const key='polytrack-0.6.2-overall-movement-v2';
     const currentSignature=String(signature||entries.map((entry)=>`${entry.userId}:${entry.rank}:${Number(entry.score||0).toFixed(4)}`).join('|'));
-    const prior=readJsonStorage(key,{signature:'',ranks:{},movements:{}}) || {signature:'',ranks:{},movements:{}};
+    const prior=readJsonStorage(key,{signature:'',ranks:{},movements:{},since:{}}) || {signature:'',ranks:{},movements:{},since:{}};
     if(prior.signature===currentSignature){
-      return entries.map((entry)=>({...entry,movement:Number(prior.movements?.[entry.userId]||0)||0,movementAt:Number(prior.updatedAt||0)||0}));
+      return entries.map((entry)=>({...entry,movement:Number(prior.movements?.[entry.userId]||0)||0,movementAt:Number(prior.since?.[entry.userId]||0)||0}));
     }
-    const ranks={}; const movements={};
+    const ranks={}; const movements={}; const since={}; const now=Date.now();
     for(const entry of entries){
       ranks[entry.userId]=entry.rank;
       const priorRank=Number(prior.ranks?.[entry.userId]||0)||0;
       const changed=priorRank>0?priorRank-entry.rank:0;
       movements[entry.userId]=changed!==0?changed:(Number(prior.movements?.[entry.userId]||0)||0);
+      since[entry.userId]=priorRank===0?0:changed!==0?now:(Number(prior.since?.[entry.userId]||0)||0);
     }
-    writeJsonStorage(key,{signature:currentSignature,ranks,movements,updatedAt:Date.now()});
-    return entries.map((entry)=>({...entry,movement:Number(movements[entry.userId]||0)||0,movementAt:Date.now()}));
+    writeJsonStorage(key,{signature:currentSignature,ranks,movements,since,updatedAt:now});
+    return entries.map((entry)=>({...entry,movement:Number(movements[entry.userId]||0)||0,movementAt:Number(since[entry.userId]||now)}));
   }
 
   function computeOverallFromTrackBoardDocs(boardDocs){
@@ -1667,6 +1696,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
         builtRevision:Math.min(latestRevision,Number(capturedRevision || 0) || 0)
       },{merge:false});
     });
+    if(localStorage.getItem('polytrack-0.6.2-ranked-guide-seen-v1')!=='1') panel.querySelector('#overallHelpPopup').style.display='flex';
   }
 
   async function claimOverallRebuildLease(d, overallRef){
@@ -1728,6 +1758,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
   let overallLoadState = {status:'idle',message:''};
   let overallLoadGeneration = 0;
   let rankedFreshnessTimer = 0;
+  let lastRankedManualRefreshAt = 0;
   function withTimeout(promise, milliseconds, message){
     return Promise.race([
       promise,
@@ -1738,7 +1769,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     let direct = [];
     const cached = readOverallSnapshotCache();
     if (!forceRefresh && cached && Date.now()-Number(cached.fetchedAt||0) < OVERALL_REFRESH_MS) {
-      overallLoadState={status:'cache',message:'Saved ranked snapshot',fetchedAt:cached.serverUpdatedAt||cached.fetchedAt,nextRefreshAt:Number(cached.fetchedAt||0)+OVERALL_REFRESH_MS};
+      overallLoadState={status:'cache',message:'Saved ranked snapshot',fetchedAt:cached.serverUpdatedAt||cached.fetchedAt,checkedAt:Number(cached.fetchedAt||0),nextRefreshAt:Number(cached.fetchedAt||0)+OVERALL_REFRESH_MS};
       return annotateOverallMovement(cached.entries,cached.signature);
     }
     overallLoadState = {status:'loading',message:'',fetchedAt:cached?.fetchedAt||0};
@@ -1759,13 +1790,13 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
       if (validDirect && (builtRevision >= revision || Date.now()-updatedAt < OVERALL_REBUILD_MIN_AGE_MS)) {
         writeOverallSnapshotCache(direct,{serverUpdatedAt:updatedAt,revision,builtRevision,signature});
         const pending=builtRevision<revision;
-        overallLoadState={status:pending?'pending':'cloud',message:pending?'New PBs received · full positions are waiting to recalculate':'Live ranked snapshot',fetchedAt:updatedAt||Date.now(),nextRefreshAt:Date.now()+OVERALL_REFRESH_MS,nextRebuildAt:pending?updatedAt+OVERALL_REBUILD_MIN_AGE_MS:0};
+        overallLoadState={status:pending?'pending':'cloud',message:pending?'New PBs received · positions are queued to recalculate':'Ranked snapshot',fetchedAt:updatedAt||Date.now(),checkedAt:Date.now(),nextRefreshAt:Date.now()+OVERALL_REFRESH_MS,nextRebuildAt:pending?updatedAt+OVERALL_REBUILD_MIN_AGE_MS:0};
         return annotateOverallMovement(direct,signature);
       }
       const overallRef=d.collection(COLLECTIONS.leaderboardsOverall).doc('main');
       const claimed=await claimOverallRebuildLease(d,overallRef);
       if(!claimed&&direct.length){
-        overallLoadState={status:'pending',message:'Another player is recalculating positions · showing the last complete snapshot',fetchedAt:updatedAt||cached?.serverUpdatedAt||cached?.fetchedAt||Date.now(),nextRefreshAt:Date.now()+OVERALL_REFRESH_MS};
+        overallLoadState={status:'pending',message:'Positions are recalculating · showing the last complete snapshot',fetchedAt:updatedAt||cached?.serverUpdatedAt||cached?.fetchedAt||Date.now(),checkedAt:Date.now(),nextRefreshAt:Date.now()+OVERALL_REFRESH_MS};
         return annotateOverallMovement(direct,signature);
       }
       const boardsSnap = await d.collection(COLLECTIONS.leaderboardsTrack).get();
@@ -1775,7 +1806,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
         await commitOverallSnapshot(d,overallRef,complete,revision,'polytrack-0.6.2-panel-rebuild');
         const rebuiltSignature=`${revision}:${revision}:${Date.now()}`;
         writeOverallSnapshotCache(complete,{serverUpdatedAt:Date.now(),revision,builtRevision:revision,signature:rebuiltSignature});
-        overallLoadState={status:'cloud',message:'Live ranked snapshot · positions recalculated',fetchedAt:Date.now(),nextRefreshAt:Date.now()+OVERALL_REFRESH_MS};
+        overallLoadState={status:'cloud',message:'Ranked snapshot · positions recalculated',fetchedAt:Date.now(),checkedAt:Date.now(),nextRefreshAt:Date.now()+OVERALL_REFRESH_MS};
         return annotateOverallMovement(complete,rebuiltSignature);
       }
       if (validDirect) {
@@ -1794,7 +1825,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
             const hydrated = await hydrateOverallProfiles(data.entries || []);
             const signature=`api:${Number(data.updatedAt||Date.now())}`;
             writeOverallSnapshotCache(hydrated,{serverUpdatedAt:data.updatedAt||Date.now(),signature});
-            overallLoadState={status:'cloud',message:'Live API snapshot',fetchedAt:Number(data.updatedAt||0)||Date.now(),nextRefreshAt:Date.now()+OVERALL_REFRESH_MS};
+            overallLoadState={status:'cloud',message:'Ranked API snapshot',fetchedAt:Number(data.updatedAt||0)||Date.now(),checkedAt:Date.now(),nextRefreshAt:Date.now()+OVERALL_REFRESH_MS};
             return annotateOverallMovement(hydrated,signature);
           }
         } catch {}
@@ -1810,11 +1841,12 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     }
   }
 
-  function movementMarkup(value, movementAt=0){
+  function movementMarkup(value, movementAt=0, rank=0){
     const movement = Number(value || 0) || 0;
-    if (movement > 0) return `<span class="overall-move up">&#9650; Moved up ${movement}</span>`;
-    if (movement < 0) return `<span class="overall-move down">&#9660; Moved down ${Math.abs(movement)}</span>`;
-    return `<span class="overall-move flat">Holding position${movementAt?` · ${ageLabel(movementAt)}`:''}</span>`;
+    const since=movementAt?` · #${Number(rank)||'?'} since ${ageLabel(movementAt).replace(' ago','')}`:'';
+    if (movement > 0) return `<span class="overall-move up">&#9650; Up ${movement}${since}</span>`;
+    if (movement < 0) return `<span class="overall-move down">&#9660; Down ${Math.abs(movement)}${since}</span>`;
+    return `<span class="overall-move flat">${movementAt?`#${Number(rank)||'?'} since ${ageLabel(movementAt).replace(' ago','')}`:`Rank #${Number(rank)||'?'} in this snapshot`}</span>`;
   }
 
   function bestTrackMarkup(entry){
@@ -1822,7 +1854,8 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     const strongest=entry?.strongestTrack?.trackId?entry.strongestTrack:null;
     const line=(label,finish)=>{const info=trackInfo(finish.trackId);const field=Math.max(Number(finish.rank||0),Number(finish.fieldSize||0)||0);return `<span class="overall-best-line" data-track-id="${escapeHtml(finish.trackId)}"><b>${label}</b> #${Number(finish.rank)} of ${field} · ${escapeHtml(info.name)}</span>`;};
     if(best?.trackId&&Number(best.rank)>0){
-      const second=strongest&&strongest.trackId!==best.trackId?line('Strongest',strongest):`<span class="overall-best-line muted">${Number(entry?.raceCount||0)>1?'Best finish is also the strongest weighted result':'Complete another track to unlock comparisons'}</span>`;
+      const alternate=(Array.isArray(entry?.bestTracks)?entry.bestTracks:[]).find((finish)=>finish?.trackId&&finish.trackId!==best.trackId);
+      const second=strongest&&strongest.trackId!==best.trackId?line('Strongest',strongest):alternate?line('Next best',alternate):`<span class="overall-best-line muted">Only one ranked track in this profile</span>`;
       return line('Best',best)+second;
     }
     return 'Complete a track to set a best finish';
@@ -1831,7 +1864,13 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
   function countryFlagMarkup(countryCode){
     const code = String(countryCode || '').trim().toUpperCase();
     if (!/^[A-Z]{2}$/.test(code)) return '';
-    return `<span class="overall-flag" title="Country: ${code}" aria-label="Country ${code}"><img src="images/countries/${code.toLowerCase()}.svg" alt="${code}" onerror="this.parentElement.style.display='none'"></span>`;
+    return `<span class="overall-flag" title="Country: ${code}" aria-label="Country ${code}"><img src="images/countries/${code.toLowerCase()}.svg" alt="${code}" loading="lazy" decoding="async" onerror="this.parentElement.replaceWith(document.createTextNode('${code}'))"></span>`;
+  }
+
+  function medalSummaryMarkup(medals,compact=false){
+    const rows=[['gold','Gold',Number(medals?.gold||0)],['silver','Silver',Number(medals?.silver||0)],['bronze','Bronze',Number(medals?.bronze||0)]].filter((row)=>row[2]>0);
+    if(!rows.length)return '';
+    return `<span class="${compact?'row-medals':'profile-medals'}">${rows.map(([kind,label,count])=>`<span class="${kind}" title="${label}: top ${kind==='gold'?'10':kind==='silver'?'25':'50'}% track finishes"><img src="images/ranked-medal.svg" alt="">${count}${compact?'':` ${label}`}</span>`).join('')}</span>`;
   }
 
   function activeRankedAccountId(){
@@ -1849,17 +1888,19 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     const safeName = escapeHtml(safeDisplayName(row?.nickname || row?.name || 'Guest',safeUserId));
     const savedCarStyle = __pt062NormalizeStyle(row?.carStyle || __pt062GetRememberedStyle(safeUserId) || '');
     const best = bestTrackMarkup(row);
-    const move = movementMarkup(row?.movement || 0,row?.movementAt||0);
+    const move = movementMarkup(row?.movement || 0,row?.movementAt||0,rank);
     const extra = showTopHint ? '<div style="font-size:13px;color:rgba(225,225,225,.9);margin-top:2px;">This could be you</div>' : '';
     const hintText = extra ? escapeHtml(String(extra).replace(/<[^>]+>/g,'').trim()) : '';
     const officialCount = Number(row?.officialCount || 0) || 0;
     const communityCount = Number(row?.communityCount || 0) || 0;
     const isSelf = safeUserId && safeUserId === activeRankedAccountId();
     const medals=row?.medals||{};
-    const categoryValue=overallCategory==='medals'?Number(medals.gold||0)+Number(medals.silver||0)+Number(medals.bronze||0):overallCategory==='tracks'?races:score;
-    const categoryUnit=overallCategory==='medals'?'MEDALS':overallCategory==='tracks'?'TRACKS':'RP · LOWER IS BETTER';
+    const medalTotal=Number(medals.gold||0)+Number(medals.silver||0)+Number(medals.bronze||0);
+    const categoryValue=overallCategory==='medals'?medalTotal:overallCategory==='tracks'?races:overallCategory==='official'?officialCount:overallCategory==='community'?communityCount:score;
+    const categoryUnit=overallCategory==='medals'?'TRACK MEDALS':overallCategory==='tracks'?'TRACKS FINISHED':overallCategory==='official'?'OFFICIAL FINISHES':overallCategory==='community'?'COMMUNITY FINISHES':'RANK POINTS';
     const categoryDisplay=overallCategory==='overall'?score.toFixed(2):String(categoryValue);
-    return `<div class="overall-entry ${rank===1?'top-1':rank===2?'top-2':rank===3?'top-3':''} ${isSelf?'is-self':''}" data-userid="${safeUserId}" tabindex="0" role="button" aria-label="View ${safeName} ranked profile" style="animation-delay:${(index*0.045).toFixed(3)}s"><span class="overall-rank">#${rank}</span><span class="overall-name">${carModelPreview(savedCarStyle,row?.carColorId||row?.carColors,safeUserId)}<span class="overall-name-label"><span class="overall-name-main">${safeName}${countryFlagMarkup(row?.countryCode)}${isSelf?'<span class="overall-you-tag">YOU</span>':''}</span>${hintText?`<span class="overall-name-hint">${hintText}</span>`:''}<span class="overall-racer-meta">${races} completed · ${Number(medals.gold||0)} gold / ${Number(medals.silver||0)} silver / ${Number(medals.bronze||0)} bronze</span></span></span><div class="overall-mid">${move}<div class="overall-best">${best}</div></div><div class="overall-stats"><div class="overall-score">${categoryDisplay}</div><div class="overall-score-unit">${categoryUnit}</div><div class="overall-races">${officialCount} official · ${communityCount} community</div></div></div>`;
+    const identityMeta=overallCategory==='overall'?`${races} of ${totalTracks} tracks`:`${score.toFixed(2)} RP`;
+    return `<div class="overall-entry ${rank===1?'top-1':rank===2?'top-2':rank===3?'top-3':''} ${isSelf?'is-self':''}" data-userid="${safeUserId}" tabindex="0" role="button" aria-label="View ${safeName} ranked profile" style="animation-delay:${(index*0.03).toFixed(3)}s"><span class="overall-rank">#${rank}</span><span class="overall-name">${carModelPreview(savedCarStyle,row?.carColorId||row?.carColors,safeUserId)}<span class="overall-name-label"><span class="overall-name-main">${safeName}${countryFlagMarkup(row?.countryCode)}${isSelf?'<span class="overall-you-tag">YOU</span>':''}</span>${hintText?`<span class="overall-name-hint">${hintText}</span>`:''}<span class="overall-racer-meta">${identityMeta}${medalTotal?` · ${medalSummaryMarkup(medals,true)}`:''}</span></span></span><div class="overall-mid">${move}<div class="overall-best">${best}</div></div><div class="overall-stats"><div class="overall-score">${categoryDisplay}</div><div class="overall-score-unit">${categoryUnit}</div></div></div>`;
   }
 
   const OVERALL_PAGE_SIZE = 15;
@@ -1870,6 +1911,8 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     const rows=[...overallEntriesCache];
     if(overallCategory==='medals') rows.sort((a,b)=>((b.medals?.gold||0)+(b.medals?.silver||0)+(b.medals?.bronze||0))-((a.medals?.gold||0)+(a.medals?.silver||0)+(a.medals?.bronze||0))||Number(b.medals?.gold||0)-Number(a.medals?.gold||0)||a.rank-b.rank);
     else if(overallCategory==='tracks') rows.sort((a,b)=>Number(b.raceCount||0)-Number(a.raceCount||0)||a.rank-b.rank);
+    else if(overallCategory==='official') rows.sort((a,b)=>Number(b.officialCount||0)-Number(a.officialCount||0)||a.rank-b.rank);
+    else if(overallCategory==='community') rows.sort((a,b)=>Number(b.communityCount||0)-Number(a.communityCount||0)||a.rank-b.rank);
     else rows.sort((a,b)=>a.rank-b.rank);
     return rows.map((entry,index)=>({...entry,categoryRank:index+1}));
   }
@@ -1879,7 +1922,8 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     const status = document.getElementById('overallPageStatus');
     const previous = document.getElementById('overallPrevPage');
     const next = document.getElementById('overallNextPage');
-    if (status) status.textContent = `${overallCategory==='overall'?'Overall':overallCategory==='medals'?'Medals':'Tracks'} · ${overallPage + 1}/${totalPages} · ${overallEntriesCache.length} racers`;
+    const label={overall:'Overall',medals:'Medals',tracks:'Tracks',official:'Official',community:'Community'}[overallCategory]||'Overall';
+    if (status) status.textContent = `${label} · ${overallPage + 1}/${totalPages} · ${overallEntriesCache.length} racers`;
     if (previous) previous.disabled = overallPage <= 0;
     if (next) next.disabled = overallPage >= totalPages - 1;
   }
@@ -1910,6 +1954,27 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     const info=trackInfo(finish.trackId);
     return `<div class="profile-result"><b>${label}</b><span>${escapeHtml(info.name)}</span><small>#${Number(finish.rank||0)} of ${Math.max(Number(finish.rank||0),Number(finish.fieldSize||0))}</small></div>`;
   }
+  function formatRaceTime(timeMs){
+    const value=Math.max(0,Math.round(Number(timeMs||0)||0));
+    const minutes=Math.floor(value/60000);
+    const seconds=Math.floor((value%60000)/1000);
+    return `${String(minutes).padStart(2,'0')}:${String(seconds).padStart(2,'0')}.${String(value%1000).padStart(3,'0')}`;
+  }
+  function cachedProfileFinishes(userId,entry){
+    const byTrack=new Map();
+    const store=trackSnapshotStore();
+    for(const [trackId,snapshot] of Object.entries(store)){
+      const rows=Array.isArray(snapshot?.entries)?snapshot.entries:[];
+      const index=rows.findIndex((row)=>cleanUserId(row.accountId||row.userId||'')===cleanUserId(userId));
+      if(index<0)continue;
+      const row=rows[index]||{};
+      byTrack.set(trackId,{trackId,rank:index+1,fieldSize:rows.length,timeMs:Number(row.timeMs||0)||Math.round(Number(row.frames||row.raceTimeFrames||0)*1000/60),cachedAt:Number(snapshot.fetchedAt||0)||0});
+    }
+    for(const finish of [...(entry?.bestTracks||[]),entry?.strongestTrack,entry?.improvementTrack]){
+      if(finish?.trackId&&!byTrack.has(finish.trackId))byTrack.set(finish.trackId,{...finish,timeMs:Number(finish.timeMs||0)||0,cachedAt:0});
+    }
+    return Array.from(byTrack.values()).sort((a,b)=>(a.rank/Math.max(1,a.fieldSize))-(b.rank/Math.max(1,b.fieldSize))||a.rank-b.rank);
+  }
   function openRankedProfile(userId){
     const entry=overallEntriesCache.find((row)=>cleanUserId(row.userId||row.accountId||'')===cleanUserId(userId));
     const popup=document.getElementById('overallProfilePopup');
@@ -1918,9 +1983,18 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     const self=overallEntriesCache.find((row)=>cleanUserId(row.userId||row.accountId||'')===activeRankedAccountId());
     const medals=entry.medals||{};
     const gap=self&&entry.userId!==self.userId?Number(self.score||0)-Number(entry.score||0):0;
-    const recommendation=self?.improvementTrack?.trackId?`Your clearest cached opportunity is ${trackInfo(self.improvementTrack.trackId).name}.`:self?'Complete another track to unlock a personal overtake target.':'Finish a ranked track to unlock comparisons.';
-    content.innerHTML=`<div class="profile-head"><div><span class="profile-kicker">RANKED PROFILE</span><h3>${escapeHtml(safeDisplayName(entry.name||'Guest',entry.userId))}${countryFlagMarkup(entry.countryCode)}</h3><p>#${entry.rank} overall · ${Number(entry.score||0).toFixed(2)} RP · ${Number(entry.raceCount||0)} tracks</p></div><div class="profile-medals"><span class="gold">${Number(medals.gold||0)} G</span><span class="silver">${Number(medals.silver||0)} S</span><span class="bronze">${Number(medals.bronze||0)} B</span></div></div><div class="profile-results">${trackSummaryLine('Best finish',entry.bestTracks?.[0],'No ranked finish')}${trackSummaryLine('Strongest weighted',entry.strongestTrack,'Needs another recalculation')}${trackSummaryLine('Biggest opportunity',entry.improvementTrack,'Complete another track')}</div><div class="profile-target"><b>${entry.userId===self?.userId?'Your next move':'How to close the gap'}</b><span>${escapeHtml(recommendation)}</span>${gap>0?`<small>You are ${gap.toFixed(2)} RP behind this racer in the saved snapshot.</small>`:''}</div><p class="profile-disclaimer">Analytics use the displayed ranked snapshot. Open the status beside the title to see exactly how old it is.</p>`;
+    const isSelf=cleanUserId(entry.userId)===cleanUserId(self?.userId);
+    const alternate=(entry.bestTracks||[]).find((finish)=>finish?.trackId&&finish.trackId!==entry.strongestTrack?.trackId);
+    const secondResult=entry.strongestTrack?.trackId&&entry.strongestTrack.trackId!==entry.bestTracks?.[0]?.trackId?entry.strongestTrack:alternate;
+    const cachedFinishes=cachedProfileFinishes(entry.userId,entry);
+    const recommendation=isSelf
+      ? entry.strongestTrack?.trackId?`Reinforce ${trackInfo(entry.strongestTrack.trackId).name} to protect your strongest contribution${entry.improvementTrack?.trackId?`, then target ${trackInfo(entry.improvementTrack.trackId).name}`:''}.`:'Set another ranked finish to establish a stronger route.'
+      : self?.improvementTrack?.trackId?`Your clearest current route toward ${safeDisplayName(entry.name||'this racer',entry.userId)} is improving ${trackInfo(self.improvementTrack.trackId).name}.`:'Set another ranked finish to unlock a useful comparison.';
+    const carStyle=__pt062NormalizeStyle(entry.carStyle||__pt062GetRememberedStyle(entry.userId)||'');
+    const trackRows=cachedFinishes.length?cachedFinishes.map((finish)=>{const info=trackInfo(finish.trackId);return `<div class="profile-track-row"><span><b>${escapeHtml(info.name)}</b><small>${info.type==='official'?'Official':'Community'}${finish.cachedAt?` · cached ${preciseAgeLabel(finish.cachedAt)}`:''}</small></span><strong>#${Number(finish.rank||0)} / ${Math.max(Number(finish.rank||0),Number(finish.fieldSize||0))}</strong><time>${finish.timeMs?formatRaceTime(finish.timeMs):'Time unavailable'}</time></div>`;}).join(''):'<div class="profile-track-empty">No per-track details are cached on this device yet.</div>';
+    content.innerHTML=`<div class="profile-hero">${carModelPreview(carStyle,entry.carColorId||entry.carColors,entry.userId)}<div class="profile-identity"><span class="profile-kicker">RANKED PROFILE</span><h3>${escapeHtml(safeDisplayName(entry.name||'Guest',entry.userId))}${countryFlagMarkup(entry.countryCode)}${isSelf?'<span class="overall-you-tag">YOU</span>':''}</h3><div class="profile-stat-strip"><span><b>#${entry.rank}</b>Overall</span><span><b>${Number(entry.score||0).toFixed(2)}</b>RP</span><span><b>${Number(entry.raceCount||0)}</b>Tracks</span><span><b>${Number(entry.officialCount||0)}</b>Official</span></div>${medalSummaryMarkup(medals)||'<p class="profile-no-medals">No track medals yet. Finish in the top half of a track field to earn bronze.</p>'}</div></div><div class="profile-results">${trackSummaryLine('Best finish',entry.bestTracks?.[0],'No ranked finish')}${trackSummaryLine(secondResult?'Next distinct result':'Strongest result',secondResult,'Only one ranked track is available')}${trackSummaryLine('Improvement target',entry.improvementTrack,'No separate target yet')}</div><div class="profile-target"><b>${isSelf?'Defend and improve':'Your comparison'}</b><span>${escapeHtml(recommendation)}</span>${gap>0?`<small>You are ${gap.toFixed(2)} RP behind this racer in the displayed snapshot.</small>`:''}</div><section class="profile-track-history"><header><div><span class="profile-kicker">TRACK BREAKDOWN</span><h4>Results available on this device</h4></div><span>${cachedFinishes.length} shown · ${Number(entry.raceCount||0)} total ranked tracks</span></header><div class="profile-track-list">${trackRows}</div></section><p class="profile-disclaimer">This list uses existing device caches and the Ranked snapshot. It deliberately does not download every track when a profile opens.</p>`;
     popup.style.display='flex';
+    hydrateOverallCarModels(content);
   }
   function renderEntries(entries){
     const listEl = document.getElementById('overallLeaderboardList');
@@ -1943,14 +2017,23 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     const el=document.getElementById('overallFreshness'); if(!el) return;
     const status=String(overallLoadState.status||'');
     el.className=`overall-freshness ${status==='stale'?'is-stale':status==='pending'?'is-pending':status==='loading'?'is-loading':''}`;
-    const parts=[overallLoadState.message || (status==='cloud'?'Live ranked snapshot':'Saved ranked snapshot')];
-    if(overallLoadState.fetchedAt) parts.push(preciseAgeLabel(overallLoadState.fetchedAt));
+    const parts=[overallLoadState.message || (status==='cloud'?'Ranked snapshot':'Saved ranked snapshot')];
+    if(overallLoadState.fetchedAt) parts.push(`calculated ${preciseAgeLabel(overallLoadState.fetchedAt)}`);
+    if(overallLoadState.checkedAt) parts.push(`cloud checked ${preciseAgeLabel(overallLoadState.checkedAt)}`);
     if(status==='cache'&&overallLoadState.nextRefreshAt>Date.now()) parts.push(`next cloud check in ${durationLabel(overallLoadState.nextRefreshAt-Date.now())}`);
     if(status==='pending'&&overallLoadState.nextRebuildAt>Date.now()) parts.push(`recalculation eligible in ${durationLabel(overallLoadState.nextRebuildAt-Date.now())}`);
     if(status==='loading') parts.push('checking now');
+    const wait=Math.max(0,120000-(Date.now()-lastRankedManualRefreshAt));
+    if(wait>0)parts.push(`manual refresh in ${durationLabel(wait)}`);
+    else parts.push('click to check now');
     el.textContent=parts.join(' · ');
     const streakEl=document.getElementById('overallStreakLeader');
     if(streakEl?.dataset.base&&streakEl.dataset.fetchedAt) streakEl.textContent=`${streakEl.dataset.base} · ${preciseAgeLabel(Number(streakEl.dataset.fetchedAt))}`;
+  }
+  function requestRankedRefresh(){
+    if(Date.now()-lastRankedManualRefreshAt<120000){updateRankedFreshness();return;}
+    lastRankedManualRefreshAt=Date.now();
+    openPanel(true);
   }
   function updateWeightedTrackInsights(entries){
     const el=document.getElementById('overallOpportunities'); if(!el) return;
@@ -2015,7 +2098,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
       if (generation !== overallLoadGeneration) return;
       const streakEl = panel.querySelector('#overallStreakLeader');
       if (streakEl) {
-        const base=streakLeader?.bestStreak?`Best streak: ${streakLeader.name} · ${streakLeader.bestStreak} days`:'No shared streak leader yet';
+        const base=streakLeader?.bestStreak?`Best streak: ${streakLeader.name} · ${streakLeader.bestStreak} ${streakLeader.bestStreak===1?'day':'days'}`:'No shared streak leader yet';
         streakEl.dataset.base=base;
         streakEl.dataset.fetchedAt=String(streakLeader?.fetchedAt||Date.now());
         streakEl.textContent=`${base} · ${preciseAgeLabel(streakLeader?.fetchedAt||Date.now())}`;
@@ -2037,7 +2120,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
 
   function makeUserPayload(profile={}){
     const accountId = String(profile.accountId || localStorage.getItem('polytrack-0.6.2-active-account-id') || guestAccountId);
-    const stickyName = safeDisplayName(localStorage.getItem(LAST_ACTIVE_NAME_KEY) || 'Guest',accountId);
+    const stickyName = safeDisplayName(getOrCreateDefaultDisplayName(accountId),accountId);
     const name = safeDisplayName(profile.nickname || profile.name || stickyName,accountId);
     const carStyle = __pt062NormalizeStyle(profile.carStyle || getDefaultCarStyle());
     return {
@@ -2090,7 +2173,8 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
       if (requestMethod === 'POST') {
         log('info','[NET201] /user POST intercepted');
         const accountId = await accountIdFromPayload(hinted, guestAccountId);
-        let safeName = await enforceSafeDisplayName(hinted.nickname || localStorage.getItem(LAST_ACTIVE_NAME_KEY) || 'Guest', accountId);
+        const previousLocalName = sanitizeDisplayName(localStorage.getItem(LAST_ACTIVE_NAME_KEY) || getOrCreateDefaultDisplayName(accountId));
+        let safeName = await enforceSafeDisplayName(hinted.nickname || getOrCreateDefaultDisplayName(accountId), accountId);
         const countryCode = typeof hinted.countryCode === 'string' ? hinted.countryCode.slice(0,8) : null;
         const carStyle = __pt062NormalizeStyle(hinted.carStyle || getDefaultCarStyle());
         try {
@@ -2109,7 +2193,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
           log('info','[FB202] profiles_public.set start',{accountId});
           const ownerUid = window.firebase.auth().currentUser?.uid || '';
           await d.collection(COLLECTIONS.profilesPublic).doc(accountId).set({accountId,ownerUid,name:safeName,nickname:safeName,countryCode,carStyle,isVerifier:false,updatedAt:nowTs},{merge:true});
-          await propagateDisplayName(d, accountId, safeName);
+          if(previousLocalName!==safeName) await updateOverallIdentity(d,accountId,safeName,countryCode,carStyle);
           log('info','[FB202] profiles_public.set ok',{accountId});
         } catch (err) { log('warn','[FB402] profiles_public.set failed', String(err && (err.message || err))); }
         return {};
@@ -2240,6 +2324,16 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     } catch { return null; }
   }
 
+  function localPersonalBestMs(trackId,accountId){
+    let best=Infinity;
+    for(const row of readLocalRaceRows()){
+      if(String(row.trackId||'')!==String(trackId||'')||String(row.accountId||row.userId||'')!==String(accountId||''))continue;
+      const value=Math.max(0,Number(row.timeMs||0)||0)||Math.round(Math.max(0,Number(row.frames||row.raceTimeFrames||0)||0)*1000/60);
+      if(value>0)best=Math.min(best,value);
+    }
+    return Number.isFinite(best)?best:0;
+  }
+
   async function mirrorRaceResult(url, body){
     const payload = parsePayload(body); if (!payload) return null;
     const accountId = await accountIdFromPayload(payload, guestAccountId);
@@ -2274,11 +2368,13 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     const warmTrack=readTrackSnapshotCache(trackId);
     const warmBest=(warmTrack?.entries||[]).find((entry)=>String(entry.accountId||entry.userId||'')===accountId);
     const warmBestMs=Math.max(0,Number(warmBest?.timeMs||0)||0)||Math.round(Math.max(0,Number(warmBest?.frames||warmBest?.raceTimeFrames||0)||0)*1000/60);
-    if(warmBestMs>0&&warmBestMs<=timeMs){
+    const localBestMs=localPersonalBestMs(trackId,accountId);
+    const knownBestMs=Math.min(...[warmBestMs,localBestMs].filter((value)=>value>0));
+    if(Number.isFinite(knownBestMs)&&knownBestMs<=timeMs){
       recordDailyActivity(trackId,timeMs,false,0);
       lastMirrorSig=mirrorSig;
       lastMirrorAt=Date.now();
-      log('info','[CACHE210] Cached PB proves this is not an improvement; skipped Firebase verification',{accountId,trackId,timeMs,currentBestMs:warmBestMs,readsSaved:'up to 2'});
+      log('info','[CACHE210] Local PB proves this is not an improvement; skipped Firebase verification',{accountId,trackId,timeMs,currentBestMs:knownBestMs,source:localBestMs>0?'local-race-history':'track-cache',readsSaved:'up to 2'});
       return {accountId,trackId,uploadId:safeRecordingId(warmBest.id||warmBest.uploadId)||null,timeMs,frames,name,carStyle,saved:false,cacheVerified:true};
     }
     try {
@@ -2408,13 +2504,14 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     const now = Date.now();
     if (now - lastRankedSpawnAt < 220) return;
     lastRankedSpawnAt = now;
+    window.__polytrackRankingsAnimated = true;
     button.classList.remove('ranked-ready','ranked-waiting');
     button.classList.remove('button-spawn');
     void button.offsetWidth;
     button.classList.add('button-spawn');
     const finish = ()=>{ try { button.classList.remove('button-spawn','ranked-waiting'); button.classList.add('ranked-ready'); } catch {} };
     button.addEventListener('animationend',finish,{once:true});
-    setTimeout(finish,900);
+    setTimeout(finish,560);
   }
 
   function cssTimeMs(value){
@@ -2429,7 +2526,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
       const style = getComputedStyle(el);
       return Math.max(latest,cssTimeMs(style.animationDelay)+cssTimeMs(style.animationDuration));
     },0);
-    const delay = Math.min(1200,Math.max(180,nativeEnd+55));
+    const delay = Math.min(460,Math.max(90,nativeEnd>0?nativeEnd+35:150));
     rankedSpawnTimer = setTimeout(()=>{
       rankedSpawnTimer=0;
       if (!rankingsSpawnedOnce && isElementVisible(container) && button.isConnected) {
@@ -2462,14 +2559,17 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
       mainButtonsWereVisible = true;
       mainButtonsShownAt = Date.now();
       nativeMenuButtonsAnimating = false;
-      rankingsSpawnedOnce = false;
-      button.classList.remove('ranked-ready','button-spawn');
-      button.classList.add('ranked-waiting');
-      scheduleRankedSpawnFallback(button,container);
+      if(!rankingsSpawnedOnce){
+        button.classList.remove('ranked-ready','button-spawn');
+        button.classList.add('ranked-waiting');
+        scheduleRankedSpawnFallback(button,container);
+      }else{
+        button.classList.remove('ranked-waiting','button-spawn');
+        button.classList.add('ranked-ready');
+      }
     } else if (!containerVisible) {
       mainButtonsWereVisible = false;
       nativeMenuButtonsAnimating = false;
-      rankingsSpawnedOnce = false;
       if (rankedSpawnTimer) { clearTimeout(rankedSpawnTimer); rankedSpawnTimer=0; }
       button.classList.remove('ranked-waiting','button-spawn');
       button.classList.add('ranked-ready');
@@ -2486,13 +2586,13 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     if (!button) {
       button = document.createElement('button');
       button.id = 'injectedRankingsBtn';
-      button.className = `button button-image ${isElementVisible(container)?'ranked-waiting':'ranked-ready'}`;
+      button.className = `button button-image ${isElementVisible(container)&&!rankingsSpawnedOnce?'ranked-waiting':'ranked-ready'}`;
       const existing = container.querySelectorAll('button.button-image');
       button.style.animationDelay = '0s';
       container.appendChild(button);
       button.addEventListener('click', (event)=>{ event.preventDefault(); event.stopPropagation(); openPanel(); });
       rankingsButtonRef = button;
-      if (isElementVisible(container)) { rankingsSpawnedOnce=false; scheduleRankedSpawnFallback(button,container); }
+      if (isElementVisible(container) && !rankingsSpawnedOnce) scheduleRankedSpawnFallback(button,container);
     }
     const rankedLabel = tRankedWord();
     if (button.dataset.rankedLabel !== rankedLabel || !button.querySelector('img[src="images/trophy.svg"]')) {
@@ -2729,9 +2829,11 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     setUnofficialMessage();
     ensurePersistentInfoBranding();
     ensureStaticDiscordLink();
+    syncNativeDiscordVisibility();
     ensureLobbyHotkeyHints();
     ensureSettingsEnhancements();
     ensureReturningPlayerNotice();
+    ensureWeeklyTrackHighlight();
   }
 
   function hideVerifiedOnlyToggle(){
@@ -2750,10 +2852,12 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     setUnofficialMessage();
     ensurePersistentInfoBranding();
     ensureStaticDiscordLink();
+    syncNativeDiscordVisibility();
     ensureLobbyHotkeyHints();
     ensureSettingsEnhancements();
     hideVerifiedOnlyToggle();
     ensureReturningPlayerNotice();
+    ensureWeeklyTrackHighlight();
     updateTrackFreshnessBanner();
   }
 
@@ -2764,8 +2868,9 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     if(!banner){banner=document.createElement('div');banner.id='polytrackTrackFreshness';banner.className='polytrack-track-freshness';document.body.appendChild(banner);}
     const state=currentTrackLoadState;
     banner.className=`polytrack-track-freshness ${state.status==='stale'?'is-stale':''}`;
-    const parts=[state.status==='cloud'?'Live track leaderboard':state.status==='stale'?'Offline track cache':'Saved track leaderboard'];
-    if(state.fetchedAt)parts.push(preciseAgeLabel(state.fetchedAt));
+    const parts=[state.status==='stale'?'Offline track cache':'Track leaderboard'];
+    if(state.fetchedAt)parts.push(`updated ${preciseAgeLabel(state.fetchedAt)}`);
+    if(state.checkedAt&&state.status==='cloud')parts.push(`checked ${preciseAgeLabel(state.checkedAt)}`);
     if(state.nextRefreshAt>Date.now())parts.push(`next cloud check in ${durationLabel(state.nextRefreshAt-Date.now())}`);
     banner.textContent=parts.join(' · ');
   }
@@ -2829,6 +2934,22 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
       },{merge:false});
     });
     log('info','[FB204] Track cache updated; global calculation deferred',{trackId,participants:trackEntries.length,revision:capturedRevision});
+  }
+
+  async function updateOverallIdentity(d,accountId,nextName,countryCode,carStyle){
+    const safeId=String(accountId||'').slice(0,128); if(!safeId)return;
+    const ref=d.collection(COLLECTIONS.leaderboardsOverall).doc('main');
+    await d.runTransaction(async(tx)=>{
+      const snap=await tx.get(ref); if(!snap.exists)return;
+      const data=snap.data()||{}; let changed=false;
+      const entries=(Array.isArray(data.entries)?data.entries:[]).map((entry)=>{
+        if(String(entry.userId||entry.accountId||'')!==safeId)return entry;
+        changed=true;
+        return {...entry,name:safeDisplayName(nextName,safeId),nickname:safeDisplayName(nextName,safeId),countryCode:String(countryCode||entry.countryCode||'').slice(0,8),carStyle:__pt062NormalizeStyle(carStyle||entry.carStyle||'')};
+      });
+      if(changed)tx.update(ref,{entries,updatedAt:Date.now()});
+    });
+    log('info','[PROFILE203] Ranked identity updated without scanning track boards',{accountId:safeId});
   }
 
   async function propagateDisplayName(d, accountId, nextName){
