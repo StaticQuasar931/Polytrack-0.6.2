@@ -268,7 +268,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
   const TRACK_CATALOG = new Map([{"id":"5803f9e963625804e3de3246d043dc7dde847aa32e991f7f7326b0453f1fa038","name":"Summer 1","type":"official"},{"id":"7eac4fee1111152cfba4d3737410264ca0f22c7f5a2211e79f0099589b8b48c0","name":"Summer 2","type":"official"},{"id":"148826aa16ffaa23dbc453b32cff05e025ddbce1773fc7733cc13d218926515a","name":"Summer 3","type":"official"},{"id":"93c7363dfea7fb09ca1d23b72cad5df43a30841d41c8ff25fb544c85bb03c7ae","name":"Summer 4","type":"official"},{"id":"7603aaeffa1989a649dfaa8e1804bed4481b49df233e377687d0669899566e52","name":"Summer 5","type":"official"},{"id":"c117823cf6788e3247b9ee63a0c091c07352bbe352c650a7790dc6718148c2fa","name":"Summer 6","type":"official"},{"id":"e4bcaca3a583bb0eb62a700a69d14e89c852f0c5bf740fca76e0519ebdfc9ab1","name":"Summer 7","type":"official"},{"id":"7239b17057127936907a805b0caa5d8c6f6c97eca9bdabf1a5312dce479629b7","name":"Winter 1","type":"official"},{"id":"99864b635d1891d22e17eb9267527a07a92c49c0f02893729fa2ded90e3ca0f9","name":"Winter 2","type":"official"},{"id":"a5341fe706097cff2a3812a3fc0d87399254557328351ae8e5c882700fc1a196","name":"Winter 3","type":"official"},{"id":"7d134c939df80c676a258266201beedd3b93572d5603f3ff4339ff8679803715","name":"Winter 4","type":"official"},{"id":"2fe4bd46b0075cc25fc770ce50adbb68447cf493c999635bb272d231811dd264","name":"Winter 5","type":"official"},{"id":"c20b4ee3cd517ca6cae7e43f047548757287fbd08ba81b97892a3ef520159a34","name":"Desert 1","type":"official"},{"id":"88647ea04145fbbbb19b55f1590e038fb0378acb2571110f02cb545cc46b0d57","name":"Desert 2","type":"official"},{"id":"2806030c503abb41a1a26fa9a570888be14296172bb273798ef0ad87a108a2ec","name":"Desert 3","type":"official"},{"id":"4697ea67b18c3f49b30a3d8884602115536650bc5435c88e3732e64d21a72d33","name":"Desert 4","type":"official"},{"id":"e5d084e06db4ab71196fea44efeceb23c8561266a78669c324a38f92581fe2db","name":"Desert 5","type":"official"},{"id":"5159a8dac6a1f397407a7b5233ad570613531f6609f7dc897490c28c9f2c7a4e","name":"Apostle","type":"community"},{"id":"1783b7b6c30e7fddf7ffb7c8a4a8a3b65c1ef6ec317d908d6eb05e6c905a57f6","name":"Stardust","type":"community"},{"id":"ddfe00045807e2786552d1e31e1363384c365487180f65d4eff1aa41e334a8e8","name":"Overclocked","type":"community"},{"id":"4058e3616fbd79b848e70037adde4f12b4413011050aaf1c9d875cdbe2e33d68","name":"Amberbound","type":"community"},{"id":"2ec74a179c8aba94354e3c6dee2a2920bedd7d84adf4d0a691f4a7453afdb1e8","name":"The Eldritch Estate","type":"community"},{"id":"76e1920a3ca015033a0b21156848def2c248c95d97ccf4aab2312a0302beefe0","name":"Star Bound","type":"community"},{"id":"81cede50724b1ee0c2ebcef973c37d620680766bd75771c5ae2728b8732c7a66","name":"Natsu","type":"community"},{"id":"76269faf38e8726671c05b2b9044f7aa3e66c4313cb4fa5d0fbb23fc8524fe9e","name":"Lenore","type":"community"},{"id":"151f12fd3ebc8942f7aaef669024a0fc149bc220f370753efe14d9371acc9c87","name":"sandy lanes II","type":"community"},{"id":"f9283607ecec9c89583205cf08715c8f504cc271eec51209bb6fc0cc37ddc915","name":"Planet 97","type":"community"},{"id":"64bf7efaed2a47dfb03a6b152e3aef637ac251b68a725a28352f3376ff1384d7","name":"Marvelous Marble","type":"community"},{"id":"520c4f511821ced30b99bceafbb02e6b7531e867126b0756e68d5e157691ef2f","name":"Arx Lucida","type":"community"},{"id":"315c9e95c567cce4feca78f5ad6e8d08d0a22dac0d56061af567b43eea3d4fa8","name":"Koselig","type":"community"},{"id":"a8913b96daceb5b615fe45aad2bb104e04eb7db140242934657111e1d1f55b89","name":"Sky Bound","type":"community"},{"id":"66f43b2d2a17f3cee05a127040ca409795058510bd3d1ac7eee224512ec532f5","name":"ShardMir","type":"community"},{"id":"fcbba504800751b0fb404a7cd1c9591befdf688ad5451ab2bc1f3651590cc5fc","name":"𝔖𝔱𝔢𝔦𝔫𝔴𝔞𝔩𝔩𝔟𝔲𝔯𝔤","type":"community"},{"id":"9ba44e8eafd0158e7e1f63e7d609db308c53f337b79e86bd0b630225451eef34","name":"𝕻𝖆𝖗𝖆𝖉𝖎𝖘𝖊 𝕻𝖆𝖑𝖆𝖈𝖊","type":"community"},{"id":"b3889905b6df31cbe302e58e975988385607771605bf6e8e8e8e31b3d2dc8aa1","name":"Sunken Glyphs","type":"community"},{"id":"3cd94552b12fb3a8ac45ca3a5e21a882b71b31c788989b396ab382afc69414ac","name":"Grimspyre","type":"community"},{"id":"3125a5f98c3b43cf1e2604e25e8504bffd714ea5843200fa8ddf0b4c58842f16","name":"Magenta Mines","type":"community"},{"id":"a2137c20c03ad1848098b47f70417cc0b0bf169010c825dc6fb82f37066808a0","name":"Cruising Altitude","type":"community"},{"id":"d03b9f7c10c95f40eed389458be51bdf2437febd5673d028da134e59e503c10b","name":"Termite Terror","type":"community"},{"id":"f68a709a296a60f6e6f73a2da670f95aca424be0f2fda5d6b608ece71f339b7c","name":"4 seasons","type":"community"},{"id":"a1f41dc9e884d5d4b1b6025158d70f0934dc4d892076e6c4b32dc3f3846b882e","name":"Lost at sea","type":"community"},{"id":"b430aad5e481caa4588e30f46352b876b62f1ba0cf7730a15efd026c91a8f32e","name":"Frosted Fjords 寒い","type":"community"},{"id":"95d8f7cbe11053dbdfaeeb2f3c3d8f53f0d45fb6abeb411a74949a4cf52f427f","name":"〜✧〜Ḽevitation〜✧〜","type":"community"},{"id":"409f26b9faf55bd0ad748177bf85ebdcfc0ddd572190e7f464f38b4a60587b7e","name":"Frozen Ramparts","type":"community"},{"id":"c1a2c5aef1029d7bbf946f08cd087dd25bad6e019a41694a48a0024c27627dc8","name":"Tangled Cliffs","type":"community"},{"id":"9e53d03f4efe86834c49ce202b528d769d9aa7a6e17732d0fc56440463956a1b","name":"Sludge Pipe Circuit","type":"community"},{"id":"b77ec520a40c4b38d3d7d653b747b1f8627c98709096568db22cd1bfec534ba6","name":"Zealot","type":"community"},{"id":"9f827673c4132828009237a03e12ead73eae87504b4708a79c6cc0858212262d","name":"Shrouded Oasis","type":"community"},{"id":"9acd9aef650c4ccc41bb01f72ed44dfaa13f2e4404d2e3466f09cc1adcd9a9c0","name":"⚙︎Cogware⚙︎","type":"community"},{"id":"62d9989187e4508f7866e7b30aa187ddbee2595df21ff5988d7fec3589f9048d","name":"Land of the Rising Sun","type":"community"},{"id":"b36162623435dc90a54f57590d2baa9f2d67a51cb12c393531f4b6d5e5528ebf","name":"Midas Metropolis","type":"community"},{"id":"74ae56c0f278a19f3b69f3903198c7b9de09981133205856b53bf6bdf8db4211","name":"Frozen In Time","type":"community"},{"id":"9f4597449906aa0c2baf9a4737406385c829533e64e9e972b25b4189f4593a54","name":"Winterfell","type":"community"},{"id":"28b658c7d10eb8b5de6f465e034e87e40f70b37e4534d8c37d1f2af06b5a36d7","name":"Launch Control","type":"community"},{"id":"470af92ed4c0a6f62028d7dea4dbc7765d1db16a3698d6a0c271be582a20a7c6","name":"Fractured Shores","type":"community"},{"id":"a6b990137e404c9ef2cb4399c463acbed8ebfa3bb82ab5315027118604c4ec03","name":"Starry Tropisx","type":"community"},{"id":"35fe02bf18312713c05528f0b7b8fd15c83dac50bcdcbd373040a16e8bfcc138","name":"Flying Dreams","type":"community"},{"id":"18b69f54f119cfb2867abded9a1574f0799a750ef94aa744d9ec8ef6b4d565ae","name":"Ghost City","type":"community"},{"id":"5aafb733c264d51b09beedc7bd7eabb5e65bdded338980fcb14ae5ce36955572","name":"Asguardia","type":"community"},{"id":"5ea46b3ae268a0196dcc59dabe88926400b56e29814658bfed06a284f837cefd","name":"MOS ESPA","type":"community"},{"id":"ab8e1c13ddf394102be1cb04adcff8411127f1e7140a216d27a94fc19b7d0428","name":"Joenail Jones","type":"community"},{"id":"86335d78d1a06d3dc81d80f84b8ac2e8f6359e9a206826e2c36f7d3f4351bea4","name":"Anubis","type":"community"},{"id":"a510bbd3341f2992a12db8a3780cb8943b6087538345d58d16602d6129742df0","name":"Natsujō","type":"community"},{"id":"8cf99166f12cbb56a9df4e022a0e9b8c78973adb929dbf1e265ebb9f99f01163","name":"Arabica","type":"community"},{"id":"33d99aad2ad5cef45b1d3afb8735c5229cfd98ac7cc24916e0da7283f7a545ce","name":"Hyperion's Sanctuary","type":"community"},{"id":"5c00f2c90bcf8230183484225d1a417e45b0ad310379acfafd4c8f1dc7345dd7","name":"Winter Hollow","type":"community"},{"id":"009fad7fcc215022c6b2dbb2b6de622f07cd88d4930b8e2b6a6b74c1f5de9e44","name":"Clay temples","type":"community"},{"id":"1ad53694ee3e96aea27afa7b64d5c29d115de88a17b69cf3fe3f5609c52b040b","name":"Las Calles","type":"community"},{"id":"2ed125037366052871fbb97da6e1bda49cfeb471f6b9c8fa799d520bdb3683e2","name":"DESERT STALLION","type":"community"},{"id":"f79b1d863d50f9e3b4489988698065c6d775ff3ec90bf91085bad05ad5ec8316","name":"Last Remnant","type":"community"},{"id":"27429a1d1bf05770851e3919af70f47c6cd7a269c67032b084fb4345f6c271ce","name":"lu muvimento","type":"community"},{"id":"f5c327cf09b90e4de8c3c1f9c910dbb7988cf15485d2e4beec3cc03aef408c5c","name":"90*RESET","type":"community"},{"id":"7451c2128cb96bc28195cf0ca0f83a46c3b55d78d434232d9de085dd1cf0ab36","name":"Opal Palace - Repolished","type":"community"},{"id":"af6ef508e1f6e47a462a6998b950ef535d1e8a38fe67ead891bf5f2de1346f43","name":"Re : Akina","type":"community"},{"id":"089f2aebcfe4f24d8dda3a8a630172d2bd13793e78c5247adfaa760743a377e1","name":"Sandline Ultimatum","type":"community"},{"id":"5e40f730509204c77e9c610839ed43addddbe0f8aa007168447f7fde38583905","name":"Malformations","type":"community"},{"id":"191737cc4d1b74949e992d99371e5c7f5fc446a716af571c6e5449b23e9f4558","name":"Snow Park","type":"community"},{"id":"39bd3fa6c3c769b298c219aee7561af35a6d856bfee14b46b0b48499e7a57ed5","name":"concrete jungle","type":"community"}]
 .map((track)=>[track.id, Object.freeze(track)]));
   function trackInfo(trackId){
-    return TRACK_CATALOG.get(String(trackId || '')) || { id:String(trackId || ''), name:'Unknown track', type:'community' };
+    return TRACK_CATALOG.get(String(trackId || '')) || { id:String(trackId || ''), name:'Custom Track', type:'custom' };
   }
   const LOG_PREFIX='[polytrack-data-0.6.2]';
   const log=(type,msg,data)=>{
@@ -283,7 +283,8 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
   const OVERALL_PB_DIRTY_KEY = 'polytrack-0.6.2-ranked-pb-dirty-v1';
   const TRACK_CACHE_KEY = 'polytrack-0.6.2-track-snapshots-v3';
   const STREAK_LEADER_CACHE_KEY = 'polytrack-0.6.2-streak-leader-v2';
-  const OVERALL_REFRESH_MS = 2 * 60 * 1000;
+  // Snapshots never expire. This only controls when another cloud check is allowed.
+  const OVERALL_REFRESH_CHECK_MS = 2 * 60 * 1000;
   const OVERALL_REBUILD_MIN_AGE_MS = 15 * 60 * 1000;
   const TRACK_REFRESH_MS = 2 * 60 * 1000;
   const MODERATION_REFRESH_MS = 10 * 60 * 1000;
@@ -302,7 +303,8 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
   function writeOverallSnapshotCache(entries,meta={}){
     const normalized = normalizeEntries(entries || []);
     if (!normalized.length) return;
-    writeJsonStorage(OVERALL_CACHE_KEY,{entries:normalized,fetchedAt:Date.now(),serverUpdatedAt:Number(meta.serverUpdatedAt||0)||0,revision:Number(meta.revision||0)||0,builtRevision:Number(meta.builtRevision||0)||0,signature:String(meta.signature||'')});
+    const prior=readJsonStorage(OVERALL_CACHE_KEY,null)||{};
+    writeJsonStorage(OVERALL_CACHE_KEY,{entries:normalized,fetchedAt:Number(meta.checkedAt||meta.fetchedAt||0)||Date.now(),serverUpdatedAt:Number(meta.serverUpdatedAt||0)||Number(prior.serverUpdatedAt||0)||0,revision:Number(meta.revision||0)||0,builtRevision:Number(meta.builtRevision||0)||0,signature:String(meta.signature||'')});
   }
   function trackSnapshotStore(){
     const value = readJsonStorage(TRACK_CACHE_KEY,{});
@@ -344,7 +346,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
   function medalForRank(rank,fieldSize=0,trackId=''){
     const place=Math.max(0,Number(rank||0)||0);
     const info=trackInfo(trackId);
-    if(Math.max(0,Number(fieldSize||0)||0)<MIN_PODIUM_FIELD_SIZE||!TRACK_CATALOG.has(String(trackId||''))||info.name==='Unknown track')return '';
+    if(Math.max(0,Number(fieldSize||0)||0)<MIN_PODIUM_FIELD_SIZE||!TRACK_CATALOG.has(String(trackId||'')))return '';
     return place===1?'gold':place===2?'silver':place===3?'bronze':'';
   }
   function medalIcon(kind){
@@ -491,13 +493,14 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
   }
   function rankedTrackWeight(trackId,fieldSize){
     const info=trackInfo(trackId);
-    const base=info.type==='official'?1.6:1;
+    const base=info.type==='official'?1.6:info.type==='community'?1:0.6;
     return base*Math.min(2,0.8+Math.log2(Math.max(1,Number(fieldSize||0))+1)/3);
   }
   function rankedWeightTitle(trackId,fieldSize,total=false){
     if(total)return 'Total weight is the combined value of completed tracks. Official tracks start at 1.6x, and larger fields raise their value.';
     const info=trackInfo(trackId);
-    return `Track weight measures how strongly this result affects Overall RP. ${info.type==='official'?'Official tracks start at 1.6x.':'Community tracks start at 1.0x.'} This field has ${Math.max(0,Number(fieldSize||0)||0)} ranked drivers.`;
+    const baseText=info.type==='official'?'Official tracks start at 1.6x.':info.type==='community'?'Community tracks start at 1.0x.':'Custom tracks start at 0.6x.';
+    return `Weight controls this track's RP impact. ${baseText} ${Math.max(0,Number(fieldSize||0)||0)} ranked drivers.`;
   }
   function dailySpotlightMarkup(){
     const daily = dailySpotlight();
@@ -506,7 +509,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     const pbProgress = `${Math.min(1,daily.pbs)}/1 PB`;
     const improvement = daily.bestPbImprovementMs > 0 ? ` · best gain ${(daily.bestPbImprovementMs/1000).toFixed(3)}s` : '';
     const streakWord=daily.streak===1?'day':'days';
-    return `<div class="overall-competition" id="overallDailyGrid"><section class="weekly-cup" title="Weekly featured track. Uses the newest saved leaderboard on this device."><span class="competition-kicker">FEATURED THIS WEEK</span><strong data-track-id="${escapeHtml(weekly.track.id)}">${escapeHtml(weekly.track.name)}</strong><span>${weekly.result}${weekly.field?` of ${weekly.field}`:''}</span></section><nav class="overall-pager" aria-label="Ranked pages"><button id="overallPrevPage" class="button" type="button" aria-label="Previous ranked page">&#8249;</button><span id="overallPageStatus" class="overall-page-status">Page 1</span><button id="overallNextPage" class="button" type="button" aria-label="Next ranked page">&#8250;</button></nav><section class="daily-card" title="Daily progress is local and resets once per UTC day."><span class="competition-kicker">DAILY GOAL</span><strong data-track-id="${escapeHtml(daily.track.id)}">${escapeHtml(daily.track.name)}</strong><span>${daily.completed?'Goal complete':`${runProgress} · ${pbProgress}`}${improvement}</span><small>${daily.streak} ${streakWord} streak</small></section><div class="overall-footer-tools"><button id="overallFreshness" class="overall-freshness" type="button" aria-label="Ranked snapshot status. Select to request a refresh.">Checking ranked data</button><label class="overall-category-select"><span>LEADERBOARD</span><select id="overallCategorySelect" aria-label="Choose ranked leaderboard"><option value="overall">Overall RP</option><option value="medals">Podium points</option><option value="tracks">Tracks finished</option><option value="weight">Total track weight</option><option value="average">Average finish</option><option value="podiumRate">Podium rate</option><option value="pbs">PBs set</option></select></label><div id="overallTrackScope" class="overall-track-scope" hidden aria-label="Track type"><button class="active" type="button" data-track-scope="all">All</button><button type="button" data-track-scope="official">Official</button><button type="button" data-track-scope="community">Community</button></div></div></div>`;
+    return `<div class="overall-competition" id="overallDailyGrid"><div class="overall-challenge-stack"><section class="weekly-cup" title="Weekly featured track. Uses the newest saved leaderboard on this device."><span class="competition-kicker">FEATURED THIS WEEK</span><strong data-track-id="${escapeHtml(weekly.track.id)}">${escapeHtml(weekly.track.name)}</strong><span>${weekly.result}${weekly.field?` of ${weekly.field}`:''}</span></section><section class="daily-card" title="Daily progress is local and resets once per UTC day."><span class="competition-kicker">DAILY GOAL</span><strong data-track-id="${escapeHtml(daily.track.id)}">${escapeHtml(daily.track.name)}</strong><span>${daily.completed?'Goal complete':`${runProgress} · ${pbProgress}`}${improvement}</span><small>${daily.streak} ${streakWord} streak</small></section></div><nav class="overall-pager" aria-label="Ranked pages"><button id="overallPrevPage" class="button" type="button" aria-label="Previous ranked page">&#8249;</button><span id="overallPageStatus" class="overall-page-status">Page 1</span><button id="overallNextPage" class="button" type="button" aria-label="Next ranked page">&#8250;</button></nav><div class="overall-footer-right"><label class="overall-category-select"><span>LEADERBOARD</span><select id="overallCategorySelect" aria-label="Choose ranked leaderboard"><option value="overall">Overall RP</option><option value="medals">Podium points</option><option value="tracks">Tracks finished</option><option value="weight">Total track weight</option><option value="average">Average finish</option><option value="podiumRate">Podium rate</option><option value="pbs">PBs set</option></select></label><div id="overallTrackScope" class="overall-track-scope" hidden aria-label="Track type"><button class="active" type="button" data-track-scope="all">All</button><button type="button" data-track-scope="official">Official</button><button type="button" data-track-scope="community">Community</button></div><button id="overallFreshness" class="overall-freshness" type="button" aria-label="Ranked snapshot status. Select to request a refresh.">Checking ranked data</button></div></div>`;
   }
   function normalizeCarColorId(colors){
     const fallback = 'ffffff8ec7ff28346a212b58';
@@ -1051,6 +1054,9 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
       .overall-racer-meta{font-size:15px!important}.overall-weight-chip,.overall-best-line em{font-size:16px!important;font-weight:700!important}.overall-score{font-size:35px!important}.overall-best-line{font-size:15px!important}.overall-footer-tools{grid-template-columns:minmax(280px,1fr) auto minmax(280px,1fr)!important}.overall-footer-tools .overall-freshness{grid-column:1;text-align:left!important}.overall-footer-tools .overall-category-select{grid-column:2;justify-self:center;min-width:310px!important}.overall-footer-tools .overall-track-scope{grid-column:3;justify-self:end}.overall-category-select span{font-weight:700}.overall-category-select select{font-size:17px!important}.overall-competition section{min-height:54px!important}.overall-competition section strong{font-size:20px!important}.profile-track-thumb{object-fit:contain!important;object-position:center!important;filter:none!important;transform:none!important}.profile-trend{display:flex;align-items:center;gap:10px;margin-top:8px;color:#bcd0ed;font-size:12px}.profile-rank-trend{display:flex;align-items:end;gap:3px;height:56px;padding:3px 6px;background:#142451}.profile-rank-trend i{display:block;width:8px;min-height:8px;background:#7ee7ff}.profile-trend-empty{color:#91a8c9}.profile-medals>span{background:#12234f!important;font-weight:700}.profile-medals .gold{color:#ffe381!important}.profile-medals .silver{color:#f5f8ff!important}.profile-medals .bronze{color:#ffc09b!important}.polytrack-track-freshness{display:flex;flex-direction:column;gap:2px}.polytrack-track-freshness strong{font-weight:700}.polytrack-track-freshness span{font-size:.82em;color:#a9c8ea}.record.sq-pb-podium{position:relative;padding-right:50px!important}.record.sq-pb-podium.gold{color:#ffe381!important}.record.sq-pb-podium.silver{color:#edf4ff!important}.record.sq-pb-podium.bronze{color:#ffb786!important}
       @media(max-width:900px){.overall-shell{width:100vw!important}.overall-entry{grid-template-columns:68px minmax(0,1fr) minmax(180px,.8fr) 145px!important;padding-right:10px}.overall-car-model{width:88px!important}.overall-footer-tools{grid-template-columns:1fr 1fr!important}.overall-footer-tools .overall-freshness{grid-column:1/-1;grid-row:2}.overall-footer-tools .overall-category-select{grid-column:1;grid-row:1;min-width:0!important;width:100%}.overall-footer-tools .overall-track-scope{grid-column:2;grid-row:1;justify-self:end}.overall-competition{grid-template-columns:1fr 1fr!important}.overall-competition .overall-pager{grid-column:1/-1!important;grid-row:1}.sq-settings-grid{grid-template-columns:1fr}.profile-result .profile-track-thumb{width:78px!important;height:58px!important}.profile-result{grid-template-columns:78px minmax(0,1fr) 72px!important}}
       @media(max-width:620px){.overall-entry{grid-template-columns:56px minmax(0,1fr) 106px!important;grid-template-areas:'rank name stats' 'rank mid stats'}.overall-mid{max-width:none}.overall-best-line:nth-child(2){display:none}.overall-score{font-size:25px!important}.overall-score-unit{font-size:10px!important}.overall-competition{grid-template-columns:1fr 1fr!important}.overall-competition .overall-pager{grid-column:1/-1!important}.overall-competition section strong{font-size:16px!important}.overall-competition section>span:not(.competition-kicker){font-size:11px!important}.overall-footer-tools{grid-template-columns:1fr!important}.overall-footer-tools .overall-category-select,.overall-footer-tools .overall-track-scope,.overall-footer-tools .overall-freshness{grid-column:1!important;justify-self:stretch!important}.overall-footer-tools .overall-category-select{grid-row:1}.overall-footer-tools .overall-track-scope{grid-row:2}.overall-footer-tools .overall-freshness{grid-row:3}.sq-settings-grid .sq-setting-row>p{font-size:17px}.profile-trend{align-items:flex-start;flex-direction:column}.profile-rank-trend{width:100%}.polytrack-track-freshness{font-size:13px!important}}
+      .overall-competition{grid-template-columns:minmax(300px,.95fr) minmax(320px,.8fr) minmax(320px,.95fr)!important;grid-template-rows:auto!important;align-items:stretch}.overall-challenge-stack{display:grid;grid-template-rows:1fr 1fr;gap:5px;min-width:0}.overall-challenge-stack section{min-height:43px!important}.overall-footer-right{display:grid;grid-template-columns:1fr;grid-template-rows:auto auto auto;gap:5px;align-content:center;padding:7px 9px;background:#101a3d;border-top:1px solid rgba(126,231,255,.24)}.overall-footer-right .overall-category-select{grid-row:1;width:100%;justify-content:space-between;background:#1b2d61}.overall-footer-right .overall-category-select select{flex:1;min-width:0}.overall-footer-right .overall-track-scope{grid-row:2;justify-content:center}.overall-footer-right .overall-freshness{grid-row:3;max-width:none;min-height:38px;padding:7px 10px;background:#192858;font-size:calc(14px * var(--sq-ui-scale,1));text-align:center}.overall-pager{align-self:center}.profile-stat-strip span{min-height:72px!important;padding:10px 12px!important;font-size:calc(14px * var(--sq-ui-scale,1))!important;line-height:1.18}.profile-stat-strip b{font-size:calc(25px * var(--sq-ui-scale,1))!important}.profile-achievement-row{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:9px 0;padding:9px 13px;background:#162858;border-left:4px solid #7ee7ff;color:#bcd0ed;font-size:calc(16px * var(--sq-ui-scale,1))}.profile-achievement-row .profile-medals{margin:0!important;gap:9px!important}.profile-achievement-row .profile-medals>span{padding:8px 12px!important;font-size:calc(16px * var(--sq-ui-scale,1))}.profile-achievement-row .profile-medals img{width:26px!important;height:26px!important}.profile-track-image-frame{position:relative;display:flex!important;align-items:center;justify-content:center;width:82px;height:82px;overflow:hidden;background:#14234f;box-shadow:inset 0 0 0 1px rgba(126,231,255,.2)}.profile-track-placeholder{position:absolute!important;inset:auto!important;color:#6f88aa;font-size:9px;letter-spacing:.8px}.profile-track-image-frame .profile-track-thumb{position:relative;width:100%!important;height:100%!important;object-fit:contain!important;object-position:center!important;background:#14234f}.profile-result{grid-template-columns:92px minmax(0,1fr) 76px!important}.profile-result>.profile-track-image-frame{width:88px;height:88px}.profile-track-row{grid-template-columns:88px minmax(180px,1fr) 110px 150px 112px!important;min-height:92px!important}.profile-track-row .profile-track-image-frame{width:82px;height:82px}.polytrack-track-freshness{padding:12px 17px!important;min-width:290px;font-size:calc(16px * var(--sq-ui-scale,1))!important}.polytrack-track-freshness strong{font-size:calc(19px * var(--sq-ui-scale,1))}.polytrack-track-freshness span{font-size:calc(16px * var(--sq-ui-scale,1))!important}.sq-settings-grid{gap:10px 14px!important;margin:12px!important}.sq-settings-grid .sq-setting-row{min-height:82px!important;padding:10px 13px!important}.sq-settings-grid .sq-setting-row>p{font-size:calc(20px * var(--sq-ui-scale,1))!important}.sq-setting-range{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(180px,.8fr);gap:14px}.sq-range-controls{display:flex;align-items:center;gap:10px}.sq-range-controls input{width:100%;accent-color:#7ee7ff}.sq-range-controls output{min-width:48px;color:#8ff1ff;font-size:18px}.row-medal-denominator{border:0!important;color:#b9cce8}.overall-entry[data-category='medals'] .overall-best-line,#overallLeaderboardPanel[data-category='medals'] .overall-best-line{font-size:17px!important}.overall-name-main{font-size:calc(27px * var(--sq-ui-scale,1))!important}.overall-best-line{font-size:calc(15px * var(--sq-ui-scale,1))!important}.overall-score{font-size:calc(35px * var(--sq-ui-scale,1))!important}.profile-identity h3{font-size:calc(42px * var(--sq-ui-scale,1))!important}
+      @media(max-width:900px){.overall-competition{grid-template-columns:1fr 1fr!important}.overall-challenge-stack{grid-column:1}.overall-pager{grid-column:2!important;grid-row:1!important}.overall-footer-right{grid-column:1/-1;grid-template-columns:1fr 1fr}.overall-footer-right .overall-category-select{grid-column:1;grid-row:1}.overall-footer-right .overall-track-scope{grid-column:2;grid-row:1}.overall-footer-right .overall-freshness{grid-column:1/-1;grid-row:2}.profile-track-row{grid-template-columns:76px minmax(140px,1fr) 90px 130px!important}.profile-track-image-frame{width:70px!important;height:70px!important}}
+      @media(max-width:620px){.overall-competition{grid-template-columns:1fr!important}.overall-challenge-stack,.overall-pager,.overall-footer-right{grid-column:1!important}.overall-pager{grid-row:auto!important}.overall-footer-right{grid-template-columns:1fr}.overall-footer-right .overall-category-select,.overall-footer-right .overall-track-scope,.overall-footer-right .overall-freshness{grid-column:1;grid-row:auto}.profile-achievement-row{align-items:flex-start;flex-direction:column}.profile-track-row{grid-template-columns:62px minmax(110px,1fr) 104px!important}.profile-track-image-frame{width:56px!important;height:56px!important}.sq-setting-range{grid-template-columns:1fr}.polytrack-track-freshness{min-width:0;font-size:14px!important}.polytrack-track-freshness strong{font-size:17px}.polytrack-track-freshness span{font-size:14px!important}}
       @keyframes staticGlowPulse{0%{box-shadow:0 0 0 rgba(255,255,255,0.0),0 0 10px rgba(0,255,255,0.12)}50%{box-shadow:0 0 14px rgba(255,255,255,0.18),0 0 22px rgba(255,0,255,0.18)}100%{box-shadow:0 0 0 rgba(255,255,255,0.0),0 0 10px rgba(0,255,255,0.12)}}
       @keyframes rankLoading{0%{transform:translateX(-130%)}55%{transform:translateX(120%)}100%{transform:translateX(310%)}}
       @keyframes staticSheen{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
@@ -1211,6 +1217,8 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     document.documentElement.classList.toggle('sq-hide-racer-codes', localStorage.getItem('polytrack-0.6.2-show-racer-codes') === '0');
     document.documentElement.classList.toggle('sq-hide-pb-podiums', localStorage.getItem('polytrack-0.6.2-pb-podiums') === '0');
     document.documentElement.classList.toggle('sq-compact-ranked', localStorage.getItem('polytrack-0.6.2-compact-ranked') === '1');
+    const fontScale=Math.max(85,Math.min(125,Number(localStorage.getItem('polytrack-0.6.2-ui-font-scale')||100)||100));
+    document.documentElement.style.setProperty('--sq-ui-scale',String(fontScale/100));
     if (extrasWereHidden !== !showExtras) window.dispatchEvent(new Event('sq-preferences-changed'));
   }
 
@@ -1246,6 +1254,24 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     wrapper.appendChild(button);
     row.append(text,wrapper);
     render();
+    return row;
+  }
+
+  function settingsRange(label,storageKey,min,max,step,defaultValue){
+    const row=document.createElement('div');
+    row.className='setting sq-setting-row sq-setting-range';
+    const text=document.createElement('p');
+    text.textContent=label;
+    const controls=document.createElement('div');
+    controls.className='sq-range-controls';
+    const input=document.createElement('input');
+    input.type='range'; input.min=String(min); input.max=String(max); input.step=String(step);
+    input.value=String(Math.max(min,Math.min(max,Number(localStorage.getItem(storageKey)||defaultValue)||defaultValue)));
+    input.setAttribute('aria-label',label);
+    const output=document.createElement('output');
+    const render=()=>{output.textContent=`${input.value}%`;localStorage.setItem(storageKey,input.value);applyUiPreferences();};
+    input.addEventListener('input',render);
+    controls.append(input,output); row.append(text,controls); render();
     return row;
   }
 
@@ -1370,6 +1396,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     grid.appendChild(settingsToggle('Featured track highlight','polytrack-0.6.2-featured-highlight',true));
     grid.appendChild(settingsToggle('Expanded Ranked details','polytrack-0.6.2-compact-ranked',true,true));
     grid.appendChild(settingsToggle('Public racer codes in Ranked','polytrack-0.6.2-show-racer-codes',true));
+    grid.appendChild(settingsRange('Custom UI text size','polytrack-0.6.2-ui-font-scale',85,125,5,100));
     container.prepend(section);
   }
 
@@ -1518,6 +1545,37 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     });
   }
 
+  function normalizedFinishSamples(entry){
+    const seen=new Set(); const out=[];
+    for(const finish of [...(Array.isArray(entry?.bestTracks)?entry.bestTracks:[]),...(Array.isArray(entry?.weightedResults)?entry.weightedResults:[]),entry?.strongestTrack,entry?.improvementTrack]){
+      const normalized=normalizeFinishSummary(finish);
+      if(!normalized?.trackId||seen.has(normalized.trackId))continue;
+      seen.add(normalized.trackId); out.push(normalized);
+    }
+    return out;
+  }
+  function fallbackAverageFinish(entry){
+    const explicit=Number(entry?.averageFinish||0)||0;
+    if(explicit>0)return explicit;
+    const finishes=normalizedFinishSamples(entry).filter((finish)=>finish.rank>0);
+    return finishes.length?finishes.reduce((sum,finish)=>sum+finish.rank,0)/finishes.length:Math.max(0,Number(entry?.bestTrackRank||0)||0);
+  }
+  function fallbackPodiumRate(entry){
+    const explicit=Number(entry?.podiumRate||0)||0;
+    if(explicit>0)return Math.min(100,explicit);
+    const medals=fallbackMedals(entry);
+    const podiums=Number(medals.gold||0)+Number(medals.silver||0)+Number(medals.bronze||0);
+    return Number(entry?.raceCount||0)>0?Math.min(100,podiums/Number(entry.raceCount)*100):0;
+  }
+  function fallbackMedals(entry){
+    const saved={gold:Math.max(0,Number(entry?.medals?.gold||0)||0),silver:Math.max(0,Number(entry?.medals?.silver||0)||0),bronze:Math.max(0,Number(entry?.medals?.bronze||0)||0)};
+    const derived={gold:0,silver:0,bronze:0};
+    for(const finish of normalizedFinishSamples(entry)){
+      const medal=medalForRank(finish.rank,finish.fieldSize,finish.trackId);
+      if(medal)derived[medal]++;
+    }
+    return {gold:Math.max(saved.gold,derived.gold),silver:Math.max(saved.silver,derived.silver),bronze:Math.max(saved.bronze,derived.bronze)};
+  }
   function normalizeEntries(entries){
     if (!Array.isArray(entries)) return [];
     return entries.map((entry, i) => ({
@@ -1539,19 +1597,17 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
       improvementTrack: normalizeFinishSummary(entry.improvementTrack),
       weightedResults: (Array.isArray(entry.weightedResults) ? entry.weightedResults : []).slice(0,2).map(normalizeFinishSummary),
       opportunityTracks: (Array.isArray(entry.opportunityTracks) ? entry.opportunityTracks : []).slice(0,3).map(normalizeFinishSummary),
-      medals: {
-        gold:Math.max(0,Number(entry.medals?.gold||0)||0),
-        silver:Math.max(0,Number(entry.medals?.silver||0)||0),
-        bronze:Math.max(0,Number(entry.medals?.bronze||0)||0)
-      },
+      medals: fallbackMedals(entry),
       officialCount: Number(entry.officialCount || 0) || 0,
       communityCount: Number(entry.communityCount || 0) || 0,
+      customCount: Number(entry.customCount || 0) || 0,
       weightedTracks: Number(entry.weightedTracks || 0) || 0,
-      averageFinish: Math.max(0,Number(entry.averageFinish || 0) || 0),
-      podiumRate: Math.max(0,Math.min(100,Number(entry.podiumRate || 0) || 0)),
-      pbCount: Math.max(0,Number(entry.pbCount || 0) || 0),
+      averageFinish: Math.max(0,fallbackAverageFinish(entry)),
+      podiumRate: Math.max(0,fallbackPodiumRate(entry)),
+      pbCount: Math.max(Number(entry.raceCount||0)||0,Number(entry.pbCount || 0) || 0),
       movement: Number(entry.movement || 0) || 0,
       movementAt: Number(entry.movementAt || 0) || 0,
+      rankSince: Math.max(0,Number(entry.rankSince||0)||0),
       scoreDelta: Number(entry.scoreDelta || 0) || 0,
       accountCreatedAt: Math.max(0,Number(entry.accountCreatedAt||0)||0),
       carStyle: __pt062NormalizeStyle(entry.carStyle || __pt062GetRememberedStyle(entry.userId || entry.accountId) || ''),
@@ -1725,14 +1781,14 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
       entries.sort((a,b)=>a.timeMs-b.timeMs);
       const fieldSize = entries.length;
       const info = trackInfo(trackId);
-      const typeWeight = info.type === 'official' ? 1.6 : 1;
+      const typeWeight = info.type === 'official' ? 1.6 : info.type === 'community' ? 1 : 0.6;
       const participationWeight = Math.min(2, 0.8 + Math.log2(fieldSize + 1) / 3);
       const trackWeight = typeWeight * participationWeight;
       entries.forEach((entry, idx)=>{
         const rank = idx + 1;
         const placementRatio = (rank - 0.5) / (fieldSize + 1);
         const placementCost = 1 + 99 * placementRatio;
-        const cur = userAgg.get(entry.userId) || { userId:entry.userId,name:entry.name,countryCode:entry.countryCode||'',carColors:entry.carColors||null,carId:entry.carId||null,carStyle:entry.carStyle||'',accountCreatedAt:Number(entry.createdAt||0)||0,weightedCost:0,weightSum:0,tracks:new Set(),officialCount:0,communityCount:0,pbCount:0,finishes:[] };
+        const cur = userAgg.get(entry.userId) || { userId:entry.userId,name:entry.name,countryCode:entry.countryCode||'',carColors:entry.carColors||null,carId:entry.carId||null,carStyle:entry.carStyle||'',accountCreatedAt:Number(entry.createdAt||0)||0,weightedCost:0,weightSum:0,tracks:new Set(),officialCount:0,communityCount:0,customCount:0,pbCount:0,finishes:[] };
         cur.name = entry.name || cur.name;
         cur.countryCode = entry.countryCode || cur.countryCode;
         cur.carColors = normalizeCarColorId(entry.carColors || cur.carColors || '');
@@ -1746,7 +1802,9 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
         const contribution=Math.max(0,(100-placementCost)*trackWeight);
         const improvementValue=placementCost*trackWeight;
         cur.finishes.push({trackId,rank,fieldSize,weight:Number(trackWeight.toFixed(3)),contribution:Number(contribution.toFixed(3)),improvementValue:Number(improvementValue.toFixed(3)),timeMs:entry.timeMs,timingVersion:2,type:info.type});
-        if (info.type === 'official') cur.officialCount += 1; else cur.communityCount += 1;
+        if (info.type === 'official') cur.officialCount += 1;
+        else if (info.type === 'community') cur.communityCount += 1;
+        else cur.customCount += 1;
         userAgg.set(entry.userId, cur);
       });
     }
@@ -1775,7 +1833,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
       const podiums=medals.gold+medals.silver+medals.bronze;
       const averageFinish=played?u.finishes.reduce((sum,finish)=>sum+finish.rank,0)/played:0;
       const podiumRate=played?podiums/played*100:0;
-      return {userId:u.userId,name:safeDisplayName(getLastKnownName(u.userId)||u.name,u.userId),countryCode:String(u.countryCode||'').slice(0,8).toUpperCase(),carId:String(u.carId||'').slice(0,64)||null,carColors:normalizeCarColorId(u.carColors||'ffffff8ec7ff28346a212b58'),carColorId:normalizeCarColorId(u.carColors||'ffffff8ec7ff28346a212b58'),carStyle:__pt062NormalizeStyle(u.carStyle||__pt062GetRememberedStyle(u.userId)||''),accountCreatedAt:Number(u.accountCreatedAt||0)||0,score,raceCount:played,totalTracks:TOTAL_TRACKS,officialCount:u.officialCount,communityCount:u.communityCount,weightedTracks:Number(u.weightSum.toFixed(3)),averageFinish:Number(averageFinish.toFixed(2)),podiumRate:Number(podiumRate.toFixed(1)),pbCount:u.pbCount,bestTracks,strongestTrack,improvementTrack,weightedResults,opportunityTracks,medals,bestTrackId:primaryBest.trackId||null,bestTrackRank:Number(primaryBest.rank||0)||0,bestTrackField:Number(primaryBest.fieldSize||0)||0,rankModel:'participation-v4',timingVersion:2};
+      return {userId:u.userId,name:safeDisplayName(getLastKnownName(u.userId)||u.name,u.userId),countryCode:String(u.countryCode||'').slice(0,8).toUpperCase(),carId:String(u.carId||'').slice(0,64)||null,carColors:normalizeCarColorId(u.carColors||'ffffff8ec7ff28346a212b58'),carColorId:normalizeCarColorId(u.carColors||'ffffff8ec7ff28346a212b58'),carStyle:__pt062NormalizeStyle(u.carStyle||__pt062GetRememberedStyle(u.userId)||''),accountCreatedAt:Number(u.accountCreatedAt||0)||0,score,raceCount:played,totalTracks:TOTAL_TRACKS,officialCount:u.officialCount,communityCount:u.communityCount,customCount:u.customCount,weightedTracks:Number(u.weightSum.toFixed(3)),averageFinish:Number(averageFinish.toFixed(2)),podiumRate:Number(podiumRate.toFixed(1)),pbCount:Math.max(u.pbCount,played),bestTracks,strongestTrack,improvementTrack,weightedResults,opportunityTracks,medals,bestTrackId:primaryBest.trackId||null,bestTrackRank:Number(primaryBest.rank||0)||0,bestTrackField:Number(primaryBest.fieldSize||0)||0,rankModel:'participation-v4',timingVersion:2};
     }).sort((a,b)=>a.score-b.score || b.raceCount-a.raceCount || String(a.userId).localeCompare(String(b.userId)))
       .slice(0,200)
       .map((row, idx)=>({ rank: idx + 1, ...row }));
@@ -1787,7 +1845,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     const currentSignature=String(signature||entries.map((entry)=>`${entry.userId}:${entry.rank}:${Number(entry.score||0).toFixed(4)}`).join('|'));
     const prior=readJsonStorage(key,{signature:'',ranks:{},scores:{},movements:{},scoreDeltas:{},since:{},history:{}}) || {signature:'',ranks:{},scores:{},movements:{},scoreDeltas:{},since:{},history:{}};
     if(prior.signature===currentSignature){
-      return entries.map((entry)=>({...entry,movement:Number(prior.movements?.[entry.userId]||0)||0,scoreDelta:Number(prior.scoreDeltas?.[entry.userId]||0)||0,movementAt:Number(prior.since?.[entry.userId]||0)||0,rankHistory:Array.isArray(prior.history?.[entry.userId])?prior.history[entry.userId]:[]}));
+      return entries.map((entry)=>({...entry,movement:Number(prior.movements?.[entry.userId]||0)||0,scoreDelta:Number(prior.scoreDeltas?.[entry.userId]||0)||0,movementAt:Number(entry.rankSince||prior.since?.[entry.userId]||0)||0,rankHistory:Array.isArray(prior.history?.[entry.userId])?prior.history[entry.userId]:[]}));
     }
     const ranks={}; const scores={}; const movements={}; const scoreDeltas={}; const since={}; const history={}; const now=Date.now();
     for(const entry of entries){
@@ -1803,7 +1861,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
       history[entry.userId]=[...priorHistory,{rank:entry.rank,at:now}].filter((point,index,array)=>index===array.length-1||Number(point.rank)!==Number(array[index+1]?.rank)).slice(-12);
     }
     writeJsonStorage(key,{signature:currentSignature,ranks,scores,movements,scoreDeltas,since,history,updatedAt:now});
-    return entries.map((entry)=>({...entry,movement:Number(movements[entry.userId]||0)||0,scoreDelta:Number(scoreDeltas[entry.userId]||0)||0,movementAt:Number(since[entry.userId]||0)||0,rankHistory:history[entry.userId]||[]}));
+    return entries.map((entry)=>({...entry,movement:Number(movements[entry.userId]||0)||0,scoreDelta:Number(scoreDeltas[entry.userId]||0)||0,movementAt:Number(entry.rankSince||since[entry.userId]||0)||0,rankHistory:history[entry.userId]||[]}));
   }
 
   function computeOverallFromTrackBoardDocs(boardDocs){
@@ -1849,13 +1907,19 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
   }
 
   function mergeOverallSnapshots(previousEntries, rebuiltEntries){
+    const previousByUser = new Map(normalizeEntries(previousEntries || []).map((entry)=>[String(entry.userId),entry]));
     const byUser = new Map();
     for (const entry of normalizeEntries(previousEntries || [])) byUser.set(String(entry.userId),entry);
     for (const entry of normalizeEntries(rebuiltEntries || [])) byUser.set(String(entry.userId),entry);
     return Array.from(byUser.values())
       .sort((a,b)=>Number(a.score||Infinity)-Number(b.score||Infinity) || Number(b.raceCount||0)-Number(a.raceCount||0) || String(a.userId).localeCompare(String(b.userId)))
       .slice(0,200)
-      .map((entry,index)=>({...entry,rank:index+1,rankModel:String(entry.rankModel||'participation-v3')}));
+      .map((entry,index)=>{
+        const rank=index+1;
+        const previous=previousByUser.get(String(entry.userId));
+        const rankSince=previous&&Number(previous.rank)===rank?(Number(previous.rankSince||0)||Date.now()):Date.now();
+        return {...entry,rank,rankSince,rankModel:String(entry.rankModel||'participation-v4')};
+      });
   }
 
   async function hydrateOverallProfiles(entries){
@@ -1881,8 +1945,8 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
   async function fetchOverallEntries(forceRefresh=false){
     let direct = [];
     const cached = readOverallSnapshotCache();
-    if (!forceRefresh && cached && Date.now()-Number(cached.fetchedAt||0) < OVERALL_REFRESH_MS) {
-      overallLoadState={status:'cache',message:'Saved ranked snapshot',fetchedAt:cached.serverUpdatedAt||cached.fetchedAt,checkedAt:Number(cached.fetchedAt||0),nextRefreshAt:Number(cached.fetchedAt||0)+OVERALL_REFRESH_MS};
+    if (!forceRefresh && cached && Date.now()-Number(cached.fetchedAt||0) < OVERALL_REFRESH_CHECK_MS) {
+      overallLoadState={status:'cache',message:'Saved ranked snapshot',fetchedAt:cached.serverUpdatedAt||cached.fetchedAt,serverUpdatedAt:cached.serverUpdatedAt||0,checkedAt:Number(cached.fetchedAt||0),nextRefreshAt:Number(cached.fetchedAt||0)+OVERALL_REFRESH_CHECK_MS};
       return annotateOverallMovement(cached.entries,cached.signature);
     }
     overallLoadState = {status:'loading',message:'',fetchedAt:cached?.fetchedAt||0};
@@ -1903,37 +1967,37 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
       if (validDirect && (builtRevision >= revision || Date.now()-updatedAt < OVERALL_REBUILD_MIN_AGE_MS)) {
         writeOverallSnapshotCache(direct,{serverUpdatedAt:updatedAt,revision,builtRevision,signature});
         const pending=builtRevision<revision;
-        overallLoadState={status:pending?'pending':'cloud',message:pending?'New PBs received · positions are queued to recalculate':'Ranked snapshot',fetchedAt:updatedAt||Date.now(),checkedAt:Date.now(),nextRefreshAt:Date.now()+OVERALL_REFRESH_MS,nextRebuildAt:pending?updatedAt+OVERALL_REBUILD_MIN_AGE_MS:0};
+        overallLoadState={status:pending?'pending':'cloud',message:pending?'New PBs received · positions are queued to recalculate':'Ranked snapshot',fetchedAt:updatedAt||Date.now(),serverUpdatedAt:updatedAt||0,checkedAt:Date.now(),nextRefreshAt:Date.now()+OVERALL_REFRESH_CHECK_MS,nextRebuildAt:pending?updatedAt+OVERALL_REBUILD_MIN_AGE_MS:0};
         return annotateOverallMovement(direct,signature);
       }
       const rebuildBackoff=Number(readJsonStorage(OVERALL_REBUILD_BACKOFF_KEY,0)||0);
       if(!forceRefresh&&direct.length&&rebuildBackoff>Date.now()){
         writeOverallSnapshotCache(direct,{serverUpdatedAt:updatedAt,revision,builtRevision,signature});
-        overallLoadState={status:'stale',message:'Saved rankings · recalculation is waiting for server access',fetchedAt:updatedAt||Date.now(),checkedAt:Date.now(),nextRefreshAt:Date.now()+OVERALL_REFRESH_MS};
+        overallLoadState={status:'stale',message:'Saved rankings · recalculation is waiting for server access',fetchedAt:updatedAt||Date.now(),checkedAt:Date.now(),nextRefreshAt:Date.now()+OVERALL_REFRESH_CHECK_MS};
         return annotateOverallMovement(direct,signature);
       }
       const overallRef=d.collection(COLLECTIONS.leaderboardsOverall).doc('main');
       const claimed=await claimOverallRebuildLease(d,overallRef);
       if(!claimed&&direct.length){
-        overallLoadState={status:'pending',message:'Positions are recalculating · showing the last complete snapshot',fetchedAt:updatedAt||cached?.serverUpdatedAt||cached?.fetchedAt||Date.now(),checkedAt:Date.now(),nextRefreshAt:Date.now()+OVERALL_REFRESH_MS};
+        overallLoadState={status:'pending',message:'Positions are recalculating · showing the last complete snapshot',fetchedAt:updatedAt||cached?.serverUpdatedAt||cached?.fetchedAt||Date.now(),checkedAt:Date.now(),nextRefreshAt:Date.now()+OVERALL_REFRESH_CHECK_MS};
         return annotateOverallMovement(direct,signature);
       }
       const boardsSnap = await d.collection(COLLECTIONS.leaderboardsTrack).get();
       const rebuilt = computeOverallFromTrackBoardDocs(boardsSnap.docs);
       if (rebuilt.length) {
-        const complete = validDirect ? mergeOverallSnapshots(direct,rebuilt) : rebuilt;
+        const complete = mergeOverallSnapshots(validDirect ? direct : [],rebuilt);
         try {
           await commitOverallSnapshot(d,overallRef,complete,revision,'polytrack-0.6.2-panel-rebuild');
         } catch (commitError) {
           writeJsonStorage(OVERALL_REBUILD_BACKOFF_KEY,Date.now()+30*60*1000);
           writeOverallSnapshotCache(complete,{serverUpdatedAt:updatedAt||Date.now(),revision,builtRevision,signature:`local:${revision}:${Date.now()}`});
-          overallLoadState={status:'stale',message:'Recalculated locally · server snapshot update was denied',fetchedAt:updatedAt||Date.now(),checkedAt:Date.now(),nextRefreshAt:Date.now()+OVERALL_REFRESH_MS};
+          overallLoadState={status:'stale',message:'Recalculated locally · server snapshot update was denied',fetchedAt:updatedAt||Date.now(),checkedAt:Date.now(),nextRefreshAt:Date.now()+OVERALL_REFRESH_CHECK_MS};
           log('warn','[FB409] Overall snapshot commit denied; local result retained',String(commitError&&(commitError.code||commitError.message||commitError)));
           return annotateOverallMovement(complete,`local:${revision}`);
         }
         const rebuiltSignature=`${revision}:${revision}:${Date.now()}`;
         writeOverallSnapshotCache(complete,{serverUpdatedAt:Date.now(),revision,builtRevision:revision,signature:rebuiltSignature});
-        overallLoadState={status:'cloud',message:'Ranked snapshot · positions recalculated',fetchedAt:Date.now(),checkedAt:Date.now(),nextRefreshAt:Date.now()+OVERALL_REFRESH_MS};
+        overallLoadState={status:'cloud',message:'Ranked snapshot · positions recalculated',fetchedAt:Date.now(),checkedAt:Date.now(),nextRefreshAt:Date.now()+OVERALL_REFRESH_CHECK_MS};
         return annotateOverallMovement(complete,rebuiltSignature);
       }
       if (validDirect) {
@@ -1952,7 +2016,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
             const hydrated = await hydrateOverallProfiles(data.entries || []);
             const signature=`api:${Number(data.updatedAt||Date.now())}`;
             writeOverallSnapshotCache(hydrated,{serverUpdatedAt:data.updatedAt||Date.now(),signature});
-            overallLoadState={status:'cloud',message:'Ranked API snapshot',fetchedAt:Number(data.updatedAt||0)||Date.now(),checkedAt:Date.now(),nextRefreshAt:Date.now()+OVERALL_REFRESH_MS};
+            overallLoadState={status:'cloud',message:'Ranked API snapshot',fetchedAt:Number(data.updatedAt||0)||Date.now(),checkedAt:Date.now(),nextRefreshAt:Date.now()+OVERALL_REFRESH_CHECK_MS};
             return annotateOverallMovement(hydrated,signature);
           }
         } catch {}
@@ -1960,8 +2024,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
       const fallback=direct.length?direct:(cached?.entries||[]);
       if(fallback.length){
         const fallbackTime=cached?.serverUpdatedAt||cached?.fetchedAt||Date.now();
-        writeOverallSnapshotCache(fallback,{serverUpdatedAt:fallbackTime,signature:cached?.signature||'fallback'});
-        overallLoadState={status:'stale',message:'Cloud unavailable · showing saved rankings',fetchedAt:fallbackTime,checkedAt:Date.now(),nextRefreshAt:Date.now()+OVERALL_REFRESH_MS};
+        overallLoadState={status:'stale',message:'Cloud unavailable · showing saved rankings',fetchedAt:fallbackTime,checkedAt:Number(cached?.fetchedAt||0),nextRefreshAt:Date.now()+OVERALL_REFRESH_CHECK_MS};
         log('warn','[CACHE300] Ranked cloud refresh failed; using durable snapshot',String(error&&(error.code||error.message||error)));
         return annotateOverallMovement(fallback,cached?.signature||'fallback');
       }
@@ -1974,15 +2037,15 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
   function movementMarkup(value, movementAt=0, rank=0){
     const movement = Number(value || 0) || 0;
     const held=movementAt?durationLabel(Date.now()-Number(movementAt)):'';
-    const observed=held?`This device first observed this move ${held} ago.`:'This device has not saved a movement time yet.';
-    if (movement > 0) return `<span class="overall-move up" title="${observed}">&#9650; Up ${movement}${held?` · ${held}`:''}</span>`;
-    if (movement < 0) return `<span class="overall-move down" title="${observed}">&#9660; Down ${Math.abs(movement)}${held?` · ${held}`:''}</span>`;
-    return `<span class="overall-move flat" title="No saved position change">No recent movement</span>`;
+    const shared=held?`Rank held for ${held}. This timestamp is saved with the shared Ranked snapshot.`:'A shared rank duration is not available yet.';
+    if (movement > 0) return `<span class="overall-move up" title="${shared}">&#9650; Up ${movement}${held?` · ${held} at rank`:''}</span>`;
+    if (movement < 0) return `<span class="overall-move down" title="${shared}">&#9660; Down ${Math.abs(movement)}${held?` · ${held} at rank`:''}</span>`;
+    return `<span class="overall-move flat" title="${shared}">${held?`${held} at this rank`:'No recent movement'}</span>`;
   }
   function categoryContextMarkup(entry,races,officialCount,communityCount,medals){
-    if(overallCategory==='medals')return `<span class="overall-move flat">${Number(medals.gold||0)+Number(medals.silver||0)+Number(medals.bronze||0)} eligible podiums</span>`;
-    if(overallCategory==='tracks'||overallCategory==='official'||overallCategory==='community')return `<span class="overall-move flat">${officialCount} official${communityCount?` · ${communityCount} community`:''}</span>`;
-    if(overallCategory==='weight')return `<span class="overall-move flat" title="${escapeHtml(rankedWeightTitle('',0,true))}">${Number(entry.weightedTracks||0).toFixed(2)}x combined weight</span>`;
+    if(overallCategory==='medals')return '';
+    if(overallCategory==='tracks'||overallCategory==='official'||overallCategory==='community')return `<span class="overall-move flat">${Number(entry.score||0).toFixed(2)} overall RP</span>`;
+    if(overallCategory==='weight')return `<span class="overall-move flat" title="${escapeHtml(rankedWeightTitle('',0,true))}">${races} weighted result${races===1?'':'s'}</span>`;
     if(overallCategory==='average')return `<span class="overall-move flat">Average across ${races} tracks</span>`;
     if(overallCategory==='podiumRate')return `<span class="overall-move flat">${Number(medals.gold||0)+Number(medals.silver||0)+Number(medals.bronze||0)} podiums from ${races} tracks</span>`;
     if(overallCategory==='pbs')return `<span class="overall-move flat">Accepted Ranked improvements</span>`;
@@ -2059,9 +2122,10 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     const categoryUnit=overallCategory==='medals'?'PODIUM POINTS':overallCategory==='tracks'?'TRACKS FINISHED':overallCategory==='official'?'OFFICIAL FINISHES':overallCategory==='community'?'COMMUNITY FINISHES':overallCategory==='weight'?'TOTAL WEIGHT':overallCategory==='average'?'AVERAGE FINISH':overallCategory==='podiumRate'?'PODIUM RATE':overallCategory==='pbs'?'PERSONAL BESTS':'RANK POINTS';
     const scoreTitle=overallCategory==='medals'?'Podium points: first 9, second 3, third 1':overallCategory==='overall'?'Overall RP. Lower is better.':overallCategory==='weight'?rankedWeightTitle('',0,true):overallCategory==='average'?'Average finishing place across ranked tracks. Lower is better.':overallCategory==='podiumRate'?'Eligible podiums divided by ranked tracks.':overallCategory==='pbs'?'Accepted personal-best improvements saved to Ranked.':'Completed ranked tracks';
     const categoryDisplay=overallCategory==='overall'||overallCategory==='weight'||overallCategory==='average'?Number(categoryValue).toFixed(2):overallCategory==='podiumRate'?`${Number(categoryValue).toFixed(1)}%`:String(categoryValue);
-    const participationMeta=[officialCount?`<span>${officialCount} official</span>`:'',communityCount?`<span>${communityCount} community</span>`:''].filter(Boolean).join('');
+    const customCount=Number(row?.customCount||0)||0;
+    const participationMeta=[officialCount?`<span>${officialCount} official</span>`:'',communityCount?`<span>${communityCount} community</span>`:'',customCount?`<span>${customCount} custom</span>`:''].filter(Boolean).join('');
     const medalMeta=medalSummaryMarkup(medals,true);
-    const identityMeta=overallCategory==='overall'?`${participationMeta}<span class="overall-weight-chip" title="${escapeHtml(rankedWeightTitle('',0,true))}">${Number(row?.weightedTracks||0).toFixed(2)}x</span>`:overallCategory==='medals'?`${medalMeta}<span>${races} ranked tracks</span>`:overallCategory==='tracks'||overallCategory==='official'||overallCategory==='community'?`${participationMeta}<span>${score.toFixed(2)} RP</span>`:overallCategory==='weight'?`${participationMeta}<span>${score.toFixed(2)} RP</span>`:overallCategory==='average'?`<span>${races} finishes</span>${participationMeta}`:overallCategory==='podiumRate'?`${medalMeta}<span>${races} eligible finishes</span>`:`<span>${score.toFixed(2)} RP</span><span>${races} ranked tracks</span>`;
+    const identityMeta=overallCategory==='overall'?`${participationMeta}<span class="overall-weight-chip" title="${escapeHtml(rankedWeightTitle('',0,true))}">${Number(row?.weightedTracks||0).toFixed(2)}x</span>`:overallCategory==='medals'?`${medalMeta}<span class="row-medal-denominator">/ ${races} ranked tracks</span>`:overallCategory==='tracks'||overallCategory==='official'||overallCategory==='community'?`<span>${score.toFixed(2)} overall RP</span>`:overallCategory==='weight'?`${participationMeta}<span>${score.toFixed(2)} RP</span>`:overallCategory==='average'?`<span>${races} finishes</span>${participationMeta}`:overallCategory==='podiumRate'?`${medalMeta}<span>/ ${races} tracks</span>`:`<span>${score.toFixed(2)} RP</span><span>${races} ranked tracks</span>`;
     return `<div class="overall-entry ${rank===1?'top-1':rank===2?'top-2':rank===3?'top-3':''} ${isSelf?'is-self':''}" data-userid="${safeUserId}" tabindex="0" role="button" aria-label="View ${safeName} ranked profile" style="animation-delay:${(index*0.03).toFixed(3)}s"><span class="overall-rank">#${rank}</span><span class="overall-name">${carModelPreview(savedCarStyle,row?.carColorId||row?.carColors,safeUserId)}<span class="overall-name-label"><span class="overall-name-main">${safeName}${countryFlagMarkup(row?.countryCode)}${isSelf?'<span class="overall-you-tag">YOU</span>':''}</span>${hintText?`<span class="overall-name-hint">${hintText}</span>`:''}<span class="overall-racer-meta">${identityMeta}</span></span></span><div class="overall-mid">${move}<div class="overall-best">${best}</div></div><div class="overall-stats" title="${scoreTitle}"><div class="overall-score">${categoryDisplay}</div><div class="overall-score-unit">${categoryUnit}</div></div></div>`;
   }
 
@@ -2117,10 +2181,13 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
   }
   function trackThumbnailMarkup(trackId){
     const info=trackInfo(trackId);
+    const nativeTitle=[...document.querySelectorAll('.track-title p')].find((node)=>String(node.textContent||'').trim()===info.name);
+    const nativeSource=nativeTitle?.closest('button')?.querySelector('img:not(.environment)')?.getAttribute('src')||'';
     const basic=String(info.name||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
     const slug=info.type==='official'?basic.replace(/[^a-z0-9]+/g,''):basic.replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'');
-    if(!slug)return '';
-    return `<img class="profile-track-thumb" src="tracks/${info.type==='official'?'official':'community'}/thumbnails/${slug}.png" alt="" loading="lazy" decoding="async" onerror="this.style.display='none'">`;
+    const fallback=slug&&info.type!=='custom'?`tracks/${info.type==='official'?'official':'community'}/thumbnails/${slug}.png`:'';
+    const source=nativeSource||fallback;
+    return `<span class="profile-track-image-frame"><span class="profile-track-placeholder">${info.type==='custom'?'CUSTOM':'TRACK'}</span>${source?`<img class="profile-track-thumb" src="${escapeHtml(source)}" alt="${escapeHtml(info.name)} thumbnail" loading="lazy" decoding="async" onerror="this.style.display='none'">`:''}</span>`;
   }
   function focusTrackFromRanked(trackId){
     const id=String(trackId||'');
@@ -2190,11 +2257,15 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
       const fieldSize=Math.max(rank,rows.length);
       byTrack.set(trackId,{trackId,rank,fieldSize,timeMs:entryTimeMs(row),weight:Number(row.weight||0)||rankedTrackWeight(trackId,fieldSize),cachedAt:Number(snapshot.serverUpdatedAt||snapshot.fetchedAt||0)||0});
     }
+    const overallFreshAt=Number(overallLoadState.serverUpdatedAt||overallLoadState.fetchedAt||readOverallSnapshotCache()?.serverUpdatedAt||readOverallSnapshotCache()?.fetchedAt||0)||0;
     for(const finish of [...(entry?.bestTracks||[]),...(entry?.weightedResults||[]),...(entry?.opportunityTracks||[]),entry?.strongestTrack,entry?.improvementTrack]){
-      if(finish?.trackId&&!byTrack.has(finish.trackId)){
-        const fieldSize=Math.max(Number(finish.rank||0),Number(finish.fieldSize||0));
-        const summaryTime=canonicalRaceTimeMs(finish,Number(entry?.timingVersion||0)<2);
-        byTrack.set(finish.trackId,{...finish,timeMs:summaryTime,weight:Number(finish.weight||0)||rankedTrackWeight(finish.trackId,fieldSize),cachedAt:0});
+      if(!finish?.trackId)continue;
+      const fieldSize=Math.max(Number(finish.rank||0),Number(finish.fieldSize||0));
+      const summaryTime=canonicalRaceTimeMs(finish,Number(entry?.timingVersion||0)<2);
+      const current=byTrack.get(finish.trackId);
+      if(!current||overallFreshAt>=Number(current.cachedAt||0)){
+        const localTime=current?.local&&current.timeMs&&(!summaryTime||current.timeMs<summaryTime)?current.timeMs:summaryTime;
+        byTrack.set(finish.trackId,{...current,...finish,timeMs:localTime,weight:Number(finish.weight||0)||rankedTrackWeight(finish.trackId,fieldSize),cachedAt:overallFreshAt,local:Boolean(current?.local)});
       }
     }
     if(cleanUserId(userId)===activeRankedAccountId()){
@@ -2217,10 +2288,11 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     const weight=Number(finish.weight||0)||rankedTrackWeight(finish.trackId,field);
     return `<button class="profile-inline-track" type="button" data-track-id="${escapeHtml(finish.trackId)}" title="${escapeHtml(`Open ${info.name}. ${comparison} ${rankedWeightTitle(finish.trackId,field)}`.trim())}"><strong>${escapeHtml(info.name)}</strong></button>`;
   }
-  function profileTrackComparison(finish,entryFinishes,selfFinishes){
+  function profileTrackComparison(finish,entryFinishes,selfFinishes,isSelf=false){
     if(!finish?.trackId)return '';
     const theirs=(entryFinishes||[]).find((row)=>row.trackId===finish.trackId)||finish;
     const yours=(selfFinishes||[]).find((row)=>row.trackId===finish.trackId);
+    if(isSelf)return Number(theirs.rank||0)>0?`You: #${theirs.rank} of ${theirs.fieldSize}${theirs.timeMs?` at ${formatRaceTime(theirs.timeMs)}`:''}.`:`Your local PB: ${formatRaceTime(theirs.timeMs)}.`;
     const theirText=Number(theirs.rank||0)>0?`Racer: #${theirs.rank} of ${theirs.fieldSize}${theirs.timeMs?` at ${formatRaceTime(theirs.timeMs)}`:''}.`:'';
     const yourText=yours?(Number(yours.rank||0)>0?` You: #${yours.rank} of ${yours.fieldSize}${yours.timeMs?` at ${formatRaceTime(yours.timeMs)}`:''}.`:` Your local PB: ${formatRaceTime(yours.timeMs)}.`):' You have no loaded result here.';
     return `${theirText}${yourText}`;
@@ -2256,6 +2328,25 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     }
     return Array.from(unique.values()).sort((a,b)=>Number(b.improvementValue||b.weight||0)-Number(a.improvementValue||a.weight||0)||Number(b.fieldSize||0)-Number(a.fieldSize||0)).slice(0,2);
   }
+  function profileComparisonRoutes(viewedFinishes,selfFinishes,defending=false){
+    const viewed=new Map((viewedFinishes||[]).filter((finish)=>finish?.trackId).map((finish)=>[finish.trackId,finish]));
+    const self=new Map((selfFinishes||[]).filter((finish)=>finish?.trackId).map((finish)=>[finish.trackId,finish]));
+    const candidates=[];
+    for(const trackId of new Set([...viewed.keys(),...self.keys()])){
+      const theirs=viewed.get(trackId); const yours=self.get(trackId);
+      const theirRatio=theirs&&Number(theirs.rank||0)>0?Number(theirs.rank)/Math.max(1,Number(theirs.fieldSize||0)):Infinity;
+      const yourRatio=yours&&Number(yours.rank||0)>0?Number(yours.rank)/Math.max(1,Number(yours.fieldSize||0)):Infinity;
+      const weight=Number(yours?.weight||theirs?.weight||0)||rankedTrackWeight(trackId,Math.max(Number(yours?.fieldSize||0),Number(theirs?.fieldSize||0),1));
+      if(defending){
+        if(!yours||!theirs||yourRatio>theirRatio)continue;
+        candidates.push({...yours,weight,routeGap:theirRatio-yourRatio});
+      }else{
+        if(!theirs||yourRatio<=theirRatio)continue;
+        candidates.push({...theirs,weight,routeGap:Number.isFinite(yourRatio)?yourRatio-theirRatio:2,unplayed:!yours});
+      }
+    }
+    return candidates.sort((a,b)=>defending?Number(a.routeGap||0)-Number(b.routeGap||0)||b.weight-a.weight:Number(b.routeGap||0)-Number(a.routeGap||0)||b.weight-a.weight).slice(0,2);
+  }
   function openRankedProfile(userId){
     const entry=overallEntriesCache.find((row)=>cleanUserId(row.userId||row.accountId||'')===cleanUserId(userId));
     const popup=document.getElementById('overallProfilePopup');
@@ -2272,16 +2363,17 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     const cachedFinishes=cachedProfileFinishes(entry.userId,entry);
     const opportunities=profileOpportunityCandidates(entry,cachedFinishes,isSelf);
     const selfFinishes=self?cachedProfileFinishes(self.userId,self):[];
-    const selfOpportunities=self?profileOpportunityCandidates(self,selfFinishes,true):[];
-    const comparisonFor=(finish)=>profileTrackComparison(finish,cachedFinishes,selfFinishes);
+    const comparisonFor=(finish)=>profileTrackComparison(finish,cachedFinishes,selfFinishes,isSelf);
     const targetTitle=isSelf?(Number(entry.rank)===1?'Hold first place':Number(entry.rank)===overallEntriesCache.length?'Start climbing':'Climb the board'):Number(entry.rank)<Number(self?.rank||Infinity)?`Overtake #${entry.rank}`:`Protect your lead over #${entry.rank}`;
+    const challengeRoutes=!isSelf&&Number(entry.rank)<Number(self?.rank||Infinity)?profileComparisonRoutes(cachedFinishes,selfFinishes,false):[];
+    const defendRoutes=!isSelf&&Number(entry.rank)>Number(self?.rank||Infinity)?profileComparisonRoutes(cachedFinishes,selfFinishes,true):[];
     const recommendation=isSelf
       ? `${opportunities.length?`Improve ${opportunities.map((finish)=>profileTrackLink(finish,comparisonFor(finish))).join(' or ')}.`:'Finish another ranked track to open a new route.'}${entry.strongestTrack?.trackId?` Keep ${profileTrackLink(entry.strongestTrack,comparisonFor(entry.strongestTrack))} strong.`:''}`
       : Number(entry.rank)<Number(self?.rank||Infinity)
-        ? selfOpportunities.length?`Improve ${selfOpportunities.map((finish)=>profileTrackLink(finish,profileTrackComparison(finish,cachedFinishes,selfFinishes))).join(' or ')} to challenge <strong>${escapeHtml(safeDisplayName(entry.name||'this racer',entry.userId))}</strong>.`:'Load more track results to build an overtake route.'
-        : `${entry.strongestTrack?.trackId?`Protect your advantage by strengthening ${profileTrackLink(self?.improvementTrack||entry.strongestTrack,profileTrackComparison(self?.improvementTrack||entry.strongestTrack,cachedFinishes,selfFinishes))}.`:'Keep setting ranked finishes to widen the gap.'}`;
+        ? challengeRoutes.length?`Challenge <strong>${escapeHtml(safeDisplayName(entry.name||'this racer',entry.userId))}</strong> through ${challengeRoutes.map((finish)=>profileTrackLink(finish,profileTrackComparison(finish,cachedFinishes,selfFinishes))).join(' or ')}.`:'Load more shared track results to build an accurate overtake route.'
+        : defendRoutes.length?`Protect your lead on ${defendRoutes.map((finish)=>profileTrackLink(finish,profileTrackComparison(finish,cachedFinishes,selfFinishes))).join(' or ')}.`:'No loaded head-to-head track currently needs defending.';
     const carStyle=__pt062NormalizeStyle(entry.carStyle||__pt062GetRememberedStyle(entry.userId)||'');
-    const trackRows=cachedFinishes.length?cachedFinishes.map((finish)=>{const info=trackInfo(finish.trackId);const kind=medalForRank(finish.rank,finish.fieldSize,finish.trackId);const place=Number(finish.rank||0)>0?`#${Number(finish.rank)} of ${Math.max(Number(finish.rank),Number(finish.fieldSize||0))}`:'Local PB';const age=finish.cachedAt?ageLabel(finish.cachedAt):finish.local?'local PB':'saved snapshot';const weight=Number(finish.weight||0)||rankedTrackWeight(finish.trackId,finish.fieldSize);return `<button class="profile-track-row" type="button" data-track-id="${escapeHtml(finish.trackId)}" aria-label="Open ${escapeHtml(info.name)}. ${place}. Weight ${weight.toFixed(2)}."><span class="profile-track-visual">${trackThumbnailMarkup(finish.trackId)}</span><span class="profile-track-name"><b>${escapeHtml(info.name)}</b><small>${info.type==='official'?'Official · 1.6x base':'Community · 1.0x base'}</small></span><span class="profile-track-weight" title="Final weight from track type and field size"><b>${weight.toFixed(2)}x</b><small>${escapeHtml(age)}</small></span><span class="profile-track-result ${kind||''}">${kind?`<img src="${medalIcon(kind)}" alt="${kind} medal">`:''}<b>${place}</b><small>${kind?`${kind} podium · ${finish.fieldSize} drivers`:`${finish.fieldSize||0} drivers`}</small></span><time>${finish.timeMs?formatRaceTime(finish.timeMs):'Time not loaded'}</time></button>`;}).join(''):'<div class="profile-track-empty">No track details have been loaded on this device yet.</div>';
+    const trackRows=cachedFinishes.length?cachedFinishes.map((finish)=>{const info=trackInfo(finish.trackId);const kind=medalForRank(finish.rank,finish.fieldSize,finish.trackId);const place=Number(finish.rank||0)>0?`#${Number(finish.rank)} of ${Math.max(Number(finish.rank),Number(finish.fieldSize||0))}`:'Local PB';const age=finish.cachedAt?ageLabel(finish.cachedAt):finish.local?'local PB':'saved snapshot';const weight=Number(finish.weight||0)||rankedTrackWeight(finish.trackId,finish.fieldSize);const typeText=info.type==='official'?'Official · 1.6x base':info.type==='community'?'Community · 1.0x base':'Custom · 0.6x base';return `<button class="profile-track-row" type="button" data-track-id="${escapeHtml(finish.trackId)}" aria-label="Open ${escapeHtml(info.name)}. ${place}. Weight ${weight.toFixed(2)}."><span class="profile-track-visual">${trackThumbnailMarkup(finish.trackId)}</span><span class="profile-track-name"><b>${escapeHtml(info.name)}</b><small>${typeText}</small></span><span class="profile-track-weight" title="Final weight from track type and field size"><b>${weight.toFixed(2)}x</b><small>${escapeHtml(age)}</small></span><span class="profile-track-result ${kind||''}">${kind?`<img src="${medalIcon(kind)}" alt="${kind} medal">`:''}<b>${place}</b><small>${kind?`${kind} podium · ${finish.fieldSize} drivers`:`${finish.fieldSize||0} drivers`}</small></span><time>${finish.timeMs?formatRaceTime(finish.timeMs):'Time not loaded'}</time></button>`;}).join(''):'<div class="profile-track-empty">No track details have been loaded on this device yet.</div>';
     const rankIndex=overallEntriesCache.findIndex((row)=>cleanUserId(row.userId)===cleanUserId(entry.userId));
     const above=rankIndex>0?overallEntriesCache[rankIndex-1]:null;
     const below=rankIndex>=0&&rankIndex<overallEntriesCache.length-1?overallEntriesCache[rankIndex+1]:null;
@@ -2293,9 +2385,10 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     const accountSince=accountCreatedAt?new Date(accountCreatedAt).toLocaleDateString(undefined,{year:'numeric',month:'short',day:'numeric'}):'Unknown';
     const scoreDelta=Number(entry.scoreDelta||0)||0;
     const scoreChange=scoreDelta<0?`Improved ${Math.abs(scoreDelta).toFixed(2)} RP`:scoreDelta>0?`Lost ${scoreDelta.toFixed(2)} RP`:'No saved RP change';
-    const participation=`${Number(entry.officialCount||0)} official${Number(entry.communityCount||0)?` · ${Number(entry.communityCount)} community`:''}`;
+    const participation=`${Number(entry.officialCount||0)} official${Number(entry.communityCount||0)?` · ${Number(entry.communityCount)} community`:''}${Number(entry.customCount||0)?` · ${Number(entry.customCount)} custom`:''}`;
     const uid=escapeHtml(entry.userId);
-    content.innerHTML=`<div class="profile-hero">${carModelPreview(carStyle,entry.carColorId||entry.carColors,entry.userId)}<div class="profile-identity"><span class="profile-kicker">RANKED PROFILE</span><h3>${escapeHtml(safeDisplayName(entry.name||'Guest',entry.userId))}${countryFlagMarkup(entry.countryCode)}${isSelf?'<span class="overall-you-tag">YOU</span>':''}</h3><div class="profile-stat-strip"><span title="${escapeHtml(rankTooltip)}"><b>#${entry.rank}</b>Overall RP rank</span><span title="${escapeHtml(tracksTooltip)}"><b>${Number(entry.raceCount||0)}/${TOTAL_TRACKS}</b>Ranked tracks</span><span title="Completed track types"><b>${escapeHtml(participation)}</b>Participation</span><span title="${escapeHtml(scoreChange)}"><b>${Number(entry.score||0).toFixed(2)}</b>Overall RP</span><span title="${escapeHtml(rankedWeightTitle('',0,true))}"><b>${Number(entry.weightedTracks||0).toFixed(2)}x</b>Total weight</span><span title="Earliest saved ranked result"><b>${escapeHtml(accountSince)}</b>Ranked since</span></div><div class="profile-trend"><b>Observed rank trend</b>${rankTrendMarkup(entry)}</div>${medalSummaryMarkup(medals)||'<p class="profile-no-medals">No eligible track podiums yet.</p>'}</div></div><div class="profile-results">${trackSummaryLine('Best finish',best,'No ranked finish')}${trackSummaryLine(weightedLabel,secondResult||weightedResults[0],'Only one ranked track is available')}${trackSummaryLine('Best opportunity',opportunities[0],'No separate target yet')}${trackSummaryLine('Next opportunity',opportunities[1],'More results unlock another route')}</div><div class="profile-target"><b>${escapeHtml(targetTitle)}</b><span>${recommendation}</span>${Math.abs(gap)>0?`<small>${Math.abs(gap).toFixed(2)} RP separates these positions.</small>`:''}</div><section class="profile-track-history"><header><div><span class="profile-kicker">TRACK BREAKDOWN</span><h4>Loaded results</h4></div><span>${cachedFinishes.length} loaded on this device · ${Number(entry.raceCount||0)} counted in Ranked</span></header><div class="profile-track-head"><button type="button" data-profile-sort="track" data-profile-user="${uid}" class="${profileSort==='track'?'active':''}">Track${profileSortArrow('track')}</button><button type="button" data-profile-sort="weight" data-profile-user="${uid}" class="${profileSort==='weight'?'active':''}">Weight & age${profileSortArrow('weight')}</button><button type="button" data-profile-sort="place" data-profile-user="${uid}" class="${profileSort==='place'?'active':''}">Result${profileSortArrow('place')}</button><button type="button" data-profile-sort="time" data-profile-user="${uid}" class="${profileSort==='time'?'active':''}">Time${profileSortArrow('time')}</button></div><div class="profile-track-list">${trackRows}</div></section><p class="profile-disclaimer">If a track leaderboard has not been loaded, its time may not be listed.</p>`;
+    const achievements=medalSummaryMarkup(medals)||'<p class="profile-no-medals">No eligible track podiums yet.</p>';
+    content.innerHTML=`<div class="profile-hero">${carModelPreview(carStyle,entry.carColorId||entry.carColors,entry.userId)}<div class="profile-identity"><span class="profile-kicker">RANKED PROFILE</span><h3>${escapeHtml(safeDisplayName(entry.name||'Guest',entry.userId))}${countryFlagMarkup(entry.countryCode)}${isSelf?'<span class="overall-you-tag">YOU</span>':''}</h3><div class="profile-stat-strip"><span title="${escapeHtml(rankTooltip)}"><b>#${entry.rank}</b>Overall RP rank</span><span title="${escapeHtml(tracksTooltip)}"><b>${Number(entry.raceCount||0)}/${TOTAL_TRACKS}</b>Ranked tracks</span><span title="Completed track types"><b>${escapeHtml(participation)}</b>Participation</span><span title="${escapeHtml(scoreChange)}"><b>${Number(entry.score||0).toFixed(2)}</b>Overall RP</span><span title="${escapeHtml(rankedWeightTitle('',0,true))}"><b>${Number(entry.weightedTracks||0).toFixed(2)}x</b>Total weight</span><span title="Earliest saved ranked result"><b>${escapeHtml(accountSince)}</b>Ranked since</span></div></div></div><div class="profile-achievement-row">${achievements}<span>${Number(entry.raceCount||0)} ranked track${Number(entry.raceCount||0)===1?'':'s'}</span></div><div class="profile-results">${trackSummaryLine('Best finish',best,'No ranked finish')}${trackSummaryLine(weightedLabel,secondResult||weightedResults[0],'Only one ranked track is available')}${trackSummaryLine('Best opportunity',opportunities[0],'No separate target yet')}${trackSummaryLine('Next opportunity',opportunities[1],'More results unlock another route')}</div><div class="profile-target"><b>${escapeHtml(targetTitle)}</b><span>${recommendation}</span>${Math.abs(gap)>0?`<small>${Math.abs(gap).toFixed(2)} RP separates these positions.</small>`:''}</div><section class="profile-track-history"><header><div><span class="profile-kicker">TRACK BREAKDOWN</span><h4>Loaded results</h4></div><span>${cachedFinishes.length} loaded on this device · ${Number(entry.raceCount||0)} counted in Ranked</span></header><div class="profile-track-head"><button type="button" data-profile-sort="track" data-profile-user="${uid}" class="${profileSort==='track'?'active':''}">Track${profileSortArrow('track')}</button><button type="button" data-profile-sort="weight" data-profile-user="${uid}" class="${profileSort==='weight'?'active':''}">Weight & age${profileSortArrow('weight')}</button><button type="button" data-profile-sort="place" data-profile-user="${uid}" class="${profileSort==='place'?'active':''}">Result${profileSortArrow('place')}</button><button type="button" data-profile-sort="time" data-profile-user="${uid}" class="${profileSort==='time'?'active':''}">Time${profileSortArrow('time')}</button></div><div class="profile-track-list">${trackRows}</div></section><p class="profile-disclaimer">If a track leaderboard has not been loaded, its time may not be listed.</p>`;
     popup.style.display='flex';
     hydrateOverallCarModels(content);
   }
@@ -2304,6 +2397,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     if (!listEl) return;
     if (Array.isArray(entries)) { overallEntriesCache = entries; overallPage = 0; }
     const allEntries = sortedOverallEntries();
+    document.getElementById('overallLeaderboardPanel')?.setAttribute('data-category',overallCategory);
     updateOverallPager();
     if (!allEntries.length){
       const connected = overallLoadState.status === 'empty-cloud';
@@ -2322,23 +2416,24 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     el.className=`overall-freshness ${status==='stale'?'is-stale':status==='pending'?'is-pending':status==='loading'?'is-loading':''}`;
     el.dataset.old=String(Boolean(overallLoadState.fetchedAt&&Date.now()-Number(overallLoadState.fetchedAt)>60*60*1000));
     const isOld=Boolean(overallLoadState.fetchedAt&&Date.now()-Number(overallLoadState.fetchedAt)>60*60*1000);
-    const parts=[status==='stale'||status==='error'?'Saved snapshot':status==='cloud'?'Rankings current':status==='loading'?'Checking rankings':'Saved snapshot'];
-    if(isOld)parts.unshift('STALE');
-    if(overallLoadState.fetchedAt) parts.push(`snapshot ${ageLabel(overallLoadState.fetchedAt)}`);
-    if(status==='loading') parts.push('refreshing');
+    const parts=[status==='loading'?'Updating rankings':status==='cloud'?'Cloud data':status==='stale'||status==='error'?'Saved data':'Saved data'];
+    if(isOld)parts[0]='STALE SAVED DATA';
+    if(overallLoadState.fetchedAt) parts.push(ageLabel(overallLoadState.fetchedAt));
     const wait=isOld?0:Math.max(0,120000-(Date.now()-lastRankedManualRefreshAt));
     const automaticWait=Math.max(0,Number(overallLoadState.nextRefreshAt||0)-Date.now());
-    if(wait>0)parts.push(`refresh in ${durationLabel(wait)}`);
+    if(status==='loading')parts.push('checking now');
+    else if(wait>0)parts.push(`refresh in ${durationLabel(wait)}`);
     else if(automaticWait>0&&status==='cache')parts.push(`refresh in ${durationLabel(automaticWait)}`);
     else parts.push('click to refresh');
     el.textContent=parts.join(' · ');
-    el.title=String(overallLoadState.message||'Click to request a fresh ranked snapshot.');
+    const checked=Number(overallLoadState.checkedAt||0)||0;
+    el.title=`${String(overallLoadState.message||'Select to request a fresh ranked snapshot.')} ${checked?`Cloud last checked ${ageLabel(checked)}.`:''}`.trim();
     const streakEl=document.getElementById('overallStreakLeader');
     if(streakEl?.dataset.base&&streakEl.dataset.fetchedAt) streakEl.textContent=`${streakEl.dataset.base} · ${ageLabel(Number(streakEl.dataset.fetchedAt))}`;
   }
   function requestRankedRefresh(){
     const snapshotAge=Date.now()-Number(overallLoadState.fetchedAt||0);
-    if(snapshotAge<OVERALL_REFRESH_MS&&Date.now()-lastRankedManualRefreshAt<120000&&overallLoadState.status!=='stale'&&overallLoadState.status!=='error'){updateRankedFreshness();return;}
+    if(snapshotAge<OVERALL_REFRESH_CHECK_MS&&Date.now()-lastRankedManualRefreshAt<120000&&overallLoadState.status!=='stale'&&overallLoadState.status!=='error'){updateRankedFreshness();return;}
     lastRankedManualRefreshAt=Date.now();
     writeJsonStorage(OVERALL_REBUILD_BACKOFF_KEY,0);
     overallLoadState.nextRefreshAt=0;
@@ -2352,7 +2447,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
       for(const finish of finishes){
         const id=String(finish?.trackId||''); if(!id) continue;
         const info=trackInfo(id); const field=Math.max(1,Number(finish.fieldSize||0)||1);
-        const weight=Number(finish.weight||0)||(info.type==='official'?1.6:1)*Math.min(2,.8+Math.log2(field+1)/3);
+        const weight=Number(finish.weight||0)||rankedTrackWeight(finish.trackId,field);
         const current=byTrack.get(id); if(!current||weight>current.weight) byTrack.set(id,{id,name:info.name,field,weight});
       }
     }
@@ -2371,7 +2466,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     const generation = ++overallLoadGeneration;
     const dirtyPb=readJsonStorage(OVERALL_PB_DIRTY_KEY,null);
     const savedBeforeOpen=readOverallSnapshotCache();
-    const pbNeedsCheck=Boolean(dirtyPb?.at)&&Date.now()-Number(savedBeforeOpen?.fetchedAt||0)>=OVERALL_REFRESH_MS;
+    const pbNeedsCheck=Boolean(dirtyPb?.at)&&Date.now()-Number(savedBeforeOpen?.fetchedAt||0)>=OVERALL_REFRESH_CHECK_MS;
     const shouldForceRefresh=forceRefresh||pbNeedsCheck;
     panel.style.display='flex';
     if(!rankedFreshnessTimer) rankedFreshnessTimer=setInterval(()=>{if(panel.style.display!=='none')updateRankedFreshness();},1000);
@@ -2390,7 +2485,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
       const savedEntries=annotateOverallMovement(saved.entries,saved.signature);
       renderEntries(savedEntries);
       updateWeightedTrackInsights(savedEntries);
-      overallLoadState={status:'loading',message:'Showing saved rankings while checking Firebase',fetchedAt:saved.serverUpdatedAt||saved.fetchedAt};
+      overallLoadState={status:'loading',message:'Showing saved rankings while checking Firebase',fetchedAt:saved.serverUpdatedAt||saved.fetchedAt,serverUpdatedAt:saved.serverUpdatedAt||0,checkedAt:saved.fetchedAt||0};
       updateRankedFreshness();
     } else {
       listEl.innerHTML = `<div class="overall-loading"><strong>${tr('loading')}</strong><span>Checking Firebase for the first ranked snapshot</span><div class="overall-loading-bar"></div></div>`;
@@ -2412,7 +2507,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     } catch (error) {
       clearTimeout(slowTimer);
       if (generation !== overallLoadGeneration) return;
-      overallLoadState=saved?.entries?.length?{status:'stale',message:'Firebase timed out · showing saved rankings',fetchedAt:saved.serverUpdatedAt||saved.fetchedAt}:{status:'error',message:'The ranked snapshot took too long to respond. Check the connection and retry.'};
+      overallLoadState=saved?.entries?.length?{status:'stale',message:'Firebase timed out · showing saved rankings',fetchedAt:saved.serverUpdatedAt||saved.fetchedAt,serverUpdatedAt:saved.serverUpdatedAt||0,checkedAt:Date.now(),nextRefreshAt:Date.now()+OVERALL_REFRESH_CHECK_MS}:{status:'error',message:'The ranked snapshot took too long to respond. Check the connection and retry.'};
       if(!saved?.entries?.length)renderEntries([]);
       updateRankedFreshness();
       log('warn','[FB408] Ranked panel load timed out',String(error&&(error.message||error)));
@@ -3201,12 +3296,9 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     const cached=readTrackSnapshotCache(state.trackId);
     const fieldSize=Math.max(0,Number(cached?.entries?.length||0)||0);
     const weight=rankedTrackWeight(state.trackId,Math.max(1,fieldSize));
-    const first=[state.status==='stale'?'Offline saved leaderboard':'Track leaderboard'];
-    if(state.fetchedAt)first.push(`data from ${ageLabel(state.fetchedAt)}`);
-    const second=[`${weight.toFixed(2)}x weight`,`${fieldSize} ranked driver${fieldSize===1?'':'s'}`];
-    if(state.nextRefreshAt>Date.now())second.push(`refresh in ${durationLabel(state.nextRefreshAt-Date.now())}`);
-    banner.innerHTML=`<strong>${escapeHtml(first.join(' · '))}</strong><span>${escapeHtml(second.join(' · '))}</span>`;
-    banner.title=rankedWeightTitle(state.trackId,fieldSize);
+    const fresh=state.status!=='stale'&&state.fetchedAt&&Date.now()-Number(state.fetchedAt)<5*60000;
+    banner.innerHTML=`<strong>Leaderboard - ${fresh?'Fresh Data':'Saved Data'}${state.fetchedAt?` · ${escapeHtml(ageLabel(state.fetchedAt))}`:''}</strong><span>${weight.toFixed(2)}x Weight · ${fieldSize} Player${fieldSize===1?'':'s'}</span>`;
+    banner.title=`${state.fetchedAt?`Data ${ageLabel(state.fetchedAt)}. `:''}${rankedWeightTitle(state.trackId,fieldSize)}${state.nextRefreshAt>Date.now()?` Refresh available in ${durationLabel(state.nextRefreshAt-Date.now())}.`:''}`;
   }
 
 
