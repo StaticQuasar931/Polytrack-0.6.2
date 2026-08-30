@@ -1152,7 +1152,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
       #injectedRankingsBtn.button-spawn{animation:rankedButtonSpawn .42s cubic-bezier(.2,.72,.25,1) both!important}
       #injectedRankingsBtn.button-spawn img{animation:rankedIconPop .42s cubic-bezier(.2,.72,.25,1) both}
       .sq-has-hotkey{position:relative}.sq-hotkey-hint{position:absolute;right:5px;top:5px;z-index:3;min-width:19px;height:19px;padding:0 4px;display:flex;align-items:center;justify-content:center;background:#f0f6ff;color:#253768;clip-path:polygon(3px 0,100% 0,calc(100% - 3px) 100%,0 100%);font:11px/19px ForcedSquare,Arial,sans-serif;letter-spacing:.2px;pointer-events:none}
-      #sqRankedSettings{position:relative;margin:0 0 14px;padding:0 0 10px;border-bottom:3px solid var(--text-color);color:var(--text-color);font-family:ForcedSquare,Arial,sans-serif}#sqRankedSettings>h2{margin:10px;padding:4px;font-size:24px;font-weight:normal;border-bottom:2px solid var(--text-color)}.sq-settings-note{margin:8px 15px;color:rgba(235,244,255,.72);font-size:16px}.sq-setting-row{margin:10px;display:flex}.sq-setting-row>p{display:inline-block;margin:10px;min-width:0;flex-grow:1;font-size:25px}.sq-setting-row>.button-wrapper{display:flex;justify-content:end}.sq-setting-row .button{height:48px;min-width:150px}.sq-moderator-tools{display:grid;grid-template-columns:1.2fr 1fr 1fr auto;gap:7px;margin:13px 10px 0;padding-top:12px;border-top:1px solid rgba(255,255,255,.16)}.sq-moderator-tools strong,.sq-mod-status{grid-column:1/-1}.sq-moderator-tools input{min-width:0;padding:7px 9px;background:#111a3d;border:1px solid rgba(142,199,255,.45);color:#fff;font:inherit}.sq-mod-save{font-size:14px}.sq-mod-status{font-size:13px;color:#78e4ff}
+      #sqRankedSettings{position:relative;margin:0 0 14px;padding:0 0 10px;border-bottom:3px solid var(--text-color);color:var(--text-color);font-family:ForcedSquare,Arial,sans-serif}#sqRankedSettings>h2{margin:10px;padding:4px;font-size:24px;font-weight:normal;border-bottom:2px solid var(--text-color)}.sq-settings-note{margin:8px 15px;color:rgba(235,244,255,.72);font-size:16px}.sq-setting-row{margin:10px;display:flex}.sq-setting-row>p{display:inline-block;margin:10px;min-width:0;flex-grow:1;font-size:25px}.sq-setting-row>.button-wrapper{display:flex;justify-content:end}.sq-setting-row .button{height:48px;min-width:150px}.sq-setting-secret{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(220px,.8fr);gap:14px}.sq-secret-controls{display:flex;align-items:center;gap:7px}.sq-secret-controls input{width:100%;min-width:0;padding:10px 12px;background:#111a3d;border:2px solid rgba(126,231,255,.45);color:#fff;font:18px ForcedSquare,Arial,sans-serif}.sq-secret-controls input:focus{outline:2px solid #7ee7ff;outline-offset:2px}.sq-secret-controls .button{min-width:78px!important}.sq-moderator-tools{display:grid;grid-template-columns:1.2fr 1fr 1fr auto;gap:7px;margin:13px 10px 0;padding-top:12px;border-top:1px solid rgba(255,255,255,.16)}.sq-moderator-tools strong,.sq-mod-status{grid-column:1/-1}.sq-moderator-tools input{min-width:0;padding:7px 9px;background:#111a3d;border:1px solid rgba(142,199,255,.45);color:#fff;font:inherit}.sq-mod-save{font-size:14px}.sq-mod-status{font-size:13px;color:#78e4ff}
       .sq-mod-challenge{position:fixed;inset:0;z-index:12000;display:flex;align-items:center;justify-content:center;background:rgba(8,12,30,.88)}.sq-mod-card{width:min(430px,calc(100vw - 30px));padding:24px;background:#2b407c;clip-path:polygon(12px 0,calc(100% - 12px) 0,100% 12px,100% calc(100% - 12px),calc(100% - 12px) 100%,12px 100%,0 calc(100% - 12px),0 12px);text-align:center}.sq-mod-card>strong{font-size:28px}.sq-mod-card>p{font-size:15px;color:rgba(240,247,255,.72)}.sq-mod-entry{margin:14px 0;font-size:25px;color:#7ee7ff;letter-spacing:3px}.sq-mod-keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}.sq-mod-keypad .button{min-width:0}.sq-mod-challenge-status{display:block;margin-top:12px;color:#ffd27e;font-size:14px}
       .sq-hide-lobby-extras #staticMenu{display:none!important}.sq-reduced-effects .staticFunPill,.sq-reduced-effects .staticFunText,.sq-reduced-effects .staticFunChar{animation:none!important}.sq-reduced-effects #injectedRankingsBtn.button-spawn{animation-duration:.01ms!important}
       .sq-hide-racer-codes .overall-racer-code{display:none!important}
@@ -1229,6 +1229,8 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
       .sq-track-leaderboard-loading .leaderboard-ui>.container>button.main{visibility:hidden!important}.sq-track-leaderboard-loading .leaderboard-ui>.container::after{content:'Loading track leaderboard';display:block;margin:18px auto;padding:12px 18px;width:max-content;max-width:80%;background:#172653;border-left:4px solid #7ee7ff;color:#eaf7ff;font:18px ForcedSquare,Arial,sans-serif}.polytrack-track-freshness.is-loading{border-left-color:#7ee7ff}.profile-result.is-null{opacity:.72;border-left-color:#71809c!important}.profile-achievement-medals{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:6px!important}.profile-achievement-medals .profile-medal-card{display:grid!important;grid-template-columns:30px 1fr!important;grid-template-rows:auto auto!important;align-items:center!important;column-gap:6px!important;min-width:0!important;min-height:58px!important;padding:7px!important;background:#10214b}.profile-medal-card img{grid-row:1/3;width:27px!important;height:27px!important}.profile-medal-card b{font-size:19px}.profile-medal-card small{font-size:10px;letter-spacing:.6px}.profile-medal-card.gold b{color:#ffe381}.profile-medal-card.silver b{color:#f4f7ff}.profile-medal-card.bronze b{color:#ffb786}.profile-guide>summary [data-summary-track-id]{cursor:pointer}.profile-guide>summary [data-summary-track-id]:hover strong{color:#7ee7ff;text-decoration:underline}
       .track-type-label{display:inline-flex!important;align-items:center;padding:2px 6px;border-left:3px solid #7ee7ff;background:#142654;color:#dceaff;text-transform:capitalize}.track-type-label.official,.track-type-official{--track-type-color:#ffd26c}.track-type-label.community,.track-type-community{--track-type-color:#72e7b4}.track-type-label.custom,.track-type-custom{--track-type-color:#d0a5ff}.track-type-label.official,.track-type-label.community,.track-type-label.custom{border-left-color:var(--track-type-color)}.profile-track-row[class*='track-type-']{border-left:3px solid var(--track-type-color,#7ee7ff)}.profile-track-row time{display:flex;flex-direction:column;gap:4px}.profile-track-row time small{color:#9fb7d8;font-size:10px;line-height:1.15}.overall-challenge-stack section{border-right:1px solid rgba(255,255,255,.1)}.overall-challenge-stack .competition-track-name{font-weight:normal}.overall-center-tools{align-content:center}.leaderboard-arcade>div{flex:1}.leaderboard-arcade button{flex:1;justify-content:center}.profile-beta-badge{padding:5px 8px;background:#ffd26c;color:#17224a;font-size:12px;letter-spacing:1px}
       .overall-track-you{display:inline-flex;padding:2px 6px;background:#7ee7ff;color:#10214b;font-size:.86em;letter-spacing:.6px;box-shadow:0 0 10px rgba(126,231,255,.28)}.overall-track-entry .overall-best-line:nth-child(2){color:#dcecff}.profile-track-row{grid-template-columns:96px minmax(180px,1fr) 110px 150px 124px!important;min-height:82px!important;padding:7px 11px!important;border-left:0!important;box-shadow:inset 3px 0 0 var(--track-type-color,#7ee7ff)}.profile-track-row .profile-track-image-frame{width:92px!important;height:66px!important;background:#101f48}.profile-track-row .profile-track-thumb{width:92px!important;height:66px!important;object-fit:contain!important;image-rendering:auto}.profile-track-row .track-type-label{display:inline-flex!important;width:max-content;padding:0!important;border:0!important;background:transparent!important;color:var(--track-type-color,#9fb7d8)!important;font-size:12px!important;letter-spacing:.5px}.profile-track-row .profile-track-name b{font-size:19px!important}.profile-track-row time{font-size:16px!important}.profile-track-row time small{font-size:12px!important;color:#bdd2ee!important}.profile-track-head{grid-template-columns:minmax(0,1fr) 110px 150px 124px!important;padding-left:116px!important}
+      .sq-multiplayer-relay{position:absolute;left:50%;bottom:18px;z-index:8;width:min(840px,calc(100vw - 24px));box-sizing:border-box;padding:10px 12px 11px;transform:translateX(-50%);background:#152652;color:#eaf5ff;font-family:ForcedSquare,Arial,sans-serif;clip-path:polygon(10px 0,100% 0,calc(100% - 10px) 100%,0 100%);box-shadow:0 12px 30px rgba(0,0,0,.36)}.sq-multiplayer-relay-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:7px}.sq-multiplayer-relay-head strong{font-size:19px;font-weight:normal;color:#fff}.sq-multiplayer-status{padding:4px 8px;background:#243b78;border-left:4px solid #7ee7ff;color:#cde8ff;font-size:13px}.sq-multiplayer-status.is-backup{border-color:#ffd56e;color:#ffe7a8}.sq-multiplayer-status.is-direct{border-color:#98a9c8;color:#ced8e9}.sq-multiplayer-paths{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.sq-multiplayer-path{min-width:0;padding:7px 9px;background:#1c3269;border-top:2px solid #536fae}.sq-multiplayer-path:first-child{border-color:#77e6b0}.sq-multiplayer-path:nth-child(2){border-color:#7ee7ff}.sq-multiplayer-path:nth-child(3){border-color:#ffd56e}.sq-multiplayer-path b{display:block;margin-bottom:2px;font-size:15px;font-weight:normal;color:#fff}.sq-multiplayer-path span{display:block;color:#b9cbe5;font-size:11px;line-height:1.22}.sq-multiplayer-code{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:6px;margin-top:7px}.sq-multiplayer-code input{min-width:0;padding:7px 9px;background:#0f1d43;border:2px solid #385594;color:#fff;font:15px ForcedSquare,Arial,sans-serif}.sq-multiplayer-code input:focus{outline:2px solid #7ee7ff;outline-offset:1px}.sq-multiplayer-code .button{min-width:76px;height:36px;font-size:14px}.sq-multiplayer-discord{display:flex!important;align-items:center;justify-content:center;padding:0 11px;color:#fff!important;text-decoration:none;background:#354d8d}.sq-multiplayer-note{margin:6px 2px 0;color:#92a9ca;font-size:10px;line-height:1.15}.sq-multiplayer-note code{color:#d7e8ff}
+      @media(max-width:760px){.sq-multiplayer-relay{bottom:7px;width:calc(100vw - 10px);padding:8px}.sq-multiplayer-paths{grid-template-columns:1fr}.sq-multiplayer-path{padding:5px 7px}.sq-multiplayer-path span{font-size:10px}.sq-multiplayer-code{grid-template-columns:minmax(0,1fr) auto}.sq-multiplayer-discord{grid-column:1/-1;min-height:32px}.sq-multiplayer-relay-head strong{font-size:16px}.sq-multiplayer-status{font-size:11px}}
       @media(max-width:1000px){.profile-track-row{grid-template-columns:82px minmax(150px,1fr) 100px 130px!important}.profile-track-row .profile-track-image-frame,.profile-track-row .profile-track-thumb{width:78px!important;height:58px!important}}
       @media(max-width:620px){.profile-track-row{grid-template-columns:68px minmax(120px,1fr) 112px!important}.profile-track-row .profile-track-image-frame,.profile-track-row .profile-track-thumb{width:64px!important;height:52px!important}.profile-track-row .profile-track-name b{font-size:17px!important}}
       @keyframes staticGlowPulse{0%{box-shadow:0 0 0 rgba(255,255,255,0.0),0 0 10px rgba(0,255,255,0.12)}50%{box-shadow:0 0 14px rgba(255,255,255,0.18),0 0 22px rgba(255,0,255,0.18)}100%{box-shadow:0 0 0 rgba(255,255,255,0.0),0 0 10px rgba(0,255,255,0.12)}}
@@ -1465,6 +1467,42 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     return row;
   }
 
+  function settingsSecretInput(label,storageKey){
+    const row=document.createElement('div');
+    row.className='setting sq-setting-row sq-setting-secret';
+    const text=document.createElement('p');
+    text.textContent=label;
+    const controls=document.createElement('div');
+    controls.className='sq-secret-controls';
+    const input=document.createElement('input');
+    input.type='password';
+    input.autocomplete='off';
+    input.spellcheck=false;
+    input.maxLength=64;
+    input.placeholder='Optional Discord code';
+    input.value=localStorage.getItem(storageKey)||'';
+    input.setAttribute('aria-label',label);
+    const save=document.createElement('button');
+    save.type='button';
+    save.className='button';
+    save.textContent='Save';
+    save.addEventListener('click',(event)=>{
+      event.preventDefault();
+      event.stopPropagation();
+      if(storageKey==='polytrack-0.6.2-turn-backup-code')saveMultiplayerBackupCode(input,save);
+      else{
+        const value=String(input.value||'').trim().slice(0,64);
+        if(value)localStorage.setItem(storageKey,value);
+        else localStorage.removeItem(storageKey);
+        save.textContent='Saved';
+        setTimeout(()=>{if(save.isConnected)save.textContent='Save';},1200);
+      }
+    });
+    controls.append(input,save);
+    row.append(text,controls);
+    return row;
+  }
+
   async function currentUserIsModerator(){
     try {
       await db();
@@ -1587,6 +1625,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     grid.appendChild(settingsToggle('Expanded Ranked details','polytrack-0.6.2-compact-ranked',true,true));
     grid.appendChild(settingsToggle('Public racer codes in Ranked','polytrack-0.6.2-show-racer-codes',true));
     grid.appendChild(settingsRange('Custom UI text size','polytrack-0.6.2-ui-font-scale',85,125,5,100));
+    grid.appendChild(settingsSecretInput('Backup multiplayer relay code','polytrack-0.6.2-turn-backup-code'));
     container.prepend(section);
   }
 
@@ -3651,6 +3690,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     Object.freeze({urls:'stun:stun1.l.google.com:19302'})
   ]);
   let multiplayerIceServersPromise = null;
+  let multiplayerNetworkMessage = 'Direct connection preferred. Relay checks when you host or join.';
   function normalizeIceServerList(value){
     const rows = Array.isArray(value) ? value : (Array.isArray(value?.iceServers) ? value.iceServers : []);
     return rows.flatMap((row)=>{
@@ -3675,25 +3715,88 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     if (multiplayerIceServersPromise) return multiplayerIceServersPromise;
     multiplayerIceServersPromise = (async()=>{
       let configured = normalizeIceServerList(window.POLYTRACK_ICE_SERVERS || window.POLYTRACK_TURN_CONFIG);
-      const credentialUrl = typeof window.POLYTRACK_TURN_CREDENTIALS_URL === 'string'
-        ? window.POLYTRACK_TURN_CREDENTIALS_URL.trim()
+      let relayMode = configured.length ? 'configured' : '';
+      const brokerUrl = typeof window.POLYTRACK_TURN_BROKER_URL === 'string'
+        ? window.POLYTRACK_TURN_BROKER_URL.trim()
         : '';
-      if (!configured.length && credentialUrl) {
+      if (!configured.length && brokerUrl) {
         try {
-          const response = await fetch(credentialUrl,{method:'GET',cache:'no-store',credentials:'omit',headers:{Accept:'application/json'}});
-          if (!response.ok) throw new Error(`TURN credential endpoint returned ${response.status}`);
-          configured = normalizeIceServerList(await response.json());
+          await db();
+          const user=window.firebase?.auth?.().currentUser;
+          if(!user) throw new Error('Firebase authentication is not ready');
+          const idToken=await user.getIdToken(false);
+          const backupCode=String(localStorage.getItem('polytrack-0.6.2-turn-backup-code')||'').trim().slice(0,64);
+          const response = await fetch(brokerUrl,{
+            method:'POST',
+            cache:'no-store',
+            credentials:'omit',
+            referrerPolicy:'no-referrer',
+            headers:{Accept:'application/json','Content-Type':'application/json',Authorization:`Bearer ${idToken}`},
+            body:JSON.stringify(backupCode?{backupCode}:{})
+          });
+          if (!response.ok) {
+            const problem=await response.json().catch(()=>({}));
+            if(response.status===503&&problem.backupCodeRequired) throw new Error('Primary relay unavailable; add the Discord backup relay code in Settings');
+            if(response.status===429) throw new Error('Relay request limit reached; wait one minute');
+            throw new Error(`TURN broker returned ${response.status}`);
+          }
+          const payload=await response.json();
+          configured = normalizeIceServerList(payload);
+          relayMode=payload.mode==='backup'?'backup':'primary';
+          log('info','[MP312] TURN relay credentials ready',{mode:relayMode,serverCount:configured.length});
         } catch (error) {
+          multiplayerNetworkMessage=String(error&&(error.message||error)) || 'Relay unavailable; direct connections only.';
           log('warn','[MP310] TURN credentials unavailable; direct connections only',String(error&&(error.message||error)));
         }
       }
       const servers = [...MULTIPLAYER_STUN_SERVERS,...configured];
       const turnAvailable = hasTurnServer(servers);
-      window.__polytrackMultiplayerNetwork = {turnAvailable,iceServerCount:servers.length,mode:turnAvailable?'relay-ready':'direct-only'};
-      if (!turnAvailable) log('warn','[MP311] No TURN relay configured; restrictive or cross-network NAT may fail','Set window.POLYTRACK_TURN_CREDENTIALS_URL to a short-lived credential endpoint.');
+      if(turnAvailable) multiplayerNetworkMessage=relayMode==='backup'?'Discord backup relay ready.':'Public relay ready.';
+      window.__polytrackMultiplayerNetwork = {turnAvailable,iceServerCount:servers.length,mode:turnAvailable?(relayMode||'relay'):'direct-only',message:multiplayerNetworkMessage};
+      syncMultiplayerRelayPanel();
+      if (!turnAvailable) log('warn','[MP311] No TURN relay configured; restrictive or cross-network NAT may fail','The secure TURN broker is unavailable or not configured.');
       return servers;
     })();
     return multiplayerIceServersPromise;
+  }
+  function multiplayerRelayStatus(){
+    const state=window.__polytrackMultiplayerNetwork;
+    if(!state)return {label:'Direct first',className:'',message:multiplayerNetworkMessage};
+    if(state.mode==='backup')return {label:'Discord backup ready',className:'is-backup',message:state.message};
+    if(state.turnAvailable)return {label:'Public relay ready',className:'',message:state.message};
+    return {label:'Direct only',className:'is-direct',message:state.message};
+  }
+  function saveMultiplayerBackupCode(input,button){
+    const value=String(input?.value||'').trim().slice(0,64);
+    if(value)localStorage.setItem('polytrack-0.6.2-turn-backup-code',value);
+    else localStorage.removeItem('polytrack-0.6.2-turn-backup-code');
+    multiplayerIceServersPromise=null;
+    window.__polytrackMultiplayerNetwork=null;
+    multiplayerNetworkMessage=value?'Backup code saved. It is used only if the public relay fails.':'Backup code removed. Direct and public relay remain available.';
+    syncMultiplayerRelayPanel();
+    if(button){button.textContent='Saved';setTimeout(()=>{if(button.isConnected)button.textContent='Save';},1100);}
+  }
+  function syncMultiplayerRelayPanel(){
+    const root=document.querySelector('.multiplayer-ui');
+    if(!root||!root.isConnected)return;
+    let panel=root.querySelector(':scope > .sq-multiplayer-relay');
+    if(!panel){
+      panel=document.createElement('section');
+      panel.className='sq-multiplayer-relay';
+      panel.setAttribute('aria-label','Multiplayer connection options');
+      panel.innerHTML='<div class="sq-multiplayer-relay-head"><strong>Connection route</strong><span class="sq-multiplayer-status" role="status"></span></div><div class="sq-multiplayer-paths"><div class="sq-multiplayer-path"><b>1. Direct</b><span>Preferred automatically. Same-network play normally needs no relay and uses no TURN quota.</span></div><div class="sq-multiplayer-path"><b>2. Public relay</b><span>Used automatically when direct WebRTC cannot connect. Free to players, with limited shared availability.</span></div><div class="sq-multiplayer-path"><b>3. Discord backup</b><span>Used only if the public relay is unavailable. Get the private code from the StaticQuasar931 Discord.</span></div></div><div class="sq-multiplayer-code"><input type="password" maxlength="64" autocomplete="off" spellcheck="false" aria-label="Discord backup relay code" placeholder="Optional Discord backup code"><button class="button" type="button">Save</button><a class="button sq-multiplayer-discord" href="https://discord.gg/DP2hM7RRhR" target="_blank" rel="noopener noreferrer">Get code</a></div><p class="sq-multiplayer-note">The code stays on this device. Relay credentials are temporary and requested only when you host or join.</p>';
+      const input=panel.querySelector('input');
+      const button=panel.querySelector('button');
+      input.value=localStorage.getItem('polytrack-0.6.2-turn-backup-code')||'';
+      button.addEventListener('click',(event)=>{event.preventDefault();saveMultiplayerBackupCode(input,button);});
+      input.addEventListener('keydown',(event)=>{if(event.key==='Enter'){event.preventDefault();saveMultiplayerBackupCode(input,button);}});
+      root.appendChild(panel);
+    }
+    const status=multiplayerRelayStatus();
+    const statusElement=panel.querySelector('.sq-multiplayer-status');
+    statusElement.className=`sq-multiplayer-status ${status.className}`.trim();
+    statusElement.textContent=status.label;
+    statusElement.title=status.message||status.label;
   }
   function multiplayerCode(){
     const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -3869,6 +3972,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     syncNativeDiscordVisibility();
     ensureLobbyHotkeyHints();
     ensureSettingsEnhancements();
+    syncMultiplayerRelayPanel();
     ensureReturningPlayerNotice();
     ensureWeeklyTrackHighlight();
     decoratePersonalBestPodiums();
@@ -3893,6 +3997,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     syncNativeDiscordVisibility();
     ensureLobbyHotkeyHints();
     ensureSettingsEnhancements();
+    syncMultiplayerRelayPanel();
     hideVerifiedOnlyToggle();
     ensureReturningPlayerNotice();
     ensureWeeklyTrackHighlight();
