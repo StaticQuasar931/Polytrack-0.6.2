@@ -872,6 +872,9 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
   }
 
   const LOCAL_RACE_STORE_KEY = 'polytrack-0.6.2-local-race-results-v1';
+  const LOCAL_PB_RECONCILE_STATE_KEY = 'polytrack-0.6.2-local-pb-reconcile-v1';
+  let localPbReconcilePromise = null;
+  let localPbReconcileTimer = 0;
   function readLocalRaceRows(){
     try {
       const raw = localStorage.getItem(LOCAL_RACE_STORE_KEY);
@@ -880,12 +883,26 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     } catch { return []; }
   }
   function writeLocalRaceRows(rows){
-    try { localStorage.setItem(LOCAL_RACE_STORE_KEY, JSON.stringify(rows.slice(0, 5000))); } catch {}
+    try {
+      const bestByTrackAndUser = new Map();
+      for (const row of Array.isArray(rows) ? rows : []) {
+        const accountId=cleanUserId(row?.accountId||row?.userId||'');
+        const trackId=String(row?.trackId||'').slice(0,80);
+        const timeMs=canonicalRaceTimeMs(row);
+        if(!accountId||!trackId||timeMs<=0)continue;
+        const key=`${accountId}|${trackId}`;
+        const current=bestByTrackAndUser.get(key);
+        const currentMs=canonicalRaceTimeMs(current);
+        const hasReplay=Boolean(normalizeReplayPayloadString(row?.replay||row?.recording||''));
+        const currentHasReplay=Boolean(normalizeReplayPayloadString(current?.replay||current?.recording||''));
+        if(!current||timeMs<currentMs||(timeMs===currentMs&&hasReplay&&!currentHasReplay))bestByTrackAndUser.set(key,{...row,accountId,userId:accountId,trackId,timeMs});
+      }
+      const canonical=Array.from(bestByTrackAndUser.values()).sort((a,b)=>Number(b.updatedAt||b.pbAt||b.createdAt||0)-Number(a.updatedAt||a.pbAt||a.createdAt||0));
+      localStorage.setItem(LOCAL_RACE_STORE_KEY, JSON.stringify(canonical.slice(0, 5000)));
+    } catch {}
   }
   function addLocalRaceRow(row){
-    const rows = readLocalRaceRows();
-    rows.unshift(row);
-    writeLocalRaceRows(rows);
+    writeLocalRaceRows([row,...readLocalRaceRows()]);
   }
 
   function enrichLegacyLeaderboardEntries(entries){
@@ -1516,7 +1533,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     input.type='password';
     input.autocomplete='off';
     input.spellcheck=false;
-    input.maxLength=64;
+    input.maxLength=192;
     input.placeholder='Optional Discord code';
     input.value=localStorage.getItem(storageKey)||'';
     input.setAttribute('aria-label',label);
@@ -3288,6 +3305,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
       const accountId = await accountIdFromPayload(hinted, guestAccountId);
       try {
         localStorage.setItem('polytrack-0.6.2-active-account-id', accountId);
+        scheduleLocalPbCloudReconcile(accountId);
         const d = await db();
         const snap = await d.collection(COLLECTIONS.profilesPublic).doc(accountId).get();
         if (snap.exists) return makeUserPayload(snap.data() || {});
@@ -3512,7 +3530,9 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
       const cachedBeforeRepair=readTrackSnapshotCache(trackId);
       const cachedSourceRow=(cachedBeforeRepair?.entries||[]).find((entry)=>String(entry.accountId||entry.userId||'')===accountId);
       const cachedSourceMs=canonicalRaceTimeMs(cachedSourceRow);
-      const leaderboardRepairNeeded=sourceBestMs>0&&cachedSourceMs!==sourceBestMs;
+      // A non-saving submission means the PB source is already authoritative.
+      // Rebuild anyway because the local display cache may already hide a stale cloud board.
+      const leaderboardRepairNeeded=sourceBestMs>0&&(!saved||cachedSourceMs!==sourceBestMs);
       if(sourceBestMs>0){
         const localTrackEntries=reconcileTrackEntriesWithLocal(trackId,[...(cachedBeforeRepair?.entries||[]),sourceRow],500);
         writeTrackSnapshotCache(trackId,localTrackEntries,cachedBeforeRepair?.serverUpdatedAt||0);
@@ -3572,6 +3592,97 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     }
   }
 
+
+  function localBestRowsForAccount(accountId){
+    const safeId=cleanUserId(accountId);
+    const bestByTrack=new Map();
+    for(const row of readLocalRaceRows()){
+      if(cleanUserId(row?.accountId||row?.userId||'')!==safeId)continue;
+      const trackId=String(row?.trackId||'').slice(0,80);
+      const timeMs=canonicalRaceTimeMs(row);
+      if(!trackId||timeMs<=0)continue;
+      const current=bestByTrack.get(trackId);
+      if(!current||timeMs<canonicalRaceTimeMs(current))bestByTrack.set(trackId,{...row,accountId:safeId,userId:safeId,trackId,timeMs});
+    }
+    return Array.from(bestByTrack.values()).sort((a,b)=>String(a.trackId).localeCompare(String(b.trackId))).slice(0,500);
+  }
+
+  function scheduleLocalPbCloudReconcile(accountId,delay=900){
+    const safeId=cleanUserId(accountId);
+    if(!safeId)return;
+    clearTimeout(localPbReconcileTimer);
+    localPbReconcileTimer=setTimeout(()=>reconcileLocalPersonalBestsToCloud(safeId).catch((error)=>log('warn','[SYNC409] Local PB reconciliation failed',String(error&&(error.message||error)))),Math.max(0,delay));
+  }
+
+  async function reconcileLocalPersonalBestsToCloud(accountId){
+    const safeId=cleanUserId(accountId);
+    const localRows=localBestRowsForAccount(safeId);
+    if(!safeId||!localRows.length)return {checked:0,uploaded:0,repaired:0};
+    const fingerprint=localRows.map((row)=>`${row.trackId}:${canonicalRaceTimeMs(row)}:${String(row.replayHash||'').slice(0,16)}`).join('|');
+    const state=readJsonStorage(LOCAL_PB_RECONCILE_STATE_KEY,{})||{};
+    if(state[safeId]?.fingerprint===fingerprint)return {checked:localRows.length,uploaded:0,repaired:0,cached:true};
+    if(localPbReconcilePromise)return localPbReconcilePromise;
+    localPbReconcilePromise=(async()=>{
+      const d=await db();
+      const cloudSnap=await d.collection(COLLECTIONS.raceResults).where('accountId','==',safeId).limit(500).get();
+      const cloudByTrack=new Map((cloudSnap.docs||[]).map((doc)=>{const row=doc.data()||{};return [String(row.trackId||''),row];}));
+      let uploaded=0;
+      let repaired=0;
+      let adopted=0;
+      let failed=0;
+      log('info','[SYNC200] Checking saved local PBs against cloud',{accountId:safeId,localTracks:localRows.length,cloudTracks:cloudByTrack.size});
+      for(const localRow of localRows){
+        const trackId=String(localRow.trackId||'');
+        const localMs=canonicalRaceTimeMs(localRow);
+        const cloudRow=cloudByTrack.get(trackId)||null;
+        const cloudMs=canonicalRaceTimeMs(cloudRow);
+        if(cloudMs>0&&cloudMs<localMs){
+          addLocalRaceRow({...cloudRow,accountId:safeId,userId:safeId,trackId});
+          adopted++;
+          continue;
+        }
+        if(!cloudRow||!cloudMs||localMs<cloudMs){
+          const stored=readRecordingStore([safeRecordingId(localRow.uploadId||localRow.id)])[0];
+          const replay=normalizeReplayPayloadString(localRow.replay||localRow.recording||stored?.recording||'');
+          if(!replay){failed++;log('warn','[SYNC404] Saved PB has no replay and cannot be uploaded',{trackId,timeMs:localMs});continue;}
+          const result=await mirrorRaceResult('local-pb-reconcile',{...localRow,accountId:safeId,userId:safeId,trackId,timeMs:localMs,frames:safePositiveInt(localRow.frames||localRow.raceTimeFrames||localMs,1),recording:replay,nickname:localRow.nickname||localRow.name||getLastKnownName(safeId)||'Player',carStyle:localRow.carStyle||stored?.carStyle||getDefaultCarStyle()});
+          if(result?.saved){
+            const authoritative={...localRow,accountId:safeId,userId:safeId,trackId,timeMs:localMs,replay};
+            cloudByTrack.set(trackId,authoritative);
+            uploaded++;
+            const verifySnap=await d.collection(COLLECTIONS.leaderboardsTrack).doc(trackId).get();
+            const verifyBoard=verifySnap.exists?(verifySnap.data()||{}):{};
+            const verifyRow=(Array.isArray(verifyBoard.entries)?verifyBoard.entries:[]).find((entry)=>cleanUserId(entry.accountId||entry.userId||'')===safeId);
+            if(canonicalRaceTimeMs(verifyRow)!==localMs||Number(verifyBoard.schemaVersion||0)<TRACK_CACHE_SCHEMA){
+              await rebuildCachedLeaderboards(d,trackId,authoritative);
+              repaired++;
+            }
+          } else failed++;
+          continue;
+        }
+        const boardRef=d.collection(COLLECTIONS.leaderboardsTrack).doc(trackId);
+        const boardSnap=await boardRef.get();
+        const board=boardSnap.exists?(boardSnap.data()||{}):{};
+        const boardRow=(Array.isArray(board.entries)?board.entries:[]).find((entry)=>cleanUserId(entry.accountId||entry.userId||'')===safeId);
+        if(canonicalRaceTimeMs(boardRow)!==cloudMs||Number(board.schemaVersion||0)<TRACK_CACHE_SCHEMA){
+          await rebuildCachedLeaderboards(d,trackId,{...cloudRow,accountId:safeId,userId:safeId,trackId});
+          repaired++;
+        }
+      }
+      if(!failed){
+        state[safeId]={fingerprint,completedAt:Date.now(),tracks:localRows.length};
+        writeJsonStorage(LOCAL_PB_RECONCILE_STATE_KEY,state);
+      }
+      if(uploaded||repaired){
+        writeJsonStorage(OVERALL_PB_DIRTY_KEY,{at:Date.now(),reason:'local-pb-reconcile'});
+        overallLoadState.nextRefreshAt=Date.now();
+      }
+      log('info','[SYNC299] Saved local PB reconciliation complete',{accountId:safeId,checked:localRows.length,uploaded,repaired,adopted,failed});
+      return {checked:localRows.length,uploaded,repaired,adopted,failed};
+    })();
+    try{return await localPbReconcilePromise;}
+    finally{localPbReconcilePromise=null;}
+  }
 
   function hookLegacyNetworking(){
     const originalFetch = window.fetch.bind(window);
@@ -3797,21 +3908,24 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     }
     return selected.slice(0,4);
   }
+  function multiplayerBrokerUrl(){
+    return typeof window.POLYTRACK_TURN_BROKER_URL === 'string'
+      ? window.POLYTRACK_TURN_BROKER_URL.trim()
+      : '';
+  }
   async function resolveMultiplayerIceServers(){
     if (multiplayerIceServersPromise) return multiplayerIceServersPromise;
     multiplayerIceServersPromise = (async()=>{
       let configured = normalizeIceServerList(window.POLYTRACK_ICE_SERVERS || window.POLYTRACK_TURN_CONFIG);
       let relayMode = configured.length ? 'configured' : '';
-      const brokerUrl = typeof window.POLYTRACK_TURN_BROKER_URL === 'string'
-        ? window.POLYTRACK_TURN_BROKER_URL.trim()
-        : '';
+      const brokerUrl = multiplayerBrokerUrl();
       if (!configured.length && brokerUrl) {
         try {
           await db();
           const user=window.firebase?.auth?.().currentUser;
           if(!user) throw new Error('Firebase authentication is not ready');
           const idToken=await user.getIdToken(false);
-          const backupCode=String(localStorage.getItem('polytrack-0.6.2-turn-backup-code')||'').trim().slice(0,64);
+          const backupCode=String(localStorage.getItem('polytrack-0.6.2-turn-backup-code')||'').trim().slice(0,192);
           const response = await fetch(brokerUrl,{
             method:'POST',
             cache:'no-store',
@@ -3853,7 +3967,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     return {label:'Direct only',className:'is-direct',message:state.message};
   }
   async function saveMultiplayerBackupCode(input,button){
-    const value=String(input?.value||'').trim().slice(0,64);
+    const value=String(input?.value||'').trim().slice(0,192);
     const prior=String(localStorage.getItem('polytrack-0.6.2-turn-backup-code')||'');
     const status=input?.closest('.sq-multiplayer-backup-drawer, .sq-settings-row')?.querySelector('.sq-backup-validation');
     if(!value){
@@ -3908,7 +4022,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
       panel=document.createElement('section');
       panel.className='sq-multiplayer-relay';
       panel.setAttribute('aria-label','Multiplayer connection options');
-      panel.innerHTML='<div class="sq-multiplayer-relay-head"><div><span class="sq-multiplayer-kicker">CONNECTION ORDER</span><strong>Automatic: 1 &rarr; 2 &rarr; 3</strong></div><span class="sq-multiplayer-status" role="status"></span><button class="sq-multiplayer-collapse" type="button" aria-expanded="true" aria-controls="sqMultiplayerRouteBody">Hide</button></div><div class="sq-multiplayer-route-body" id="sqMultiplayerRouteBody"><p class="sq-multiplayer-intro"><b>Just host or join.</b> PolyTrack tries each available route in order.</p><div class="sq-multiplayer-paths"><div class="sq-multiplayer-path is-automatic"><span class="sq-route-number">1</span><div><b>Direct</b><span>Always tried first. Fastest, and uses no TURN quota.</span></div><em>AUTO</em></div><div class="sq-multiplayer-path is-automatic"><span class="sq-route-number">2</span><div><b>Public relay</b><span>Only tried if Direct fails. No code or setup needed.</span></div><em>AUTO</em></div><button class="sq-multiplayer-path sq-multiplayer-backup-toggle" type="button" aria-expanded="false" aria-controls="sqMultiplayerBackupDrawer"><span class="sq-route-number">3</span><div><b>Discord backup</b><span>Only tried if Direct and Public Relay fail, and only after a verified code is saved.</span></div><em class="sq-backup-state">SET UP</em></button></div><div class="sq-multiplayer-backup-drawer" id="sqMultiplayerBackupDrawer" hidden><div class="sq-backup-copy"><span class="sq-multiplayer-kicker">ENABLE ROUTE 3</span><b>Get the Discord code, paste it here, then save.</b><span>The code is checked securely first. Incorrect codes are not stored.</span></div><div class="sq-multiplayer-code"><input type="password" maxlength="64" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Discord backup relay code" placeholder="Paste Discord code"><button class="button sq-multiplayer-reveal" type="button" aria-label="Show or hide backup code">Show</button><button class="button sq-multiplayer-save" type="button">Save code</button><a class="button sq-multiplayer-discord" href="https://discord.gg/DP2hM7RRhR" target="_blank" rel="noopener noreferrer">Open Discord</a></div><p class="sq-backup-validation" role="status" aria-live="polite"></p></div><p class="sq-multiplayer-note">Route 3 never skips the first two routes. A verified code only makes the final fallback available.</p></div>';
+      panel.innerHTML='<div class="sq-multiplayer-relay-head"><div><span class="sq-multiplayer-kicker">CONNECTION ORDER</span><strong>Automatic: 1 &rarr; 2 &rarr; 3</strong></div><span class="sq-multiplayer-status" role="status"></span><button class="sq-multiplayer-collapse" type="button" aria-expanded="true" aria-controls="sqMultiplayerRouteBody">Hide</button></div><div class="sq-multiplayer-route-body" id="sqMultiplayerRouteBody"><p class="sq-multiplayer-intro"><b>Just host or join.</b> PolyTrack tries each available route in order.</p><div class="sq-multiplayer-paths"><div class="sq-multiplayer-path is-automatic"><span class="sq-route-number">1</span><div><b>Direct</b><span>Always tried first. Fastest, and uses no TURN quota.</span></div><em>AUTO</em></div><div class="sq-multiplayer-path is-automatic"><span class="sq-route-number">2</span><div><b>Public relay</b><span>Only tried if Direct fails. No code or setup needed.</span></div><em>AUTO</em></div><button class="sq-multiplayer-path sq-multiplayer-backup-toggle" type="button" aria-expanded="false" aria-controls="sqMultiplayerBackupDrawer"><span class="sq-route-number">3</span><div><b>Discord backup</b><span>Only tried if Direct and Public Relay fail, and only after a verified code is saved.</span></div><em class="sq-backup-state">SET UP</em></button></div><div class="sq-multiplayer-backup-drawer" id="sqMultiplayerBackupDrawer" hidden><div class="sq-backup-copy"><span class="sq-multiplayer-kicker">ENABLE ROUTE 3</span><b>Get the Discord code, paste it here, then save.</b><span>The code is checked securely first. Incorrect codes are not stored.</span></div><div class="sq-multiplayer-code"><input type="password" maxlength="192" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Discord backup relay code" placeholder="Paste Discord code"><button class="button sq-multiplayer-reveal" type="button" aria-label="Show or hide backup code">Show</button><button class="button sq-multiplayer-save" type="button">Save code</button><a class="button sq-multiplayer-discord" href="https://discord.gg/DP2hM7RRhR" target="_blank" rel="noopener noreferrer">Open Discord</a></div><p class="sq-backup-validation" role="status" aria-live="polite"></p></div><p class="sq-multiplayer-note">Route 3 never skips the first two routes. A verified code only makes the final fallback available.</p></div>';
       const input=panel.querySelector('input');
       const button=panel.querySelector('.sq-multiplayer-save');
       const reveal=panel.querySelector('.sq-multiplayer-reveal');
