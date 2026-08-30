@@ -195,7 +195,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
   const PROFILE_NAME_WORD_B = ['racer','drift','pulse','track','echo','comet','storm','shift','vault','spark','dash','glide','runner','rocket','flare','nexus','voyage','blaze','orbit','flux','drive','streak','zenith','quartz','radar','pilot','charger','phantom','matrix','engine','jumper','hopper','sprinter','raider','seeker','keeper','walker','slider','cruiser','strider','booster','chaser','panther','falcon','otter','fox','rhino','yak','wizard','knight','samurai','sage','ranger','captain','doctor','baron','duke','rookie','veteran','legend','maverick','stomper','breaker','spirit','beacon','anchor','vector','module','kernel','vortex','quasar','galaxy','planet','meteor','asteroid','volcano','tsunami','whirl','tempest','charge','vertex','pixel','bit','byte','gear','piston','engineer','driver','rider','climber','surfer','skater','sniper','ace'];
   const DEFAULT_NAME_BLOCKLIST = ["admin","moderator","owner","staff","support","system","dev","developer","verified","helper","official","security","abuse","abuser","anal","anus","arse","arsehole","ass","assbag","assclown","assface","assfuck","assfucker","asshat","asshole","assholes","asslicker","asswipe","ballsack","bastard","bastards","beaner","bitch","bitches","bitchy","blowjob","blowjobs","bollock","bollocks","boner","boob","boobs","booty","brothel","bullshit","buttfuck","butthole","cameltoe","chink","clit","clitoris","cock","cocks","coon","crap","cum","cumming","cunt","cunts","dick","dicks","dildo","dildos","dipshit","doggystyle","douche","douchebag","dyke","fag","faggot","faggots","feck","fellatio","fingerbang","fuck","fucked","fucker","fuckers","fuckface","fucking","fuckoff","fuckwit","fuk","gangbang","gaylord","genitals","gook","handjob","hardcore","hentai","hitler","hoe","hoes","horny","incest","jackass","jerkoff","jizz","kike","kkk","kunt","lesbo","lesbian","loli","masturbate","masturbation","milf","motherfucker","motherfucking","muff","nazi","nazism","negro","nigga","nigger","niggers","nipple","nipples","nutjob","orgasm","orgy","pedo","pedophile","penis","piss","pissed","pisser","playboy","poon","poop","porn","porno","pornhub","prostitute","pussy","queef","queer","raped","raper","rapist","rape","retard","rimjob","scrotum","sex","sexy","shit","shits","shitty","shota","sissy","skank","slut","sluts","smegma","spic","spunk","strapon","suck","sucks","testicle","threesome","tit","tits","titties","titty","tranny","twat","vag","vagina","vibrator","virgin","voyeur","wank","wanker","whore","whores","wtf","xxx","xrated","yaoi","zoophile","zoophilia","alqaeda","isis","terrorist","swastika","1488","molest","molester","underage","childporn","cp","suicide","killyourself","kys","racist","racism","whitepower","wetback","spick","gimp","cripple","idiot","moron","stupid","dumbass","shithead","cumshot","cumslut","deepthroat","fisting","gangrape","gfy","goatse","groomer","hooker","hotsex","humping","jackoff","motherfucker","nutsack","pecker","peehole","peeing","pussylicking","rectum","scat","semen","sexcam","sexchat","sexworker","shemale","slapper","sodomize","sodomy","tard","teabagging","towelhead","tubgirl","unclefucker","upskirt","urethra","urine","vulva","wigger","willy","yid"];
   const MODERN_HIGH_RISK_TERMS = ['gooning','gooner','goonette','edging','edgeplay','gyatt','gyat','onlyfans','ofans','discordmod','heilhitler','gasjews','killall','kms','killyourself','kys','unaliveyourself','csam','cporn','childlover','minorlover','lolicon','shotacon'];
-  const COMPACT_SEVERE_TERMS = ['nigger','nigga','faggot','chink','kike','spic','wetback','beaner','coon','gook','tranny','fuck','bitch','cunt','rape','rapist','pedophile','molester','childporn','csam','killyourself','whitepower','heilhitler','pornhub','onlyfans','gooning','masterbait','masterbaiting','masterofbaiting'];
+  const COMPACT_SEVERE_TERMS = ['nigger','niggre','nigre','nigga','faggot','chink','kike','spic','wetback','beaner','coon','gook','tranny','fuck','bitch','cunt','rape','rapist','pedophile','molester','childporn','csam','killyourself','whitepower','heilhitler','pornhub','onlyfans','gooning','masterbait','masterbaiting','masterofbaiting'];
   const RESERVED_NAME_TERMS = ['admin','administrator','moderator','modteam','owner','staff','support','system','developer','devteam','verified','official','staticquasar931'];
 
   function readProfileMap(){
@@ -1019,6 +1019,33 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     } catch {}
   }
 
+  function migrateUnsafeLocalNames(){
+    const migrationKey='polytrack-0.6.2-name-safety-v3';
+    try {
+      if(localStorage.getItem(migrationKey)==='1')return;
+      const storageKey='polytrack-0.6.2-profile-last-names-v1';
+      const map=JSON.parse(localStorage.getItem(storageKey)||'{}');
+      if(map&&typeof map==='object'&&!Array.isArray(map)){
+        for(const [accountId,name] of Object.entries(map))map[accountId]=safeDisplayName(name,accountId);
+        localStorage.setItem(storageKey,JSON.stringify(map));
+      }
+      const active=localStorage.getItem(LAST_ACTIVE_NAME_KEY);
+      if(active)localStorage.setItem(LAST_ACTIVE_NAME_KEY,safeDisplayName(active,guestAccountId));
+      localStorage.setItem(migrationKey,'1');
+    } catch {}
+  }
+
+  function canonicalDisplayName(accountId, embeddedName=''){
+    const id=String(accountId||'').slice(0,128);
+    const live=Array.isArray(overallEntriesCache)
+      ? overallEntriesCache.find((entry)=>String(entry.userId||entry.accountId||'')===id)
+      : null;
+    const cached=readOverallSnapshotCache()?.entries?.find((entry)=>String(entry.userId||entry.accountId||'')===id);
+    const name=safeDisplayName(live?.name||live?.nickname||getLastKnownName(id)||cached?.name||cached?.nickname||embeddedName||'Guest',id);
+    if(id)setLastKnownName(id,name);
+    return name;
+  }
+
   function loadScript(src){
     return new Promise((resolve,reject)=>{
       const existing = document.querySelector(`script[data-ext-src="${src}"]`);
@@ -1229,8 +1256,10 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
       .sq-track-leaderboard-loading .leaderboard-ui>.container>button.main{visibility:hidden!important}.sq-track-leaderboard-loading .leaderboard-ui>.container::after{content:'Loading track leaderboard';display:block;margin:18px auto;padding:12px 18px;width:max-content;max-width:80%;background:#172653;border-left:4px solid #7ee7ff;color:#eaf7ff;font:18px ForcedSquare,Arial,sans-serif}.polytrack-track-freshness.is-loading{border-left-color:#7ee7ff}.profile-result.is-null{opacity:.72;border-left-color:#71809c!important}.profile-achievement-medals{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:6px!important}.profile-achievement-medals .profile-medal-card{display:grid!important;grid-template-columns:30px 1fr!important;grid-template-rows:auto auto!important;align-items:center!important;column-gap:6px!important;min-width:0!important;min-height:58px!important;padding:7px!important;background:#10214b}.profile-medal-card img{grid-row:1/3;width:27px!important;height:27px!important}.profile-medal-card b{font-size:19px}.profile-medal-card small{font-size:10px;letter-spacing:.6px}.profile-medal-card.gold b{color:#ffe381}.profile-medal-card.silver b{color:#f4f7ff}.profile-medal-card.bronze b{color:#ffb786}.profile-guide>summary [data-summary-track-id]{cursor:pointer}.profile-guide>summary [data-summary-track-id]:hover strong{color:#7ee7ff;text-decoration:underline}
       .track-type-label{display:inline-flex!important;align-items:center;padding:2px 6px;border-left:3px solid #7ee7ff;background:#142654;color:#dceaff;text-transform:capitalize}.track-type-label.official,.track-type-official{--track-type-color:#ffd26c}.track-type-label.community,.track-type-community{--track-type-color:#72e7b4}.track-type-label.custom,.track-type-custom{--track-type-color:#d0a5ff}.track-type-label.official,.track-type-label.community,.track-type-label.custom{border-left-color:var(--track-type-color)}.profile-track-row[class*='track-type-']{border-left:3px solid var(--track-type-color,#7ee7ff)}.profile-track-row time{display:flex;flex-direction:column;gap:4px}.profile-track-row time small{color:#9fb7d8;font-size:10px;line-height:1.15}.overall-challenge-stack section{border-right:1px solid rgba(255,255,255,.1)}.overall-challenge-stack .competition-track-name{font-weight:normal}.overall-center-tools{align-content:center}.leaderboard-arcade>div{flex:1}.leaderboard-arcade button{flex:1;justify-content:center}.profile-beta-badge{padding:5px 8px;background:#ffd26c;color:#17224a;font-size:12px;letter-spacing:1px}
       .overall-track-you{display:inline-flex;padding:2px 6px;background:#7ee7ff;color:#10214b;font-size:.86em;letter-spacing:.6px;box-shadow:0 0 10px rgba(126,231,255,.28)}.overall-track-entry .overall-best-line:nth-child(2){color:#dcecff}.profile-track-row{grid-template-columns:96px minmax(180px,1fr) 110px 150px 124px!important;min-height:82px!important;padding:7px 11px!important;border-left:0!important;box-shadow:inset 3px 0 0 var(--track-type-color,#7ee7ff)}.profile-track-row .profile-track-image-frame{width:92px!important;height:66px!important;background:#101f48}.profile-track-row .profile-track-thumb{width:92px!important;height:66px!important;object-fit:contain!important;image-rendering:auto}.profile-track-row .track-type-label{display:inline-flex!important;width:max-content;padding:0!important;border:0!important;background:transparent!important;color:var(--track-type-color,#9fb7d8)!important;font-size:12px!important;letter-spacing:.5px}.profile-track-row .profile-track-name b{font-size:19px!important}.profile-track-row time{font-size:16px!important}.profile-track-row time small{font-size:12px!important;color:#bdd2ee!important}.profile-track-head{grid-template-columns:minmax(0,1fr) 110px 150px 124px!important;padding-left:116px!important}
-      .sq-multiplayer-relay{position:absolute;left:50%;bottom:18px;z-index:8;width:min(840px,calc(100vw - 24px));box-sizing:border-box;padding:10px 12px 11px;transform:translateX(-50%);background:#152652;color:#eaf5ff;font-family:ForcedSquare,Arial,sans-serif;clip-path:polygon(10px 0,100% 0,calc(100% - 10px) 100%,0 100%);box-shadow:0 12px 30px rgba(0,0,0,.36)}.sq-multiplayer-relay-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:7px}.sq-multiplayer-relay-head strong{font-size:19px;font-weight:normal;color:#fff}.sq-multiplayer-status{padding:4px 8px;background:#243b78;border-left:4px solid #7ee7ff;color:#cde8ff;font-size:13px}.sq-multiplayer-status.is-backup{border-color:#ffd56e;color:#ffe7a8}.sq-multiplayer-status.is-direct{border-color:#98a9c8;color:#ced8e9}.sq-multiplayer-paths{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.sq-multiplayer-path{min-width:0;padding:7px 9px;background:#1c3269;border-top:2px solid #536fae}.sq-multiplayer-path:first-child{border-color:#77e6b0}.sq-multiplayer-path:nth-child(2){border-color:#7ee7ff}.sq-multiplayer-path:nth-child(3){border-color:#ffd56e}.sq-multiplayer-path b{display:block;margin-bottom:2px;font-size:15px;font-weight:normal;color:#fff}.sq-multiplayer-path span{display:block;color:#b9cbe5;font-size:11px;line-height:1.22}.sq-multiplayer-code{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:6px;margin-top:7px}.sq-multiplayer-code input{min-width:0;padding:7px 9px;background:#0f1d43;border:2px solid #385594;color:#fff;font:15px ForcedSquare,Arial,sans-serif}.sq-multiplayer-code input:focus{outline:2px solid #7ee7ff;outline-offset:1px}.sq-multiplayer-code .button{min-width:76px;height:36px;font-size:14px}.sq-multiplayer-discord{display:flex!important;align-items:center;justify-content:center;padding:0 11px;color:#fff!important;text-decoration:none;background:#354d8d}.sq-multiplayer-note{margin:6px 2px 0;color:#92a9ca;font-size:10px;line-height:1.15}.sq-multiplayer-note code{color:#d7e8ff}
-      @media(max-width:760px){.sq-multiplayer-relay{bottom:7px;width:calc(100vw - 10px);padding:8px}.sq-multiplayer-paths{grid-template-columns:1fr}.sq-multiplayer-path{padding:5px 7px}.sq-multiplayer-path span{font-size:10px}.sq-multiplayer-code{grid-template-columns:minmax(0,1fr) auto}.sq-multiplayer-discord{grid-column:1/-1;min-height:32px}.sq-multiplayer-relay-head strong{font-size:16px}.sq-multiplayer-status{font-size:11px}}
+      .sq-multiplayer-relay{position:absolute;left:50%;bottom:16px;z-index:8;width:min(1020px,calc(100vw - 28px));box-sizing:border-box;padding:16px 18px;transform:translateX(-50%);background:linear-gradient(115deg,#101f47,#1b3268 72%,#17365f);color:#eaf5ff;font-family:ForcedSquare,Arial,sans-serif;border:1px solid rgba(126,231,255,.26);border-left:6px solid #7ee7ff;clip-path:polygon(12px 0,100% 0,calc(100% - 12px) 100%,0 100%);box-shadow:0 16px 42px rgba(0,0,0,.46)}.sq-multiplayer-relay[hidden],.sq-multiplayer-route-body[hidden],.sq-multiplayer-backup-drawer[hidden]{display:none!important}.sq-multiplayer-relay.is-collapsed{width:min(720px,calc(100vw - 28px));padding:10px 13px}.sq-multiplayer-relay-head{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:12px}.sq-multiplayer-relay-head>div{display:flex;flex-direction:column;gap:2px;min-width:0}.sq-multiplayer-kicker{color:#7ee7ff;font-size:11px;letter-spacing:1.4px}.sq-multiplayer-relay-head strong{font-size:24px;font-weight:normal;color:#fff;line-height:1.05}.sq-multiplayer-status{padding:7px 10px;background:#243b78;border-left:4px solid #7ee7ff;color:#d7efff;font-size:14px;white-space:nowrap}.sq-multiplayer-status.is-backup{border-color:#ffd56e;color:#ffe7a8}.sq-multiplayer-status.is-direct{border-color:#98a9c8;color:#ced8e9}.sq-multiplayer-collapse{min-height:38px;padding:7px 12px;border:1px solid rgba(126,231,255,.32);background:#20396f;color:#fff;font:14px ForcedSquare,Arial,sans-serif;cursor:pointer}.sq-multiplayer-collapse:hover,.sq-multiplayer-collapse:focus-visible{background:#7ee7ff;color:#10214b;outline:2px solid #fff;outline-offset:2px}.sq-multiplayer-intro{margin:10px 0 8px;color:#c3d7ee;font-size:15px}.sq-multiplayer-paths{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.sq-multiplayer-path{display:grid;grid-template-columns:34px minmax(0,1fr);grid-template-rows:auto auto;align-items:start;gap:2px 9px;min-width:0;min-height:100px;box-sizing:border-box;padding:11px 12px;background:#1b3168;border:0;border-top:4px solid #536fae;color:inherit;text-align:left;font-family:inherit}.sq-multiplayer-path.is-automatic:first-child{border-color:#77e6b0}.sq-multiplayer-path.is-automatic:nth-child(2){border-color:#7ee7ff}.sq-multiplayer-backup-toggle{border-color:#ffd56e;cursor:pointer}.sq-multiplayer-backup-toggle:hover,.sq-multiplayer-backup-toggle:focus-visible,.sq-multiplayer-backup-toggle.is-open{background:#2c4175;outline:2px solid #ffd56e;outline-offset:-2px}.sq-route-number{grid-column:1;grid-row:1/3;display:flex!important;align-items:center;justify-content:center;width:32px;height:32px;background:#0e1d43!important;color:#fff!important;font-size:20px!important}.sq-multiplayer-path>div{grid-column:2;grid-row:1}.sq-multiplayer-path b{display:block;margin-bottom:4px;font-size:18px;font-weight:normal;color:#fff}.sq-multiplayer-path div>span{display:block;color:#c2d3e9;font-size:13px;line-height:1.3}.sq-multiplayer-path em{grid-column:2;grid-row:2;align-self:end;width:max-content;margin-top:7px;padding:3px 6px;background:#10224c;color:#8ff1ff;font-size:10px;font-style:normal;letter-spacing:1px}.sq-multiplayer-backup-toggle em{color:#ffe49a}.sq-multiplayer-backup-drawer{display:grid;grid-template-columns:minmax(220px,.75fr) minmax(0,1.25fr);align-items:center;gap:14px;margin-top:9px;padding:11px 12px;background:#222f58;border-left:4px solid #ffd56e}.sq-multiplayer-backup-drawer>div:first-child{display:flex;flex-direction:column;gap:3px}.sq-multiplayer-backup-drawer b{font-size:17px;font-weight:normal;color:#fff}.sq-multiplayer-backup-drawer span{color:#b9cbe5;font-size:12px;line-height:1.25}.sq-multiplayer-code{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:7px}.sq-multiplayer-code input{min-width:0;padding:9px 10px;background:#0f1d43;border:2px solid #385594;color:#fff;font:16px ForcedSquare,Arial,sans-serif}.sq-multiplayer-code input:focus{outline:2px solid #7ee7ff;outline-offset:1px}.sq-multiplayer-code .button{display:flex!important;align-items:center;justify-content:center;min-width:86px;height:42px;font-size:15px}.sq-multiplayer-discord{padding:0 12px;color:#fff!important;text-decoration:none;background:#354d8d}.sq-multiplayer-note{margin:8px 2px 0;color:#9fb5d2;font-size:12px;line-height:1.25}
+      @media(max-width:760px){.sq-multiplayer-relay,.sq-multiplayer-relay.is-collapsed{bottom:6px;width:calc(100vw - 10px);max-height:calc(100vh - 12px);overflow:auto;padding:11px 10px;border-left-width:4px;clip-path:none}.sq-multiplayer-relay-head{grid-template-columns:minmax(0,1fr) auto;gap:7px}.sq-multiplayer-relay-head strong{font-size:19px}.sq-multiplayer-kicker{font-size:9px}.sq-multiplayer-status{grid-column:1;padding:5px 7px;width:max-content;font-size:11px}.sq-multiplayer-collapse{grid-column:2;grid-row:1/3;min-height:42px;padding:6px 9px;font-size:12px}.sq-multiplayer-intro{margin:8px 0 6px;font-size:13px}.sq-multiplayer-paths{grid-template-columns:1fr;gap:5px}.sq-multiplayer-path{grid-template-columns:30px minmax(0,1fr) auto;grid-template-rows:auto;min-height:0;padding:8px 9px;border-top-width:3px}.sq-route-number{grid-column:1;grid-row:1;width:28px;height:28px;font-size:17px!important}.sq-multiplayer-path>div{grid-column:2;grid-row:1}.sq-multiplayer-path b{font-size:16px}.sq-multiplayer-path div>span{font-size:12px}.sq-multiplayer-path em{grid-column:3;grid-row:1;align-self:start;margin:0;font-size:8px}.sq-multiplayer-backup-drawer{grid-template-columns:1fr;gap:8px;padding:9px}.sq-multiplayer-code{grid-template-columns:minmax(0,1fr) auto}.sq-multiplayer-discord{grid-column:1/-1;min-height:38px}.sq-multiplayer-note{font-size:10px}}
+      @media(max-width:700px){#overallLeaderboardPanel{padding:0!important}.overall-shell{width:100vw!important;height:100dvh!important;clip-path:none!important}.overall-top{display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;gap:8px!important;padding:11px 10px 8px!important}.overall-top h2{font-size:32px!important}.overall-title-group{min-width:0}.overall-actions{display:grid!important;grid-template-columns:repeat(2,minmax(68px,1fr));gap:5px!important}.overall-action-btn{min-width:0!important;min-height:40px!important;padding:6px 8px!important;font-size:13px!important}.overall-sub{padding:7px 10px!important;font-size:12px!important;line-height:1.25}.overall-summary{padding:5px 8px!important;font-size:11px!important}#overallLeaderboardList{min-height:180px;padding:5px!important;overscroll-behavior:contain}.overall-entry{min-height:100px!important}.overall-competition{display:flex!important;flex-direction:column!important;gap:7px!important;max-height:46vh;overflow-y:auto!important;padding:7px!important}.overall-footer-right{order:1!important;display:grid!important;grid-template-columns:1fr!important;gap:6px!important;padding:8px!important}.overall-category-select{grid-column:1!important;grid-row:auto!important;grid-template-columns:82px minmax(0,1fr)!important;min-height:48px!important}.overall-category-select>span{font-size:12px!important}.overall-category-select select{height:40px!important;font-size:16px!important}.overall-track-scope{grid-column:1!important;grid-row:auto!important;display:grid!important;grid-template-columns:repeat(3,1fr);width:100%}.overall-track-scope button{min-width:0!important}.overall-challenge-stack{order:2!important;display:grid!important;grid-template-columns:1fr 1fr!important;grid-template-rows:auto!important;gap:6px!important}.overall-competition section{min-height:74px!important;padding:8px!important}.competition-track-main{align-items:flex-start!important;flex-direction:column!important;gap:1px!important}.competition-track-name{width:100%;font-size:17px!important}.competition-result{font-size:12px!important}.overall-competition section small{font-size:10px!important}.overall-center-tools{order:3!important;display:grid!important;gap:6px!important;padding:8px!important}.overall-pager{grid-template-columns:48px minmax(0,1fr) 48px!important;gap:6px!important}.overall-page-button{width:48px!important;min-width:48px!important;height:44px!important}.overall-page-status{min-height:44px!important;font-size:14px!important}.overall-center-tools .overall-freshness{min-height:42px!important;font-size:12px!important}.overall-profile-card{max-height:100dvh!important}.profile-track-history{padding:8px!important}.profile-track-row{grid-template-columns:64px minmax(0,1fr) 96px!important;min-height:72px!important;padding:6px!important}.profile-track-row .profile-track-image-frame,.profile-track-row .profile-track-thumb{width:60px!important;height:48px!important}.profile-track-row .profile-track-name b{font-size:16px!important}.profile-track-row time{font-size:13px!important}}
+      @media(max-width:460px){.overall-top{grid-template-columns:1fr!important}.overall-actions{grid-template-columns:repeat(4,1fr)!important}.overall-action-btn{font-size:11px!important}.overall-challenge-stack{grid-template-columns:1fr!important}.overall-competition{max-height:52vh}.overall-entry{grid-template-columns:48px minmax(0,1fr) 82px!important}.overall-rank{width:48px!important;font-size:25px!important}.overall-car-model,.overall-entry.top-1 .overall-car-model{width:50px!important;height:48px!important}.overall-name-main{font-size:17px!important}.overall-score{font-size:23px!important}.overall-stats{min-width:78px!important}.sq-multiplayer-path div>span{font-size:11px}.sq-multiplayer-path em{display:none}.sq-multiplayer-path{grid-template-columns:28px minmax(0,1fr)}}
       @media(max-width:1000px){.profile-track-row{grid-template-columns:82px minmax(150px,1fr) 100px 130px!important}.profile-track-row .profile-track-image-frame,.profile-track-row .profile-track-thumb{width:78px!important;height:58px!important}}
       @media(max-width:620px){.profile-track-row{grid-template-columns:68px minmax(120px,1fr) 112px!important}.profile-track-row .profile-track-image-frame,.profile-track-row .profile-track-thumb{width:64px!important;height:52px!important}.profile-track-row .profile-track-name b{font-size:17px!important}}
       @keyframes staticGlowPulse{0%{box-shadow:0 0 0 rgba(255,255,255,0.0),0 0 10px rgba(0,255,255,0.12)}50%{box-shadow:0 0 14px rgba(255,255,255,0.18),0 0 22px rgba(255,0,255,0.18)}100%{box-shadow:0 0 0 rgba(255,255,255,0.0),0 0 10px rgba(0,255,255,0.12)}}
@@ -1979,25 +2008,11 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
         const data = doc.data() || {};
         entries = Array.isArray(data.entries) ? data.entries : [];
         if (Number(data.schemaVersion || 0) < TRACK_CACHE_SCHEMA) {
-          const snap = await d.collection(COLLECTIONS.raceResults).where('trackId','==',safeTrackId).limit(500).get();
-          const cachedRows = entries.map((entry)=>({...entry,trackId:safeTrackId}));
-          entries = computeTrackTopEntries([...cachedRows,...snap.docs.map((x)=>x.data() || {})],safeTrackId,500);
-          try {
-            data.updatedAt=Date.now();
-            await ref.set({trackId:safeTrackId,entries,updatedAt:data.updatedAt,schemaVersion:TRACK_CACHE_SCHEMA},{merge:false});
-            log('info','[FB208] Track cache migrated',{trackId:safeTrackId,participants:entries.length,sourceRows:snap.size});
-          } catch (repairError) {
-            log('warn','[FB408] Track cache migration could not be saved',String(repairError&&(repairError.message||repairError)));
-          }
+          entries = computeTrackTopEntries(entries.map((entry)=>({...entry,trackId:safeTrackId})),safeTrackId,500);
+          log('info','[CACHE208] Legacy track cache normalized locally',{trackId:safeTrackId,participants:entries.length});
         } else if(entries.some((entry)=>Number(entry.timingVersion||0)<2||canonicalRaceTimeMs(entry)!==Math.round(Number(entry.timeMs||0)||0))){
           entries=computeTrackTopEntries(entries.map((entry)=>({...entry,trackId:safeTrackId})),safeTrackId,500);
-          try {
-            data.updatedAt=Date.now();
-            await ref.set({trackId:safeTrackId,entries,updatedAt:data.updatedAt,schemaVersion:TRACK_CACHE_SCHEMA},{merge:false});
-            log('info','[FB209] Corrected 0.6.2 millisecond timing cache',{trackId:safeTrackId,participants:entries.length});
-          } catch (repairError) {
-            log('warn','[FB409] Timing cache correction could not be saved',String(repairError&&(repairError.message||repairError)));
-          }
+          log('info','[CACHE209] Legacy timing normalized locally',{trackId:safeTrackId,participants:entries.length});
         }
         entries=applyCanonicalTrackWeight(safeTrackId,entries);
         writeTrackSnapshotCache(safeTrackId,entries,data.updatedAt||Date.now());
@@ -2015,7 +2030,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     setTimeout(updateTrackFreshnessBanner,0);
     return enrichLegacyLeaderboardEntries(ranked).map((entry)=>{
       const userId = String(entry.accountId || entry.userId || '');
-      const name = safeDisplayName(entry.nickname || entry.name || getLastKnownName(userId) || 'Guest', userId);
+      const name = canonicalDisplayName(userId,entry.nickname || entry.name || 'Guest');
       return {...entry,name,nickname:name};
     }).slice(0, limit);
   }
@@ -3711,6 +3726,37 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
       return urls.some((url)=>/^turns?:/i.test(String(url || '')));
     });
   }
+  function selectMultiplayerIceServers(configured){
+    const expanded=[];
+    for(const server of normalizeIceServerList(configured)){
+      const urls=Array.isArray(server.urls)?server.urls:[server.urls];
+      for(const url of urls){
+        const row={urls:String(url||'')};
+        if(server.username)row.username=server.username;
+        if(server.credential)row.credential=server.credential;
+        expanded.push(row);
+      }
+    }
+    if(!expanded.length)return MULTIPLAYER_STUN_SERVERS.map((server)=>({...server}));
+    const unique=[];
+    const seen=new Set();
+    for(const server of expanded){
+      const key=String(server.urls||'').toLowerCase();
+      if(!key||seen.has(key))continue;
+      seen.add(key);unique.push(server);
+    }
+    const stun=unique.find((server)=>/^stun:/i.test(server.urls))||{...MULTIPLAYER_STUN_SERVERS[0]};
+    const turn=unique.filter((server)=>/^turns?:/i.test(server.urls));
+    const udp=turn.find((server)=>/^turn:/i.test(server.urls)&&!/transport=tcp/i.test(server.urls));
+    const tcp=turn.find((server)=>/^turn:/i.test(server.urls)&&/transport=tcp/i.test(server.urls));
+    const tls=turn.find((server)=>/^turns:/i.test(server.urls));
+    const selected=[stun,udp,tcp,tls].filter(Boolean);
+    for(const server of turn){
+      if(selected.length>=4)break;
+      if(!selected.some((row)=>row.urls===server.urls))selected.push(server);
+    }
+    return selected.slice(0,4);
+  }
   async function resolveMultiplayerIceServers(){
     if (multiplayerIceServersPromise) return multiplayerIceServersPromise;
     multiplayerIceServersPromise = (async()=>{
@@ -3749,9 +3795,9 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
           log('warn','[MP310] TURN credentials unavailable; direct connections only',String(error&&(error.message||error)));
         }
       }
-      const servers = [...MULTIPLAYER_STUN_SERVERS,...configured];
+      const servers = selectMultiplayerIceServers(configured);
       const turnAvailable = hasTurnServer(servers);
-      if(turnAvailable) multiplayerNetworkMessage=relayMode==='backup'?'Discord backup relay ready.':'Public relay ready.';
+      if(turnAvailable) multiplayerNetworkMessage=relayMode==='backup'?'Discord relay fallback is available. Direct connection is still tried first.':'Public relay fallback is available. Direct connection is still tried first.';
       window.__polytrackMultiplayerNetwork = {turnAvailable,iceServerCount:servers.length,mode:turnAvailable?(relayMode||'relay'):'direct-only',message:multiplayerNetworkMessage};
       syncMultiplayerRelayPanel();
       if (!turnAvailable) log('warn','[MP311] No TURN relay configured; restrictive or cross-network NAT may fail','The secure TURN broker is unavailable or not configured.');
@@ -3761,9 +3807,9 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
   }
   function multiplayerRelayStatus(){
     const state=window.__polytrackMultiplayerNetwork;
-    if(!state)return {label:'Direct first',className:'',message:multiplayerNetworkMessage};
-    if(state.mode==='backup')return {label:'Discord backup ready',className:'is-backup',message:state.message};
-    if(state.turnAvailable)return {label:'Public relay ready',className:'',message:state.message};
+    if(!state)return {label:'Automatic',className:'',message:multiplayerNetworkMessage};
+    if(state.mode==='backup')return {label:'Backup available',className:'is-backup',message:state.message};
+    if(state.turnAvailable)return {label:'Fallback available',className:'',message:state.message};
     return {label:'Direct only',className:'is-direct',message:state.message};
   }
   function saveMultiplayerBackupCode(input,button){
@@ -3784,12 +3830,35 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
       panel=document.createElement('section');
       panel.className='sq-multiplayer-relay';
       panel.setAttribute('aria-label','Multiplayer connection options');
-      panel.innerHTML='<div class="sq-multiplayer-relay-head"><strong>Connection route</strong><span class="sq-multiplayer-status" role="status"></span></div><div class="sq-multiplayer-paths"><div class="sq-multiplayer-path"><b>1. Direct</b><span>Preferred automatically. Same-network play normally needs no relay and uses no TURN quota.</span></div><div class="sq-multiplayer-path"><b>2. Public relay</b><span>Used automatically when direct WebRTC cannot connect. Free to players, with limited shared availability.</span></div><div class="sq-multiplayer-path"><b>3. Discord backup</b><span>Used only if the public relay is unavailable. Get the private code from the StaticQuasar931 Discord.</span></div></div><div class="sq-multiplayer-code"><input type="password" maxlength="64" autocomplete="off" spellcheck="false" aria-label="Discord backup relay code" placeholder="Optional Discord backup code"><button class="button" type="button">Save</button><a class="button sq-multiplayer-discord" href="https://discord.gg/DP2hM7RRhR" target="_blank" rel="noopener noreferrer">Get code</a></div><p class="sq-multiplayer-note">The code stays on this device. Relay credentials are temporary and requested only when you host or join.</p>';
+      panel.innerHTML='<div class="sq-multiplayer-relay-head"><div><span class="sq-multiplayer-kicker">AUTOMATIC CONNECTION</span><strong>Direct first. Relay only when needed.</strong></div><span class="sq-multiplayer-status" role="status"></span><button class="sq-multiplayer-collapse" type="button" aria-expanded="true" aria-controls="sqMultiplayerRouteBody">Hide details</button></div><div class="sq-multiplayer-route-body" id="sqMultiplayerRouteBody"><p class="sq-multiplayer-intro">Host or join normally. PolyTrack chooses the best available route for you.</p><div class="sq-multiplayer-paths"><div class="sq-multiplayer-path is-automatic"><span class="sq-route-number">1</span><div><b>Direct connection</b><span>Automatic first choice. Same-network game traffic stays peer-to-peer and uses no TURN quota.</span></div><em>AUTOMATIC</em></div><div class="sq-multiplayer-path is-automatic"><span class="sq-route-number">2</span><div><b>Public relay fallback</b><span>Automatic if direct WebRTC cannot connect. Shared monthly capacity keeps cross-network games working.</span></div><em>AUTOMATIC</em></div><button class="sq-multiplayer-path sq-multiplayer-backup-toggle" type="button" aria-expanded="false" aria-controls="sqMultiplayerBackupDrawer"><span class="sq-route-number">3</span><div><b>Discord backup relay</b><span>A separate fallback with different usage limits. Open this only when the public relay is unavailable.</span></div><em>OPTIONAL</em></button></div><div class="sq-multiplayer-backup-drawer" id="sqMultiplayerBackupDrawer" hidden><div><b>Discord backup code</b><span>The code stays on this device and is sent securely only to the TURN broker.</span></div><div class="sq-multiplayer-code"><input type="password" maxlength="64" autocomplete="off" spellcheck="false" aria-label="Discord backup relay code" placeholder="Enter Discord backup code"><button class="button sq-multiplayer-save" type="button">Save</button><a class="button sq-multiplayer-discord" href="https://discord.gg/DP2hM7RRhR" target="_blank" rel="noopener noreferrer">Get code</a></div></div><p class="sq-multiplayer-note">“Fallback available” means relay access is ready, not necessarily in use. WebRTC still attempts a direct route first.</p></div>';
       const input=panel.querySelector('input');
-      const button=panel.querySelector('button');
+      const button=panel.querySelector('.sq-multiplayer-save');
+      const collapse=panel.querySelector('.sq-multiplayer-collapse');
+      const body=panel.querySelector('.sq-multiplayer-route-body');
+      const backupToggle=panel.querySelector('.sq-multiplayer-backup-toggle');
+      const backupDrawer=panel.querySelector('.sq-multiplayer-backup-drawer');
       input.value=localStorage.getItem('polytrack-0.6.2-turn-backup-code')||'';
       button.addEventListener('click',(event)=>{event.preventDefault();saveMultiplayerBackupCode(input,button);});
       input.addEventListener('keydown',(event)=>{if(event.key==='Enter'){event.preventDefault();saveMultiplayerBackupCode(input,button);}});
+      const setCollapsed=(collapsed)=>{
+        panel.classList.toggle('is-collapsed',collapsed);
+        body.hidden=collapsed;
+        collapse.setAttribute('aria-expanded',String(!collapsed));
+        collapse.textContent=collapsed?'Connection help':'Hide details';
+      };
+      setCollapsed(localStorage.getItem('polytrack-0.6.2-multiplayer-route-collapsed')==='1');
+      collapse.addEventListener('click',()=>{
+        const collapsed=!panel.classList.contains('is-collapsed');
+        setCollapsed(collapsed);
+        try{localStorage.setItem('polytrack-0.6.2-multiplayer-route-collapsed',collapsed?'1':'0');}catch{}
+      });
+      backupToggle.addEventListener('click',()=>{
+        const open=backupDrawer.hidden;
+        backupDrawer.hidden=!open;
+        backupToggle.classList.toggle('is-open',open);
+        backupToggle.setAttribute('aria-expanded',String(open));
+        if(open)setTimeout(()=>input.focus(),0);
+      });
       root.appendChild(panel);
     }
     const status=multiplayerRelayStatus();
@@ -3959,6 +4028,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
         localStorage.setItem(migrationKey,'1');
       }
     } catch {}
+    migrateUnsafeLocalNames();
     ensureStyles();
     applyUiPreferences();
     ensurePanel();
