@@ -18,7 +18,7 @@
 	"background_color": "#28346a",
 	"theme_color": "#28346a",
 	"start_url": "./index.html",
-	"orientation": "landscape",
+	"orientation": "any",
 	"display_override": ["fullscreen", "standalone", "minimal-ui"],
 	"display": "fullscreen"
 }

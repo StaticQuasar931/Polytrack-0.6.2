@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://staticquasar931.github.io/Polytrack-0.6.2/sitemap.xml
