@@ -961,7 +961,9 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
       const carStyle = __pt062NormalizeStyle(entry?.carStyle || __pt062GetRememberedStyle(userId) || entry?.carColorId || entry?.carColors || '');
       const createdAt = pbTimestamp(entry) || Date.now();
       return {
+        ...entry,
         id: safeRecordingId(entry?.id) || recordingId,
+        uploadId: safeRecordingId(entry?.uploadId || entry?.id) || recordingId,
         userId,
         accountId: userId,
         name: safeName,
@@ -972,6 +974,8 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
         carId: extractCarId(entry),
         carStyle,
         verifiedState: Number.isFinite(Number(entry?.verifiedState)) ? Number(entry.verifiedState) : 0,
+        integrityVerified: entry?.integrityVerified === true,
+        validationState: entry?.integrityVerified === true ? 'integrity' : String(entry?.validationState || 'pending').slice(0,24),
         rank,
         position: rank,
         frames,
@@ -2155,16 +2159,30 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
         let source='edge';
         try{data=await fetchRankedSnapshot('track',safeTrackId);}catch{}
         if(!data){
+          let derivedSnapshot=null;
           try{
-            data=await fetchCanonicalTrackEntries(safeTrackId,500);
-            source='canonical-firestore';
-          }catch(canonicalError){
             const d = await db();
             const ref = d.collection(COLLECTIONS.leaderboardsTrack).doc(safeTrackId);
             const doc = await ref.get();
-            data = doc.data() || {};
+            const candidate=doc.data()||null;
+            const usable=Boolean(candidate&&Array.isArray(candidate.entries)&&String(candidate.algorithmVersion||'')===RANK_MODEL&&Number(candidate.schemaVersion||0)>=TRACK_CACHE_SCHEMA);
+            if(usable)derivedSnapshot=candidate;
+          }catch(snapshotError){
+            log('warn','[FB420] Derived Firestore snapshot unavailable',String(snapshotError&&(snapshotError.message||snapshotError)));
+          }
+          if(derivedSnapshot&&!forceCloud){
+            data=derivedSnapshot;
             source='firestore-snapshot';
-            log('warn','[FB420] Canonical recovery unavailable; using derived Firestore snapshot',String(canonicalError&&(canonicalError.message||canonicalError)));
+          }else{
+            try{
+              data=await fetchCanonicalTrackEntries(safeTrackId,500);
+              source='canonical-firestore';
+            }catch(canonicalError){
+              if(!derivedSnapshot)throw canonicalError;
+              data=derivedSnapshot;
+              source='firestore-snapshot';
+              log('warn','[FB421] Canonical PB recovery unavailable; using derived Firestore snapshot',String(canonicalError&&(canonicalError.message||canonicalError)));
+            }
           }
         }
         entries = Array.isArray(data.entries) ? data.entries : [];

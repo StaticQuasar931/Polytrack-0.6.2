@@ -11,7 +11,7 @@ const REBUILD_COOLDOWN_MS = 5 * 60 * 1000;
 const MAX_REPLAY_LENGTH = 10000;
 const MIGRATION_TRACK_BATCH = 8;
 const MIGRATION_BADGE_BATCH = 25;
-const MIGRATION_VERSION = 3;
+const MIGRATION_VERSION = 4;
 const RECONCILE_RESULT_BATCH = 50;
 const RECONCILE_TRACK_BATCH = 4;
 const COLLECTIONS = Object.freeze({
@@ -461,13 +461,19 @@ async function persistTrackSnapshot(env, trackId, entries, prior = null) {
     entry.carStyle || ''
   ].join(':')).join('|');
   const signature = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(signatureInput)).then((bytes) => base64Url(new Uint8Array(bytes)));
-  if (prior?.data?.signature === signature) return { changed: false, entries, revision: Number(prior.data.revision || 0) };
+  if (trackSnapshotIsCurrent(prior?.data, signature)) return { changed: false, entries, revision: Number(prior.data.revision || 0) };
   const revision = Math.max(0, Number(prior?.data?.revision || 0)) + 1;
   const now = Date.now();
   await writeDocument(env, COLLECTIONS.track, trackId, { trackId, entries, updatedAt: now, builtAt: now, schemaVersion: TRACK_SCHEMA_VERSION, algorithmVersion: ALGORITHM_VERSION, revision, sourceRevision: revision, signature });
   const meta = (await readDocument(env, COLLECTIONS.meta, 'current'))?.data || {};
   await writeDocument(env, COLLECTIONS.meta, 'current', { ...meta, algorithmVersion: ALGORITHM_VERSION, schemaVersion: TRACK_SCHEMA_VERSION, dirty: true, revision: Math.max(Number(meta.revision || 0) + 1, revision), builtRevision: Number(meta.builtRevision || 0), lastPbAt: now, updatedAt: now, rankedWritesEnabled: String(env.RANKED_WRITES_ENABLED) !== 'false', multiplayerEnabled: String(env.MULTIPLAYER_ENABLED) !== 'false' });
   return { changed: true, entries, revision };
+}
+
+export function trackSnapshotIsCurrent(snapshot, signature) {
+  return snapshot?.signature === signature
+    && snapshot.algorithmVersion === ALGORITHM_VERSION
+    && Number(snapshot.schemaVersion || 0) >= TRACK_SCHEMA_VERSION;
 }
 
 function finishSummary(finish) {
@@ -805,6 +811,8 @@ async function publicSnapshot(request, env, context, origin, collection, id) {
   const cache = typeof caches !== 'undefined' ? caches.default : null;
   const cacheUrl = new URL(request.url);
   cacheUrl.searchParams.set('__origin', origin);
+  cacheUrl.searchParams.set('__schema', String(TRACK_SCHEMA_VERSION));
+  cacheUrl.searchParams.set('__algorithm', ALGORITHM_VERSION);
   const cacheKey = new Request(cacheUrl.toString(), { method: 'GET' });
   if (cache) {
     const cached = await cache.match(cacheKey);
@@ -812,7 +820,7 @@ async function publicSnapshot(request, env, context, origin, collection, id) {
   }
   const snapshot = await readDocument(env, collection, id);
   if (!snapshot) return json(origin, env, 404, { error: 'snapshot_not_ready' }, 'public, max-age=10, stale-while-revalidate=60');
-  const response = json(origin, env, 200, snapshot.data, 'public, max-age=30, stale-while-revalidate=300');
+  const response = json(origin, env, 200, snapshot.data, 'public, max-age=10, stale-while-revalidate=20');
   if (cache && context.waitUntil) context.waitUntil(cache.put(cacheKey, response.clone()));
   return response;
 }

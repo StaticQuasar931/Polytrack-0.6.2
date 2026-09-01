@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { computeOverall, computeTrackEntries, handleRequest, reconcileCanonicalChanges, trackWeightParts } from '../src/index.js';
+import { computeOverall, computeTrackEntries, handleRequest, reconcileCanonicalChanges, trackSnapshotIsCurrent, trackWeightParts } from '../src/index.js';
 
 const TRACK = '5803f9e963625804e3de3246d043dc7dde847aa32e991f7f7326b0453f1fa038';
 const COMMUNITY_TRACK = '5159a8dac6a1f397407a7b5233ad570613531f6609f7dc897490c28c9f2c7a4e';
@@ -10,6 +10,13 @@ const validRun = (row) => ({ replay: 'structural-replay', replayHash: 'a'.repeat
 test('solo tracks have zero weight and populated official tracks gain weight', () => {
   assert.equal(trackWeightParts(TRACK, 1).finalWeight, 0);
   assert.ok(trackWeightParts(TRACK, 20).finalWeight > trackWeightParts(TRACK, 10).finalWeight);
+});
+
+test('unchanged track signatures are rewritten when schema or algorithm is obsolete', () => {
+  const signature = 'same-content';
+  assert.equal(trackSnapshotIsCurrent({ signature, schemaVersion: 4, algorithmVersion: 'participation-v8-s1' }, signature), false);
+  assert.equal(trackSnapshotIsCurrent({ signature, schemaVersion: 5, algorithmVersion: 'old-algorithm' }, signature), false);
+  assert.equal(trackSnapshotIsCurrent({ signature, schemaVersion: 5, algorithmVersion: 'participation-v8-s1' }, signature), true);
 });
 
 test('track types use the exact registry instead of treating every hash as community', () => {
