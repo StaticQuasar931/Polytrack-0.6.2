@@ -2,16 +2,18 @@ const FIREBASE_JWKS_URL = 'https://www.googleapis.com/service_accounts/v1/jwk/se
 const FIREBASE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
 const PROJECT_ID = 'polytrack-052';
 const ALGORITHM_VERSION = 'participation-v8-s1';
-const TRACK_SCHEMA_VERSION = 4;
+const TRACK_SCHEMA_VERSION = 5;
 const MIN_RANKED_TRACKS = 3;
 const PODIUM_MIN_FIELD = 5;
 const OVERALL_LIMIT = 200;
 const TRACK_LIMIT = 500;
 const REBUILD_COOLDOWN_MS = 5 * 60 * 1000;
 const MAX_REPLAY_LENGTH = 10000;
-const MIGRATION_TRACK_BATCH = 4;
+const MIGRATION_TRACK_BATCH = 8;
 const MIGRATION_BADGE_BATCH = 25;
-const MIGRATION_VERSION = 2;
+const MIGRATION_VERSION = 3;
+const RECONCILE_RESULT_BATCH = 50;
+const RECONCILE_TRACK_BATCH = 4;
 const COLLECTIONS = Object.freeze({
   raceResults: '0.6.2_race_results',
   profiles: '0.6.2_profiles_public',
@@ -278,6 +280,25 @@ async function runQuery(env, collection, where = null, limit = 500) {
   }] : []);
 }
 
+async function runChangedResultsQuery(env, updatedAfter, limit = RECONCILE_RESULT_BATCH) {
+  const structuredQuery = {
+    from: [{ collectionId: COLLECTIONS.raceResults }],
+    where: { fieldFilter: { field: { fieldPath: 'updatedAt' }, op: 'GREATER_THAN', value: encodeValue(Math.max(0, Number(updatedAfter || 0))) } },
+    orderBy: [{ field: { fieldPath: 'updatedAt' }, direction: 'ASCENDING' }],
+    limit
+  };
+  const payload = await firestoreRequest(env, ':runQuery', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ structuredQuery })
+  });
+  return (Array.isArray(payload) ? payload : []).flatMap((item) => item.document ? [{
+    id: decodeURIComponent(String(item.document.name || '').split('/').pop()),
+    data: decodeFields(item.document.fields || {}),
+    updateTime: item.document.updateTime || ''
+  }] : []);
+}
+
 function safeText(value, max) {
   return String(value || '').replace(/[<>\u0000-\u001f]/g, '').trim().slice(0, max);
 }
@@ -403,7 +424,7 @@ export function computeTrackEntries(rows, trackId, env = {}) {
       verified: false,
       verifiedState: 0,
       integrityVerified: row.integrityVerified === true,
-      validationState: row.integrityVerified === true ? 'integrity' : 'structural',
+      validationState: row.integrityVerified === true ? 'integrity' : 'pending',
       betaTester: betaCutoff(env) > 0 && Number(row.createdAt || 0) > 0 && Number(row.createdAt) <= betaCutoff(env)
     });
   }
@@ -470,7 +491,7 @@ export function computeOverall(trackDocuments, priorEntries = [], betaTesterIds 
   const users = new Map();
   for (const board of trackDocuments) {
     const trackId = safeText(board.trackId, 80);
-    const entries = Array.isArray(board.entries) ? board.entries : [];
+    const entries = rankTrustedTrackEntries((Array.isArray(board.entries) ? board.entries : []).filter((entry) => entry.integrityVerified === true), trackId);
     if (!trackId || entries.length < 2) continue;
     for (const entry of entries) {
       const accountId = safeText(entry.accountId || entry.userId, 128);
@@ -545,7 +566,7 @@ export function computeOverall(trackDocuments, priorEntries = [], betaTesterIds 
 async function rebuildTrack(env, trackId, identityOverride = null) {
   const candidates = (await runQuery(env, COLLECTIONS.raceResults, { field: 'trackId', value: trackId }, TRACK_LIMIT)).map((document) => document.data);
   const integrity = await Promise.all(candidates.map((row) => replayIntegrityValid(row)));
-  const rows = candidates.filter((_row, index) => integrity[index]).map((row) => ({ ...row, integrityVerified: true }));
+  const rows = candidates.map((row, index) => ({ ...row, integrityVerified: integrity[index], validationState: integrity[index] ? 'integrity' : 'pending' }));
   if (identityOverride?.accountId) {
     for (const row of rows) {
       if (safeText(row.accountId, 128) !== identityOverride.accountId) continue;
@@ -562,16 +583,54 @@ async function rebuildTrack(env, trackId, identityOverride = null) {
   return persistTrackSnapshot(env, trackId, entries, prior);
 }
 
-async function mergeCanonicalResultIntoTrack(env, trackId, canonicalResult) {
+async function mergeCanonicalResultIntoTrack(env, trackId, canonicalResult, integrityVerified = false) {
   const prior = await readDocument(env, COLLECTIONS.track, trackId);
   if (!prior || prior.data?.algorithmVersion !== ALGORITHM_VERSION || !Array.isArray(prior.data?.entries)) return rebuildTrack(env, trackId);
-  const normalized = computeTrackEntries([{ ...canonicalResult, integrityVerified: true }], trackId, env)[0];
+  const normalized = computeTrackEntries([{ ...canonicalResult, integrityVerified, validationState: integrityVerified ? 'integrity' : 'pending' }], trackId, env)[0];
   if (!normalized) throw new Error('Canonical PB failed structural validation');
   const entries = rankTrustedTrackEntries([
     ...prior.data.entries.filter((entry) => safeText(entry.accountId || entry.userId, 128) !== normalized.accountId),
     normalized
   ], trackId);
   return persistTrackSnapshot(env, trackId, entries, prior);
+}
+
+export async function reconcileCanonicalChanges(env) {
+  const jobId = 'canonical_reconcile';
+  const priorJobDocument = await readDocument(env, COLLECTIONS.jobs, jobId);
+  const priorJob = priorJobDocument?.data || {};
+  const meta = priorJobDocument ? {} : ((await readDocument(env, COLLECTIONS.meta, 'current'))?.data || {});
+  const cursor = Math.max(0, Number(priorJob.cursorUpdatedAt || meta.lastPbAt || 0));
+  const changed = await runChangedResultsQuery(env, cursor, RECONCILE_RESULT_BATCH);
+  const queued = new Set((Array.isArray(priorJob.pendingTrackIds) ? priorJob.pendingTrackIds : []).map((value) => safeText(value, 80)).filter(Boolean));
+  let nextCursor = cursor;
+  for (const document of changed) {
+    const trackId = safeText(document.data?.trackId, 80);
+    const updatedAt = Math.max(0, Number(document.data?.updatedAt || 0));
+    if (trackId && structurallyValidResult(document.data, trackId)) queued.add(trackId);
+    nextCursor = Math.max(nextCursor, updatedAt);
+  }
+  const batch = [...queued].slice(0, RECONCILE_TRACK_BATCH);
+  const failed = [];
+  let rebuilt = 0;
+  for (const trackId of batch) {
+    try { await rebuildTrack(env, trackId); rebuilt += 1; }
+    catch (error) { failed.push(trackId); console.error('Canonical track reconciliation failed', trackId, String(error?.message || error)); }
+    queued.delete(trackId);
+  }
+  for (const trackId of failed) queued.add(trackId);
+  if (priorJobDocument && changed.length === 0 && batch.length === 0) {
+    return { scanned: 0, rebuilt: 0, pending: 0, cursorUpdatedAt: cursor, unchanged: true };
+  }
+  await writeDocument(env, COLLECTIONS.jobs, jobId, {
+    cursorUpdatedAt: nextCursor,
+    pendingTrackIds: [...queued].slice(0, 200),
+    lastScanAt: Date.now(),
+    lastChangedDocuments: changed.length,
+    lastRebuiltTracks: rebuilt,
+    schemaVersion: 1
+  });
+  return { scanned: changed.length, rebuilt, pending: queued.size, cursorUpdatedAt: nextCursor };
 }
 
 async function mapConcurrent(values, concurrency, mapper) {
@@ -597,7 +656,7 @@ export async function rebuildOverall(env, force = false) {
   const migration = (await readDocument(env, COLLECTIONS.jobs, 'release_migration'))?.data || {};
   const betaTesterIds = new Set([...(migration.awardedBadgeIds || []),...(migration.pendingBadges || [])].map((value) => safeText(value, 128)).filter(Boolean));
   const entries = computeOverall(boards, prior.entries || [], betaTesterIds);
-  const trackSummaries = boards.filter((board) => Array.isArray(board.entries) && board.entries.length >= 2).map((board) => {
+  const trackSummaries = boards.map((board) => ({...board,entries:rankTrustedTrackEntries((Array.isArray(board.entries)?board.entries:[]).filter((entry)=>entry.integrityVerified===true),safeText(board.trackId,80))})).filter((board) => board.entries.length >= 2).map((board) => {
     const leader = board.entries[0] || {};
     return {
       trackId: safeText(board.trackId, 80),
@@ -648,8 +707,8 @@ async function notifyProfile(request, env, context, uid, body) {
   const pendingTrackIds = existing.signature === signature
     ? [...new Set([...(existing.pendingTrackIds || []), ...trackIds])]
     : trackIds;
-  await writeDocument(env, COLLECTIONS.jobs, jobId, { kind: 'profile', accountId, identity, signature, pendingTrackIds, createdAt: Number(existing.createdAt || Date.now()), updatedAt: Date.now() });
-  const task = processProfileJob(env, jobId, { kind: 'profile', accountId, identity, signature, pendingTrackIds });
+  await writeDocument(env, COLLECTIONS.jobs, jobId, { kind: 'profile', active: pendingTrackIds.length > 0, accountId, identity, signature, pendingTrackIds, createdAt: Number(existing.createdAt || Date.now()), updatedAt: Date.now() });
+  const task = processProfileJob(env, jobId, { kind: 'profile', active: true, accountId, identity, signature, pendingTrackIds });
   if (context.waitUntil) context.waitUntil(task.catch((error) => console.error('Deferred profile job failed', String(error?.message || error))));
   return json(request.headers.get('Origin') || '', env, 202, { accepted: true, accountId, queued: pendingTrackIds.length });
 }
@@ -660,14 +719,15 @@ async function processProfileJob(env, jobId, job) {
   let changed = 0;
   for (const trackId of batch) if ((await rebuildTrack(env, trackId, job.identity)).changed) changed += 1;
   const remaining = pending.slice(batch.length);
-  await writeDocument(env, COLLECTIONS.jobs, jobId, { ...job, pendingTrackIds: remaining, processed: Math.max(0, Number(job.processed || 0)) + batch.length, changed: Math.max(0, Number(job.changed || 0)) + changed, updatedAt: Date.now(), completedAt: remaining.length ? 0 : Date.now() });
+  await writeDocument(env, COLLECTIONS.jobs, jobId, { ...job, active: remaining.length > 0, pendingTrackIds: remaining, processed: Math.max(0, Number(job.processed || 0)) + batch.length, changed: Math.max(0, Number(job.changed || 0)) + changed, updatedAt: Date.now(), completedAt: remaining.length ? 0 : Date.now() });
   if (changed) await rebuildOverall(env, false);
   return { checked: batch.length, changed, remaining: remaining.length };
 }
 
 async function processProfileJobs(env) {
-  const jobs = await runQuery(env, COLLECTIONS.jobs, { field: 'kind', value: 'profile' }, 5);
+  const jobs = await runQuery(env, COLLECTIONS.jobs, { field: 'active', value: true }, 5);
   for (const job of jobs) {
+    if (job.data.kind !== 'profile') continue;
     if (!Array.isArray(job.data.pendingTrackIds) || !job.data.pendingTrackIds.length) continue;
     await processProfileJob(env, job.id, job.data);
   }
@@ -710,7 +770,7 @@ async function processMigrationJob(env, supplied = null) {
   const pendingBadges = new Set(Array.isArray(job.pendingBadges) ? job.pendingBadges.map((value) => safeText(value, 128)).filter(Boolean) : []);
   const awardedBadgeIds = new Set(Array.isArray(job.awardedBadgeIds) ? job.awardedBadgeIds.map((value) => safeText(value, 128)).filter(Boolean) : []);
   const batch = pendingTracks.slice(0, MIGRATION_TRACK_BATCH);
-  const rebuiltTracks = await mapConcurrent(batch, 2, (trackId) => rebuildTrack(env, trackId));
+  const rebuiltTracks = await mapConcurrent(batch, 3, (trackId) => rebuildTrack(env, trackId));
   let processedTracks = 0;
   for (const result of rebuiltTracks) {
     for (const entry of result.entries) if ((entry.betaTester || candidates.has(entry.accountId)) && !awardedBadgeIds.has(entry.accountId)) pendingBadges.add(entry.accountId);
@@ -783,6 +843,12 @@ export async function handleRequest(request, env, context = {}) {
     const result = await resumeOrCreateMigration(env);
     return json(origin, env, 202, result);
   }
+  if (path === '/v1/admin/reconcile') {
+    if (!env.ADMIN_REBUILD_TOKEN || request.headers.get('X-Admin-Token') !== env.ADMIN_REBUILD_TOKEN) return json(origin, env, 403, { error: 'admin_required' });
+    const reconciliation = await reconcileCanonicalChanges(env);
+    const overall = await rebuildOverall(env, false);
+    return json(origin, env, 200, { reconciliation, overall });
+  }
   if (path !== '/v1/pb/notify' && path !== '/v1/profile/notify') return json(origin, env, 404, { error: 'not_found' });
   if (String(env.RANKED_WRITES_ENABLED) === 'false') return json(origin, env, 503, { error: 'ranked_writes_disabled' });
   let uid;
@@ -796,11 +862,11 @@ export async function handleRequest(request, env, context = {}) {
   const result = await readDocument(env, COLLECTIONS.raceResults, resultId);
   if (!result || result.data.ownerUid !== uid || resultId !== `${result.data.accountId}_${result.data.trackId}`) return json(origin, env, 403, { error: 'result_not_owned' });
   if (!structurallyValidResult(result.data)) return json(origin, env, 422, { error: 'result_failed_structural_validation' });
-  if (!(await replayIntegrityValid(result.data))) return json(origin, env, 422, { error: 'result_failed_integrity_validation' });
+  const integrityVerified = await replayIntegrityValid(result.data);
   const trackId = safeText(result.data.trackId, 80);
-  const rebuilt = await mergeCanonicalResultIntoTrack(env, trackId, result.data);
+  const rebuilt = await mergeCanonicalResultIntoTrack(env, trackId, result.data, integrityVerified);
   if (rebuilt.changed && context.waitUntil) context.waitUntil(rebuildOverall(env, false).catch((error) => console.error('Deferred overall rebuild failed', String(error?.message || error))));
-  return json(origin, env, 200, { accepted: true, changed: rebuilt.changed, trackId, revision: rebuilt.revision, overallPending: rebuilt.changed });
+  return json(origin, env, 200, { accepted: true, changed: rebuilt.changed, trackId, revision: rebuilt.revision, overallPending: rebuilt.changed, integrityVerified, validationState: integrityVerified ? 'integrity' : 'pending' });
 }
 
 export default {
@@ -814,7 +880,8 @@ export default {
   scheduled(_event, env, context) {
     context.waitUntil((async()=>{
       await processProfileJobs(env);
-      await processMigrationJob(env);
+      await resumeOrCreateMigration(env);
+      await reconcileCanonicalChanges(env);
       await rebuildOverall(env, false);
     })().catch((error) => console.error('Scheduled Ranked work failed', String(error?.message || error))));
   }

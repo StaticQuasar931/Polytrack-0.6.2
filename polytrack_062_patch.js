@@ -268,7 +268,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
   const OFFICIAL_TRACK_COUNT = 17;
   const COMMUNITY_TRACK_COUNT = 61;
   const TOTAL_TRACKS = OFFICIAL_TRACK_COUNT + COMMUNITY_TRACK_COUNT;
-  const TRACK_CACHE_SCHEMA = 4;
+  const TRACK_CACHE_SCHEMA = 5;
   const TRACK_CATALOG = new Map([{"id":"5803f9e963625804e3de3246d043dc7dde847aa32e991f7f7326b0453f1fa038","name":"Summer 1","type":"official"},{"id":"7eac4fee1111152cfba4d3737410264ca0f22c7f5a2211e79f0099589b8b48c0","name":"Summer 2","type":"official"},{"id":"148826aa16ffaa23dbc453b32cff05e025ddbce1773fc7733cc13d218926515a","name":"Summer 3","type":"official"},{"id":"93c7363dfea7fb09ca1d23b72cad5df43a30841d41c8ff25fb544c85bb03c7ae","name":"Summer 4","type":"official"},{"id":"7603aaeffa1989a649dfaa8e1804bed4481b49df233e377687d0669899566e52","name":"Summer 5","type":"official"},{"id":"c117823cf6788e3247b9ee63a0c091c07352bbe352c650a7790dc6718148c2fa","name":"Summer 6","type":"official"},{"id":"e4bcaca3a583bb0eb62a700a69d14e89c852f0c5bf740fca76e0519ebdfc9ab1","name":"Summer 7","type":"official"},{"id":"7239b17057127936907a805b0caa5d8c6f6c97eca9bdabf1a5312dce479629b7","name":"Winter 1","type":"official"},{"id":"99864b635d1891d22e17eb9267527a07a92c49c0f02893729fa2ded90e3ca0f9","name":"Winter 2","type":"official"},{"id":"a5341fe706097cff2a3812a3fc0d87399254557328351ae8e5c882700fc1a196","name":"Winter 3","type":"official"},{"id":"7d134c939df80c676a258266201beedd3b93572d5603f3ff4339ff8679803715","name":"Winter 4","type":"official"},{"id":"2fe4bd46b0075cc25fc770ce50adbb68447cf493c999635bb272d231811dd264","name":"Winter 5","type":"official"},{"id":"c20b4ee3cd517ca6cae7e43f047548757287fbd08ba81b97892a3ef520159a34","name":"Desert 1","type":"official"},{"id":"88647ea04145fbbbb19b55f1590e038fb0378acb2571110f02cb545cc46b0d57","name":"Desert 2","type":"official"},{"id":"2806030c503abb41a1a26fa9a570888be14296172bb273798ef0ad87a108a2ec","name":"Desert 3","type":"official"},{"id":"4697ea67b18c3f49b30a3d8884602115536650bc5435c88e3732e64d21a72d33","name":"Desert 4","type":"official"},{"id":"e5d084e06db4ab71196fea44efeceb23c8561266a78669c324a38f92581fe2db","name":"Desert 5","type":"official"},{"id":"5159a8dac6a1f397407a7b5233ad570613531f6609f7dc897490c28c9f2c7a4e","name":"Apostle","type":"community"},{"id":"1783b7b6c30e7fddf7ffb7c8a4a8a3b65c1ef6ec317d908d6eb05e6c905a57f6","name":"Stardust","type":"community"},{"id":"ddfe00045807e2786552d1e31e1363384c365487180f65d4eff1aa41e334a8e8","name":"Overclocked","type":"community"},{"id":"4058e3616fbd79b848e70037adde4f12b4413011050aaf1c9d875cdbe2e33d68","name":"Amberbound","type":"community"},{"id":"2ec74a179c8aba94354e3c6dee2a2920bedd7d84adf4d0a691f4a7453afdb1e8","name":"The Eldritch Estate","type":"community"},{"id":"76e1920a3ca015033a0b21156848def2c248c95d97ccf4aab2312a0302beefe0","name":"Star Bound","type":"community"},{"id":"81cede50724b1ee0c2ebcef973c37d620680766bd75771c5ae2728b8732c7a66","name":"Natsu","type":"community"},{"id":"76269faf38e8726671c05b2b9044f7aa3e66c4313cb4fa5d0fbb23fc8524fe9e","name":"Lenore","type":"community"},{"id":"151f12fd3ebc8942f7aaef669024a0fc149bc220f370753efe14d9371acc9c87","name":"sandy lanes II","type":"community"},{"id":"f9283607ecec9c89583205cf08715c8f504cc271eec51209bb6fc0cc37ddc915","name":"Planet 97","type":"community"},{"id":"64bf7efaed2a47dfb03a6b152e3aef637ac251b68a725a28352f3376ff1384d7","name":"Marvelous Marble","type":"community"},{"id":"520c4f511821ced30b99bceafbb02e6b7531e867126b0756e68d5e157691ef2f","name":"Arx Lucida","type":"community"},{"id":"315c9e95c567cce4feca78f5ad6e8d08d0a22dac0d56061af567b43eea3d4fa8","name":"Koselig","type":"community"},{"id":"a8913b96daceb5b615fe45aad2bb104e04eb7db140242934657111e1d1f55b89","name":"Sky Bound","type":"community"},{"id":"66f43b2d2a17f3cee05a127040ca409795058510bd3d1ac7eee224512ec532f5","name":"ShardMir","type":"community"},{"id":"fcbba504800751b0fb404a7cd1c9591befdf688ad5451ab2bc1f3651590cc5fc","name":"𝔖𝔱𝔢𝔦𝔫𝔴𝔞𝔩𝔩𝔟𝔲𝔯𝔤","type":"community"},{"id":"9ba44e8eafd0158e7e1f63e7d609db308c53f337b79e86bd0b630225451eef34","name":"𝕻𝖆𝖗𝖆𝖉𝖎𝖘𝖊 𝕻𝖆𝖑𝖆𝖈𝖊","type":"community"},{"id":"b3889905b6df31cbe302e58e975988385607771605bf6e8e8e8e31b3d2dc8aa1","name":"Sunken Glyphs","type":"community"},{"id":"3cd94552b12fb3a8ac45ca3a5e21a882b71b31c788989b396ab382afc69414ac","name":"Grimspyre","type":"community"},{"id":"3125a5f98c3b43cf1e2604e25e8504bffd714ea5843200fa8ddf0b4c58842f16","name":"Magenta Mines","type":"community"},{"id":"a2137c20c03ad1848098b47f70417cc0b0bf169010c825dc6fb82f37066808a0","name":"Cruising Altitude","type":"community"},{"id":"d03b9f7c10c95f40eed389458be51bdf2437febd5673d028da134e59e503c10b","name":"Termite Terror","type":"community"},{"id":"f68a709a296a60f6e6f73a2da670f95aca424be0f2fda5d6b608ece71f339b7c","name":"4 seasons","type":"community"},{"id":"a1f41dc9e884d5d4b1b6025158d70f0934dc4d892076e6c4b32dc3f3846b882e","name":"Lost at sea","type":"community"},{"id":"b430aad5e481caa4588e30f46352b876b62f1ba0cf7730a15efd026c91a8f32e","name":"Frosted Fjords 寒い","type":"community"},{"id":"95d8f7cbe11053dbdfaeeb2f3c3d8f53f0d45fb6abeb411a74949a4cf52f427f","name":"〜✧〜Ḽevitation〜✧〜","type":"community"},{"id":"409f26b9faf55bd0ad748177bf85ebdcfc0ddd572190e7f464f38b4a60587b7e","name":"Frozen Ramparts","type":"community"},{"id":"c1a2c5aef1029d7bbf946f08cd087dd25bad6e019a41694a48a0024c27627dc8","name":"Tangled Cliffs","type":"community"},{"id":"9e53d03f4efe86834c49ce202b528d769d9aa7a6e17732d0fc56440463956a1b","name":"Sludge Pipe Circuit","type":"community"},{"id":"b77ec520a40c4b38d3d7d653b747b1f8627c98709096568db22cd1bfec534ba6","name":"Zealot","type":"community"},{"id":"9f827673c4132828009237a03e12ead73eae87504b4708a79c6cc0858212262d","name":"Shrouded Oasis","type":"community"},{"id":"9acd9aef650c4ccc41bb01f72ed44dfaa13f2e4404d2e3466f09cc1adcd9a9c0","name":"⚙︎Cogware⚙︎","type":"community"},{"id":"62d9989187e4508f7866e7b30aa187ddbee2595df21ff5988d7fec3589f9048d","name":"Land of the Rising Sun","type":"community"},{"id":"b36162623435dc90a54f57590d2baa9f2d67a51cb12c393531f4b6d5e5528ebf","name":"Midas Metropolis","type":"community"},{"id":"74ae56c0f278a19f3b69f3903198c7b9de09981133205856b53bf6bdf8db4211","name":"Frozen In Time","type":"community"},{"id":"9f4597449906aa0c2baf9a4737406385c829533e64e9e972b25b4189f4593a54","name":"Winterfell","type":"community"},{"id":"28b658c7d10eb8b5de6f465e034e87e40f70b37e4534d8c37d1f2af06b5a36d7","name":"Launch Control","type":"community"},{"id":"470af92ed4c0a6f62028d7dea4dbc7765d1db16a3698d6a0c271be582a20a7c6","name":"Fractured Shores","type":"community"},{"id":"a6b990137e404c9ef2cb4399c463acbed8ebfa3bb82ab5315027118604c4ec03","name":"Starry Tropisx","type":"community"},{"id":"35fe02bf18312713c05528f0b7b8fd15c83dac50bcdcbd373040a16e8bfcc138","name":"Flying Dreams","type":"community"},{"id":"18b69f54f119cfb2867abded9a1574f0799a750ef94aa744d9ec8ef6b4d565ae","name":"Ghost City","type":"community"},{"id":"5aafb733c264d51b09beedc7bd7eabb5e65bdded338980fcb14ae5ce36955572","name":"Asguardia","type":"community"},{"id":"5ea46b3ae268a0196dcc59dabe88926400b56e29814658bfed06a284f837cefd","name":"MOS ESPA","type":"community"},{"id":"ab8e1c13ddf394102be1cb04adcff8411127f1e7140a216d27a94fc19b7d0428","name":"Joenail Jones","type":"community"},{"id":"86335d78d1a06d3dc81d80f84b8ac2e8f6359e9a206826e2c36f7d3f4351bea4","name":"Anubis","type":"community"},{"id":"a510bbd3341f2992a12db8a3780cb8943b6087538345d58d16602d6129742df0","name":"Natsujō","type":"community"},{"id":"8cf99166f12cbb56a9df4e022a0e9b8c78973adb929dbf1e265ebb9f99f01163","name":"Arabica","type":"community"},{"id":"33d99aad2ad5cef45b1d3afb8735c5229cfd98ac7cc24916e0da7283f7a545ce","name":"Hyperion's Sanctuary","type":"community"},{"id":"5c00f2c90bcf8230183484225d1a417e45b0ad310379acfafd4c8f1dc7345dd7","name":"Winter Hollow","type":"community"},{"id":"009fad7fcc215022c6b2dbb2b6de622f07cd88d4930b8e2b6a6b74c1f5de9e44","name":"Clay temples","type":"community"},{"id":"1ad53694ee3e96aea27afa7b64d5c29d115de88a17b69cf3fe3f5609c52b040b","name":"Las Calles","type":"community"},{"id":"2ed125037366052871fbb97da6e1bda49cfeb471f6b9c8fa799d520bdb3683e2","name":"DESERT STALLION","type":"community"},{"id":"f79b1d863d50f9e3b4489988698065c6d775ff3ec90bf91085bad05ad5ec8316","name":"Last Remnant","type":"community"},{"id":"27429a1d1bf05770851e3919af70f47c6cd7a269c67032b084fb4345f6c271ce","name":"lu muvimento","type":"community"},{"id":"f5c327cf09b90e4de8c3c1f9c910dbb7988cf15485d2e4beec3cc03aef408c5c","name":"90*RESET","type":"community"},{"id":"7451c2128cb96bc28195cf0ca0f83a46c3b55d78d434232d9de085dd1cf0ab36","name":"Opal Palace - Repolished","type":"community"},{"id":"af6ef508e1f6e47a462a6998b950ef535d1e8a38fe67ead891bf5f2de1346f43","name":"Re : Akina","type":"community"},{"id":"089f2aebcfe4f24d8dda3a8a630172d2bd13793e78c5247adfaa760743a377e1","name":"Sandline Ultimatum","type":"community"},{"id":"5e40f730509204c77e9c610839ed43addddbe0f8aa007168447f7fde38583905","name":"Malformations","type":"community"},{"id":"191737cc4d1b74949e992d99371e5c7f5fc446a716af571c6e5449b23e9f4558","name":"Snow Park","type":"community"},{"id":"39bd3fa6c3c769b298c219aee7561af35a6d856bfee14b46b0b48499e7a57ed5","name":"concrete jungle","type":"community"}]
 .map((track)=>[track.id, Object.freeze(track)]));
   function trackInfo(trackId){
@@ -294,10 +294,29 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
   const OVERALL_REFRESH_CHECK_MS = 2 * 60 * 1000;
   const OVERALL_REBUILD_MIN_AGE_MS = 15 * 60 * 1000;
   const TRACK_REFRESH_MS = 2 * 60 * 1000;
+  const RANKED_EDGE_BACKOFF_MS = 5 * 60 * 1000;
+  const RANKED_EDGE_STATE_KEY = 'polytrack-0.6.2-ranked-edge-state-v1';
   const MODERATION_REFRESH_MS = 10 * 60 * 1000;
   let currentTrackLoadState = null;
   let trackLoadGeneration = 0;
   let trackOverlayCache = null;
+  let rankedEdgeState = (()=>{
+    try {
+      const value=JSON.parse(sessionStorage.getItem(RANKED_EDGE_STATE_KEY)||'null');
+      return value&&Number(value.retryAt||0)>Date.now()?value:{retryAt:0,reason:''};
+    } catch { return {retryAt:0,reason:''}; }
+  })();
+  function rankedEdgeAvailable(){return Number(rankedEdgeState.retryAt||0)<=Date.now();}
+  function markRankedEdgeUnavailable(reason){
+    const wasAvailable=rankedEdgeAvailable();
+    rankedEdgeState={retryAt:Date.now()+RANKED_EDGE_BACKOFF_MS,reason:String(reason||'network unavailable').slice(0,120)};
+    try{sessionStorage.setItem(RANKED_EDGE_STATE_KEY,JSON.stringify(rankedEdgeState));}catch{}
+    if(wasAvailable)log('warn','[RANKED403] Ranked edge unavailable; using direct Firestore recovery',{retryInMinutes:5,reason:rankedEdgeState.reason});
+  }
+  function clearRankedEdgeFailure(){
+    rankedEdgeState={retryAt:0,reason:''};
+    try{sessionStorage.removeItem(RANKED_EDGE_STATE_KEY);}catch{}
+  }
   function readJsonStorage(key, fallback=null){
     try { const value=JSON.parse(localStorage.getItem(key)||'null'); return value ?? fallback; } catch { return fallback; }
   }
@@ -323,6 +342,9 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
   function readTrackSnapshotCache(trackId){
     const cached = trackSnapshotStore()[String(trackId||'')];
     return cached && Array.isArray(cached.entries) ? cached : null;
+  }
+  function trackCacheNeedsCanonicalRefresh(cached){
+    return Number(cached?.schemaVersion||0)<TRACK_CACHE_SCHEMA||Boolean(cached?.entries?.some((entry)=>!safeRecordingId(entry.uploadId||entry.id)||Number(entry.timingVersion||0)<2));
   }
   function writeTrackSnapshotCache(trackId,entries,serverUpdatedAt=0,meta={}){
     const id=String(trackId||'').slice(0,80); if(!id) return;
@@ -2063,6 +2085,8 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
           raceTimeFrames: Number(row.raceTimeFrames || 0) || null,
           frames: safePositiveInt(parsedFrames || timeMs, 1),
           verifiedState: Number.isFinite(Number(row.verifiedState)) ? Number(row.verifiedState) : 0,
+          integrityVerified: row.integrityVerified === true,
+          validationState: row.integrityVerified === true ? 'integrity' : String(row.validationState||'pending').slice(0,24),
           replayHash: row.replayHash || null,
           uploadId: safeRecordingId(row.uploadId || row.id) || null,
           carId: extractCarId(row) || null,
@@ -2093,6 +2117,25 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     return out;
   }
 
+  async function fetchCanonicalTrackEntries(trackId,limit=500){
+    const d=await db();
+    const snapshot=await d.collection(COLLECTIONS.raceResults).where('trackId','==',String(trackId||'').slice(0,80)).limit(Math.min(500,Math.max(1,limit))).get();
+    const rows=await Promise.all((snapshot.docs||[]).map(async(doc)=>{
+      const row={id:doc.id,...(doc.data()||{})};
+      const expected=String(row.replayHash||'').toLowerCase();
+      const replay=typeof row.replay==='string'?row.replay:'';
+      let integrityVerified=false;
+      if(replay&&/^[0-9a-f]{64}$/.test(expected)){
+        try{integrityVerified=(await sha256Hex(replay))===expected;}catch{}
+      }
+      return {...row,integrityVerified,validationState:integrityVerified?'integrity':'pending'};
+    }));
+    const entries=computeTrackTopEntries(rows,trackId,limit);
+    const updatedAt=rows.reduce((latest,row)=>Math.max(latest,Number(row.updatedAt||row.pbAt||row.createdAt||0)||0),0);
+    log('info','[FB220] Direct canonical track recovery complete',{trackId,participants:entries.length,pending:entries.filter((entry)=>entry.integrityVerified!==true).length});
+    return {entries,updatedAt:updatedAt||Date.now(),builtAt:updatedAt||Date.now(),schemaVersion:TRACK_CACHE_SCHEMA,algorithmVersion:RANK_MODEL,source:'canonical-firestore'};
+  }
+
   async function getTrackEntries(trackId, limit=10, forceCloud=false){
     let entries = [];
     const safeTrackId = String(trackId || '').slice(0,80);
@@ -2101,7 +2144,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     currentTrackLoadState={trackId:safeTrackId,status:'loading',fetchedAt:Number(cached?.serverUpdatedAt||cached?.fetchedAt||0)||0,checkedAt:Number(cached?.fetchedAt||0)||0};
     document.documentElement.classList.add('sq-track-leaderboard-loading');
     setTimeout(updateTrackFreshnessBanner,0);
-    const cacheHit = !forceCloud && cached && Date.now()-Number(cached.fetchedAt||0) < TRACK_REFRESH_MS;
+    const cacheHit = !forceCloud && cached && !trackCacheNeedsCanonicalRefresh(cached) && Date.now()-Number(cached.fetchedAt||0) < TRACK_REFRESH_MS;
     if (cacheHit) {
       entries = applyCanonicalTrackWeight(safeTrackId,cached.entries||[]).slice(0,500);
       currentTrackLoadState={trackId:safeTrackId,status:'cache',fetchedAt:cached.serverUpdatedAt||cached.fetchedAt,checkedAt:cached.fetchedAt,nextRefreshAt:cached.fetchedAt+TRACK_REFRESH_MS};
@@ -2110,13 +2153,19 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
       if (!cacheHit || forceCloud) {
         let data=null;
         let source='edge';
-        try{data=await fetchRankedSnapshot('track',safeTrackId);}catch(error){log('warn','[RANKED403] Edge track snapshot unavailable; trying Firestore',String(error&&(error.message||error)));}
+        try{data=await fetchRankedSnapshot('track',safeTrackId);}catch{}
         if(!data){
-          const d = await db();
-          const ref = d.collection(COLLECTIONS.leaderboardsTrack).doc(safeTrackId);
-          const doc = await ref.get();
-          data = doc.data() || {};
-          source='firestore';
+          try{
+            data=await fetchCanonicalTrackEntries(safeTrackId,500);
+            source='canonical-firestore';
+          }catch(canonicalError){
+            const d = await db();
+            const ref = d.collection(COLLECTIONS.leaderboardsTrack).doc(safeTrackId);
+            const doc = await ref.get();
+            data = doc.data() || {};
+            source='firestore-snapshot';
+            log('warn','[FB420] Canonical recovery unavailable; using derived Firestore snapshot',String(canonicalError&&(canonicalError.message||canonicalError)));
+          }
         }
         entries = Array.isArray(data.entries) ? data.entries : [];
         if (Number(data.schemaVersion || 0) < TRACK_CACHE_SCHEMA) {
@@ -2126,7 +2175,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
           entries=computeTrackTopEntries(entries.map((entry)=>({...entry,trackId:safeTrackId})),safeTrackId,500);
           log('info','[CACHE209] Legacy timing normalized locally',{trackId:safeTrackId,participants:entries.length});
         }
-        entries=applyCanonicalTrackWeight(safeTrackId,entries).slice(0,500);
+        entries=reconcileTrackEntriesWithLocal(safeTrackId,applyCanonicalTrackWeight(safeTrackId,entries).slice(0,500),500);
         writeTrackSnapshotCache(safeTrackId,entries,data.updatedAt||Date.now(),{revision:data.revision,sourceRevision:data.sourceRevision,algorithmVersion:data.algorithmVersion,schemaVersion:data.schemaVersion,source});
         currentTrackLoadState={trackId:safeTrackId,status:'cloud',fetchedAt:Number(data.updatedAt||0)||Date.now(),checkedAt:Date.now(),nextRefreshAt:Date.now()+TRACK_REFRESH_MS};
       }
@@ -3302,17 +3351,26 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
   async function fetchRankedSnapshot(kind,trackId=''){
     const endpoint=rankedBrokerUrl();
     if(!endpoint)return null;
+    if(!rankedEdgeAvailable())return null;
     const path=kind==='overall'?'/v1/snapshot/overall':`/v1/snapshot/track?trackId=${encodeURIComponent(String(trackId||'').slice(0,80))}`;
-    const response=await withTimeout(fetch(`${endpoint}${path}`,{
-      headers:{Accept:'application/json'},
-      cache:'default',
-      credentials:'omit',
-      referrerPolicy:'no-referrer'
-    }),5000,'Ranked snapshot timed out');
-    if(response.status===404)return null;
-    if(!response.ok)throw new Error(`Ranked snapshot failed (${response.status})`);
-    const payload=await response.json();
-    return payload&&typeof payload==='object'?payload:null;
+    try{
+      const response=await withTimeout(fetch(`${endpoint}${path}`,{
+        headers:{Accept:'application/json'},
+        cache:'default',
+        credentials:'omit',
+        referrerPolicy:'no-referrer'
+      }),5000,'Ranked snapshot timed out');
+      if(response.status===404)return null;
+      const contentType=String(response.headers.get('Content-Type')||'').toLowerCase();
+      if(!response.ok)throw new Error(`Ranked snapshot failed (${response.status})`);
+      if(!contentType.includes('application/json'))throw new Error('Ranked edge was replaced by a network filter');
+      const payload=await response.json();
+      clearRankedEdgeFailure();
+      return payload&&typeof payload==='object'?payload:null;
+    }catch(error){
+      markRankedEdgeUnavailable(String(error&&(error.message||error)));
+      throw error;
+    }
   }
 
   function rankedNotifyQueue(){
@@ -3330,18 +3388,26 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
   async function sendRankedNotification(resultId,trackId,{queueOnFailure=true}={}){
     const endpoint=rankedBrokerUrl();
     if(!endpoint){if(queueOnFailure)queueRankedNotification(resultId,trackId,'broker-not-configured');return {accepted:false,queued:true,error:'broker_not_configured'};}
+    if(!rankedEdgeAvailable()){
+      if(queueOnFailure)queueRankedNotification(resultId,trackId,rankedEdgeState.reason||'edge-backoff');
+      return {accepted:false,queued:true,error:'edge_backoff'};
+    }
     try{
       const user=window.firebase?.auth?.().currentUser;
       if(!user)throw new Error('Firebase user is not ready');
       const token=await user.getIdToken();
       const response=await fetch(`${endpoint}/v1/pb/notify`,{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify({resultId:String(resultId||'').slice(0,220)}),cache:'no-store'});
+      const contentType=String(response.headers.get('Content-Type')||'').toLowerCase();
+      if(!contentType.includes('application/json'))throw new Error('Ranked edge was replaced by a network filter');
       let payload={}; try{payload=await response.json();}catch{}
       if(!response.ok||payload.accepted!==true)throw new Error(String(payload.error||`ranked_${response.status}`));
+      clearRankedEdgeFailure();
       const queue=rankedNotifyQueue().filter((item)=>item.resultId!==resultId);
       writeJsonStorage(RANKED_NOTIFY_QUEUE_KEY,queue);
       log('info','[RANKED202] Ranked Worker accepted PB',{trackId,changed:Boolean(payload.changed),revision:Number(payload.revision||0)});
       return payload;
     }catch(error){
+      markRankedEdgeUnavailable(String(error&&(error.message||error)));
       if(queueOnFailure)queueRankedNotification(resultId,trackId,String(error&&(error.message||error)));
       log('warn','[RANKED402] PB saved; Ranked Worker notification queued',{trackId,reason:String(error&&(error.message||error))});
       return {accepted:false,queued:true,error:String(error&&(error.message||error))};
@@ -3352,18 +3418,23 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     const endpoint=rankedBrokerUrl();
     const safeId=cleanUserId(accountId);
     if(!endpoint||!safeId)return {accepted:false,disabled:!endpoint};
+    if(!rankedEdgeAvailable())return {accepted:false,deferred:true,error:'edge_backoff'};
     try{
       await db();
       const user=window.firebase?.auth?.().currentUser;
       if(!user)throw new Error('Firebase user is not ready');
       const token=await user.getIdToken(false);
       const response=await fetch(`${endpoint}/v1/profile/notify`,{method:'POST',headers:{Authorization:`Bearer ${token}`,'Content-Type':'application/json'},body:JSON.stringify({accountId:safeId}),cache:'no-store',credentials:'omit',referrerPolicy:'no-referrer'});
+      const contentType=String(response.headers.get('Content-Type')||'').toLowerCase();
+      if(!contentType.includes('application/json'))throw new Error('Ranked edge was replaced by a network filter');
       const payload=await response.json().catch(()=>({}));
       if(!response.ok||payload.accepted!==true)throw new Error(String(payload.error||`ranked_profile_${response.status}`));
+      clearRankedEdgeFailure();
       writeJsonStorage(OVERALL_PB_DIRTY_KEY,{at:Date.now(),reason:'profile-update'});
       overallLoadState.nextRefreshAt=Date.now();
       return payload;
     }catch(error){
+      markRankedEdgeUnavailable(String(error&&(error.message||error)));
       log('warn','[RANKED_PROFILE_400] Ranked identity refresh deferred',String(error&&(error.message||error)));
       return {accepted:false,error:String(error&&(error.message||error))};
     }
@@ -3402,9 +3473,10 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
 
   function makeLeaderboardPayload(method, entries=[], position=0, previousPosition=0, forcedUploadId=null, forcedUserEntryId=null, forcedUserEntry=null){
     const normalizedEntries = enrichLegacyLeaderboardEntries(entries);
-    const pos = Number.isSafeInteger(Number(position)) && Number(position) > 0 ? Number(position) : 0;
-    const prevPos = Number.isSafeInteger(Number(previousPosition)) && Number(previousPosition) > 0 ? Number(previousPosition) : pos;
     const isPost = String(method).toUpperCase() === 'POST';
+    const fallbackPosition=isPost?1:0;
+    const pos = Number.isSafeInteger(Number(position)) && Number(position) > 0 ? Number(position) : fallbackPosition;
+    const prevPos = Number.isSafeInteger(Number(previousPosition)) && Number(previousPosition) > 0 ? Number(previousPosition) : pos;
     const displayPos = isPost ? prevPos : pos;
     const resolvedUploadId = isPost ? (safeRecordingId(forcedUploadId) || nextUploadId()) : null;
     const explicitUser = forcedUserEntry && typeof forcedUserEntry === 'object' ? forcedUserEntry : null;
@@ -3483,7 +3555,9 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
       if (!trackId) return null;
       hinted.userTokenHash = urlObj.searchParams.get('userTokenHash') || hinted.userTokenHash || '';
       const accountId = await accountIdFromPayload(hinted, guestAccountId);
-      const fullEntries = await getTrackEntries(trackId, 500).catch(()=>[]);
+      const onlyVerified=urlObj.searchParams.get('onlyVerified')==='true';
+      const loadedEntries = await getTrackEntries(trackId, 500).catch(()=>[]);
+      const fullEntries=onlyVerified?applyCanonicalTrackWeight(trackId,computeTrackTopEntries(loadedEntries.filter((entry)=>entry.integrityVerified===true),trackId,500)):loadedEntries;
       const mine = fullEntries.find((e)=>String(e.accountId||e.userId||'')===String(accountId||'')) || null;
       if (!mine) return null;
       return { position:safePositiveInt(mine.rank || mine.position, fullEntries.indexOf(mine)+1), frames:safePositiveInt(mine.frames || mine.raceTimeFrames,1), id:safeRecordingId(mine.id || mine.uploadId) || buildRecordingId(mine) };
@@ -3491,7 +3565,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
 
     if (urlObj.pathname === '/leaderboard' || urlObj.pathname === '/v6/leaderboard') {
       const trackId = String(urlObj.searchParams.get('trackId') || hinted.trackId || '').slice(0,80);
-      if (!trackId) return requestMethod === 'POST' ? {uploadId:nextUploadId(),previousPosition:0,newPosition:0} : {total:0,entries:[],userEntry:null};
+      if (!trackId) return requestMethod === 'POST' ? {uploadId:nextUploadId(),previousPosition:1,newPosition:1} : {total:0,entries:[],userEntry:null};
       const amount = Math.min(100, Number(urlObj.searchParams.get('amount') || 20) || 20);
       const skip = Math.max(0, Number(urlObj.searchParams.get('skip') || 0) || 0);
       if (requestMethod === 'POST') {
@@ -3501,11 +3575,14 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
         const postEntries = mirrorMeta?.leaderboardChanged ? await getTrackEntries(trackId, 500, true).catch(()=>reconcileTrackEntriesWithLocal(trackId,preEntries,500)) : mirrorMeta?.localSaved ? await getTrackEntries(trackId,500).catch(()=>reconcileTrackEntriesWithLocal(trackId,preEntries,500)) : reconcileTrackEntriesWithLocal(trackId,preEntries,500);
         const oldIndex = preEntries.findIndex((e)=>String(e.accountId||e.userId||'')===String(mirrorMeta?.accountId||''));
         const newIndex = postEntries.findIndex((e)=>String(e.accountId||e.userId||'')===String(mirrorMeta?.accountId||''));
-        return { uploadId:safeRecordingId(mirrorMeta?.uploadId) || nextUploadId(), previousPosition:oldIndex < 0 ? 0 : oldIndex+1, newPosition:newIndex < 0 ? 0 : newIndex+1 };
+        const safeNewPosition=newIndex>=0?newIndex+1:oldIndex>=0?oldIndex+1:1;
+        return { uploadId:safeRecordingId(mirrorMeta?.uploadId) || nextUploadId(), previousPosition:oldIndex < 0 ? safeNewPosition : oldIndex+1, newPosition:safeNewPosition };
       }
       hinted.userTokenHash = urlObj.searchParams.get('userTokenHash') || hinted.userTokenHash || '';
       const accountId = await accountIdFromPayload(hinted, guestAccountId);
-      const fullEntries = await getTrackEntries(trackId, 500).catch(()=>[]);
+      const onlyVerified=urlObj.searchParams.get('onlyVerified')==='true';
+      const loadedEntries = await getTrackEntries(trackId, 500).catch(()=>[]);
+      const fullEntries=onlyVerified?applyCanonicalTrackWeight(trackId,computeTrackTopEntries(loadedEntries.filter((entry)=>entry.integrityVerified===true),trackId,500)):loadedEntries;
       const mineIndex = fullEntries.findIndex((e)=>String(e.accountId||e.userId||'')===String(accountId||''));
       const page = enrichLegacyLeaderboardEntries(fullEntries.slice(skip,skip+amount));
       const mine = mineIndex < 0 ? null : fullEntries[mineIndex];
@@ -3891,7 +3968,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
           log('error','[NET500] Firebase bridge request failed; Kodub fallback blocked',String(error&&(error.message||error)));
           const isLeaderboardPost=this.__extMethod==='POST'&&/\/leaderboard$/.test(this.__extUrlObj?.pathname||'');
           const payload=isLeaderboardPost
-            ? {uploadId:nextUploadId(),previousPosition:0,newPosition:0}
+            ? {uploadId:nextUploadId(),previousPosition:1,newPosition:1}
             : {ok:false,error:'Firebase bridge request failed'};
           this.__extBlobUrl=URL.createObjectURL(new Blob([JSON.stringify(payload)],{type:'application/json'}));
           originalOpen.call(this,'GET',this.__extBlobUrl,true);

@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { computeOverall, computeTrackEntries, handleRequest, trackWeightParts } from '../src/index.js';
+import { computeOverall, computeTrackEntries, handleRequest, reconcileCanonicalChanges, trackWeightParts } from '../src/index.js';
 
 const TRACK = '5803f9e963625804e3de3246d043dc7dde847aa32e991f7f7326b0453f1fa038';
 const COMMUNITY_TRACK = '5159a8dac6a1f397407a7b5233ad570613531f6609f7dc897490c28c9f2c7a4e';
 const CUSTOM_TRACK = 'f'.repeat(64);
-const validRun = (row) => ({ replay: 'structural-replay', replayHash: 'a'.repeat(64), raceTimeFrames: row.timeMs, uploadId: 123, ...row });
+const validRun = (row) => ({ replay: 'structural-replay', replayHash: 'a'.repeat(64), raceTimeFrames: row.timeMs, uploadId: 123, integrityVerified: true, ...row });
 
 test('solo tracks have zero weight and populated official tracks gain weight', () => {
   assert.equal(trackWeightParts(TRACK, 1).finalWeight, 0);
@@ -58,6 +58,7 @@ test('rank titles require breadth even when three finishes are strong', () => {
       rank: index + 1,
       weight: 1,
       timeMs: 20000 + index
+      ,integrityVerified: true
     }))
   }));
   const specialist = computeOverall(boards).find((entry) => entry.userId === 'specialist');
@@ -74,7 +75,8 @@ test('maximum snapshots stay below a conservative Firestore document budget', ()
       rank: racerIndex + 1,
       weight: 4.5,
       timeMs: 20000 + racerIndex,
-      pbAt: 1780000000000
+      pbAt: 1780000000000,
+      integrityVerified: true
     }))
   }));
   const entries = computeOverall(boards);
@@ -90,6 +92,18 @@ test('rejects an untrusted origin before touching Firestore', async () => {
   });
   assert.equal(response.status, 403);
   assert.equal(touched, false);
+});
+
+test('canonical reconciliation endpoint requires the private admin token', async () => {
+  let touched=false;
+  const response=await handleRequest(new Request('https://ranked.example/v1/admin/reconcile',{
+    method:'POST',headers:{Origin:'https://staticquasar931.github.io'}
+  }),{
+    ALLOWED_ORIGINS:'https://staticquasar931.github.io',['ADMIN_'+'REBUILD_TOKEN']:'unit-test-value',
+    __TEST_FIRESTORE:async()=>{touched=true;return null;}
+  });
+  assert.equal(response.status,403);
+  assert.equal(touched,false);
 });
 
 test('rejects notification for a result owned by another Firebase user', async () => {
@@ -108,7 +122,7 @@ test('rejects notification for a result owned by another Firebase user', async (
   assert.deepEqual(await response.json(), { error: 'result_not_owned' });
 });
 
-test('rejects an owned result when its replay hash does not match', async () => {
+test('accepts an owned hash mismatch as pending without granting integrity verification', async () => {
   const response = await handleRequest(new Request('https://ranked.example/v1/pb/notify', {
     method: 'POST',
     headers: { Origin: 'https://staticquasar931.github.io', 'Content-Type': 'application/json' },
@@ -116,13 +130,22 @@ test('rejects an owned result when its replay hash does not match', async () => 
   }), {
     ALLOWED_ORIGINS: 'https://staticquasar931.github.io',
     __TEST_UID: 'signed-in-user',
-    __TEST_FIRESTORE: async (path) => path.includes('race_results') ? { fields: {
-      ownerUid: { stringValue: 'signed-in-user' }, accountId: { stringValue: 'racer' }, trackId: { stringValue: TRACK },
-      timeMs: { integerValue: '20000' }, raceTimeFrames: { integerValue: '1200' }, replay: { stringValue: 'recording' }, replayHash: { stringValue: '0'.repeat(64) }
-    } } : null
+    __TEST_FIRESTORE: async (path, init) => {
+      if(path.includes('race_results'))return { fields: {
+        ownerUid: { stringValue: 'signed-in-user' }, accountId: { stringValue: 'racer' }, trackId: { stringValue: TRACK },
+        timeMs: { integerValue: '20000' }, raceTimeFrames: { integerValue: '1200' }, replay: { stringValue: 'recording' }, replayHash: { stringValue: '0'.repeat(64) }
+      } };
+      if(init?.method==='PATCH')return {};
+      if(path.includes('s1_leaderboards_track'))return {fields:{algorithmVersion:{stringValue:'participation-v8-s1'},entries:{arrayValue:{values:[]}},revision:{integerValue:'1'}}};
+      if(path.includes('s1_release_meta'))return {fields:{revision:{integerValue:'1'},builtRevision:{integerValue:'1'},dirty:{booleanValue:false}}};
+      return null;
+    }
   });
-  assert.equal(response.status, 422);
-  assert.deepEqual(await response.json(), { error: 'result_failed_integrity_validation' });
+  assert.equal(response.status, 200);
+  const payload=await response.json();
+  assert.equal(payload.accepted,true);
+  assert.equal(payload.integrityVerified,false);
+  assert.equal(payload.validationState,'pending');
 });
 
 test('serves a complete public snapshot from the Worker API', async () => {
@@ -146,7 +169,61 @@ test('structurally invalid runs are excluded from track snapshots', () => {
   ], TRACK);
   assert.deepEqual(entries.map((entry) => entry.accountId), ['valid']);
   assert.equal(entries[0].verified, false);
-  assert.equal(entries[0].validationState, 'structural');
+  assert.equal(entries[0].validationState, 'integrity');
+});
+
+test('pending runs remain visible per track but cannot affect Overall RP', () => {
+  const entries=computeTrackEntries([
+    validRun({accountId:'verified',trackId:TRACK,timeMs:21000,createdAt:1}),
+    validRun({accountId:'pending',trackId:TRACK,timeMs:20000,createdAt:2,integrityVerified:false})
+  ],TRACK);
+  assert.deepEqual(entries.map((entry)=>entry.accountId),['pending','verified']);
+  assert.equal(entries[0].validationState,'pending');
+  const overall=computeOverall([{trackId:TRACK,entries}]);
+  assert.equal(overall.some((entry)=>entry.userId==='pending'),false);
+});
+
+test('scheduled reconciliation discovers canonical PBs without a client Worker notification', async () => {
+  const canonical={
+    ownerUid:'owner',accountId:'blocked-client',trackId:TRACK,timeMs:20500,raceTimeFrames:1230,
+    replay:'recording',replayHash:'0'.repeat(64),uploadId:321,createdAt:200,updatedAt:200
+  };
+  let wroteTrack=false;
+  const env={
+    ALGORITHM_VERSION:'participation-v8-s1',
+    __TEST_FIRESTORE:async(path,init={})=>{
+      if(init.method==='PATCH'){
+        if(path.includes('s1_leaderboards_track'))wroteTrack=true;
+        return {};
+      }
+      if(path===':runQuery'){
+        const query=JSON.parse(init.body).structuredQuery;
+        const collection=query.from?.[0]?.collectionId;
+        if(collection!=='0.6.2_race_results')return [];
+        return [{document:{name:`projects/test/databases/(default)/documents/0.6.2_race_results/blocked-client_${TRACK}`,fields:Object.fromEntries(Object.entries(canonical).map(([key,value])=>[key,typeof value==='number'?{integerValue:String(value)}:{stringValue:value}])),updateTime:'2026-09-01T12:00:00Z'}}];
+      }
+      if(path.includes('s1_release_meta'))return {fields:{lastPbAt:{integerValue:'100'},revision:{integerValue:'1'},builtRevision:{integerValue:'1'}}};
+      return null;
+    }
+  };
+  const result=await reconcileCanonicalChanges(env);
+  assert.equal(result.scanned,1);
+  assert.equal(result.rebuilt,1);
+  assert.equal(wroteTrack,true);
+});
+
+test('idle canonical reconciliation performs no recurring Firestore write', async () => {
+  let writes=0;
+  const result=await reconcileCanonicalChanges({
+    __TEST_FIRESTORE:async(path,init={})=>{
+      if(init.method==='PATCH'){writes++;return {};}
+      if(path.includes('canonical_reconcile'))return {fields:{cursorUpdatedAt:{integerValue:'200'},pendingTrackIds:{arrayValue:{values:[]}}}};
+      if(path===':runQuery')return [];
+      return null;
+    }
+  });
+  assert.equal(result.unchanged,true);
+  assert.equal(writes,0);
 });
 
 test('synthetic ranking sizes remain capped and deterministic', () => {
