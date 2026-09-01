@@ -5,7 +5,7 @@ import { computeOverall, computeTrackEntries, handleRequest, trackWeightParts } 
 const TRACK = '5803f9e963625804e3de3246d043dc7dde847aa32e991f7f7326b0453f1fa038';
 const COMMUNITY_TRACK = '5159a8dac6a1f397407a7b5233ad570613531f6609f7dc897490c28c9f2c7a4e';
 const CUSTOM_TRACK = 'f'.repeat(64);
-const validRun = (row) => ({ replay: 'structural-replay', replayHash: 'a'.repeat(64), raceTimeFrames: row.timeMs, ...row });
+const validRun = (row) => ({ replay: 'structural-replay', replayHash: 'a'.repeat(64), raceTimeFrames: row.timeMs, uploadId: 123, ...row });
 
 test('solo tracks have zero weight and populated official tracks gain weight', () => {
   assert.equal(trackWeightParts(TRACK, 1).finalWeight, 0);
@@ -33,6 +33,8 @@ test('track entries retain one fastest PB per account without cloning racers', (
   const entries = computeTrackEntries(rows, TRACK, { BETA_CUTOFF_MS: '10' });
   assert.deepEqual(entries.map((entry) => [entry.accountId, entry.timeMs]), [['a', 29000], ['b', 29500]]);
   assert.equal(entries[0].fieldSize, 2);
+  assert.equal(entries[0].uploadId, 123);
+  assert.equal(entries[0].id, 123);
 });
 
 test('overall rank is deterministic and preserves rank duration only when unchanged', () => {
@@ -104,6 +106,37 @@ test('rejects notification for a result owned by another Firebase user', async (
   });
   assert.equal(response.status, 403);
   assert.deepEqual(await response.json(), { error: 'result_not_owned' });
+});
+
+test('rejects an owned result when its replay hash does not match', async () => {
+  const response = await handleRequest(new Request('https://ranked.example/v1/pb/notify', {
+    method: 'POST',
+    headers: { Origin: 'https://staticquasar931.github.io', 'Content-Type': 'application/json' },
+    body: JSON.stringify({ resultId: `racer_${TRACK}` })
+  }), {
+    ALLOWED_ORIGINS: 'https://staticquasar931.github.io',
+    __TEST_UID: 'signed-in-user',
+    __TEST_FIRESTORE: async (path) => path.includes('race_results') ? { fields: {
+      ownerUid: { stringValue: 'signed-in-user' }, accountId: { stringValue: 'racer' }, trackId: { stringValue: TRACK },
+      timeMs: { integerValue: '20000' }, raceTimeFrames: { integerValue: '1200' }, replay: { stringValue: 'recording' }, replayHash: { stringValue: '0'.repeat(64) }
+    } } : null
+  });
+  assert.equal(response.status, 422);
+  assert.deepEqual(await response.json(), { error: 'result_failed_integrity_validation' });
+});
+
+test('serves a complete public snapshot from the Worker API', async () => {
+  const response = await handleRequest(new Request('https://ranked.example/v1/snapshot/overall', {
+    headers: { Origin: 'https://staticquasar931.github.io' }
+  }), {
+    ALLOWED_ORIGINS: 'https://staticquasar931.github.io',
+    __TEST_FIRESTORE: async (path) => path.includes('leaderboards_overall') ? { fields: {
+      revision: { integerValue: '7' }, entries: { arrayValue: { values: [] } }, trackSummaries: { arrayValue: { values: [] } }
+    } } : null
+  });
+  assert.equal(response.status, 200);
+  assert.equal((await response.json()).revision, 7);
+  assert.match(response.headers.get('Cache-Control'), /^public/);
 });
 
 test('structurally invalid runs are excluded from track snapshots', () => {

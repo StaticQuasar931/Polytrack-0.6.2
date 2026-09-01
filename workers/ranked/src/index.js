@@ -8,6 +8,10 @@ const PODIUM_MIN_FIELD = 5;
 const OVERALL_LIMIT = 200;
 const TRACK_LIMIT = 500;
 const REBUILD_COOLDOWN_MS = 5 * 60 * 1000;
+const MAX_REPLAY_LENGTH = 10000;
+const MIGRATION_TRACK_BATCH = 4;
+const MIGRATION_BADGE_BATCH = 25;
+const MIGRATION_VERSION = 2;
 const COLLECTIONS = Object.freeze({
   raceResults: '0.6.2_race_results',
   profiles: '0.6.2_profiles_public',
@@ -108,8 +112,10 @@ function responseHeaders(origin, env) {
   return headers;
 }
 
-function json(origin, env, status, body) {
-  return new Response(JSON.stringify(body), { status, headers: responseHeaders(origin, env) });
+function json(origin, env, status, body, cacheControl = '') {
+  const headers = responseHeaders(origin, env);
+  if (cacheControl) headers.set('Cache-Control', cacheControl);
+  return new Response(JSON.stringify(body), { status, headers });
 }
 
 function base64UrlBytes(value) {
@@ -293,9 +299,18 @@ function structurallyValidResult(row, expectedTrackId = '') {
     (!expectedTrackId || trackId === expectedTrackId) &&
     raceTime(row) > 0 &&
     Number.isSafeInteger(frames) && frames > 0 && frames <= 4000000 &&
-    replay.length > 0 && replay.length <= 900000 &&
+    replay.length > 0 && replay.length < MAX_REPLAY_LENGTH &&
     (!replayHash || /^[0-9a-f]{32,128}$/i.test(replayHash))
   );
+}
+
+async function replayIntegrityValid(row) {
+  if (!structurallyValidResult(row)) return false;
+  const expected = safeText(row?.replayHash, 128).toLowerCase();
+  if (!/^[0-9a-f]{64}$/.test(expected)) return false;
+  const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(String(row.replay || '')));
+  const actual = [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('');
+  return actual === expected;
 }
 
 function trackType(trackId) {
@@ -375,6 +390,8 @@ export function computeTrackEntries(rows, trackId, env = {}) {
       frames: Math.max(1, Number(row.frames || row.raceTimeFrames || timeMs)),
       raceTimeFrames: Math.max(1, Number(row.raceTimeFrames || row.frames || timeMs)),
       replayHash: safeText(row.replayHash, 128) || null,
+      uploadId: Number.isSafeInteger(Number(row.uploadId)) && Number(row.uploadId) > 0 ? Number(row.uploadId) : null,
+      id: Number.isSafeInteger(Number(row.uploadId)) && Number(row.uploadId) > 0 ? Number(row.uploadId) : null,
       carId: safeText(row.carId, 64) || null,
       carColors: safeText(row.carColors, 64) || null,
       carStyle: safeText(row.carStyle, 256),
@@ -385,7 +402,8 @@ export function computeTrackEntries(rows, trackId, env = {}) {
       accountCreatedAt: Math.max(0, Number(row.accountCreatedAt || row.createdAt || 0)),
       verified: false,
       verifiedState: 0,
-      validationState: 'structural',
+      integrityVerified: row.integrityVerified === true,
+      validationState: row.integrityVerified === true ? 'integrity' : 'structural',
       betaTester: betaCutoff(env) > 0 && Number(row.createdAt || 0) > 0 && Number(row.createdAt) <= betaCutoff(env)
     });
   }
@@ -408,7 +426,20 @@ function rankTrustedTrackEntries(rows, trackId) {
 }
 
 async function persistTrackSnapshot(env, trackId, entries, prior = null) {
-  const signature = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(entries.map((entry) => `${entry.accountId}:${entry.timeMs}:${entry.pbAt}`).join('|'))).then((bytes) => base64Url(new Uint8Array(bytes)));
+  const signatureInput = entries.map((entry) => [
+    entry.accountId,
+    entry.timeMs,
+    entry.pbAt,
+    entry.uploadId || '',
+    entry.replayHash || '',
+    entry.integrityVerified === true ? 1 : 0,
+    entry.name || '',
+    entry.countryCode || '',
+    entry.carId || '',
+    entry.carColors || '',
+    entry.carStyle || ''
+  ].join(':')).join('|');
+  const signature = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(signatureInput)).then((bytes) => base64Url(new Uint8Array(bytes)));
   if (prior?.data?.signature === signature) return { changed: false, entries, revision: Number(prior.data.revision || 0) };
   const revision = Math.max(0, Number(prior?.data?.revision || 0)) + 1;
   const now = Date.now();
@@ -512,7 +543,9 @@ export function computeOverall(trackDocuments, priorEntries = [], betaTesterIds 
 }
 
 async function rebuildTrack(env, trackId, identityOverride = null) {
-  const rows = (await runQuery(env, COLLECTIONS.raceResults, { field: 'trackId', value: trackId }, TRACK_LIMIT)).map((document) => document.data);
+  const candidates = (await runQuery(env, COLLECTIONS.raceResults, { field: 'trackId', value: trackId }, TRACK_LIMIT)).map((document) => document.data);
+  const integrity = await Promise.all(candidates.map((row) => replayIntegrityValid(row)));
+  const rows = candidates.filter((_row, index) => integrity[index]).map((row) => ({ ...row, integrityVerified: true }));
   if (identityOverride?.accountId) {
     for (const row of rows) {
       if (safeText(row.accountId, 128) !== identityOverride.accountId) continue;
@@ -532,13 +565,26 @@ async function rebuildTrack(env, trackId, identityOverride = null) {
 async function mergeCanonicalResultIntoTrack(env, trackId, canonicalResult) {
   const prior = await readDocument(env, COLLECTIONS.track, trackId);
   if (!prior || prior.data?.algorithmVersion !== ALGORITHM_VERSION || !Array.isArray(prior.data?.entries)) return rebuildTrack(env, trackId);
-  const normalized = computeTrackEntries([canonicalResult], trackId, env)[0];
+  const normalized = computeTrackEntries([{ ...canonicalResult, integrityVerified: true }], trackId, env)[0];
   if (!normalized) throw new Error('Canonical PB failed structural validation');
   const entries = rankTrustedTrackEntries([
     ...prior.data.entries.filter((entry) => safeText(entry.accountId || entry.userId, 128) !== normalized.accountId),
     normalized
   ], trackId);
   return persistTrackSnapshot(env, trackId, entries, prior);
+}
+
+async function mapConcurrent(values, concurrency, mapper) {
+  const output = new Array(values.length);
+  let cursor = 0;
+  const workers = Array.from({ length: Math.min(Math.max(1, concurrency), values.length) }, async () => {
+    while (cursor < values.length) {
+      const index = cursor++;
+      output[index] = await mapper(values[index], index);
+    }
+  });
+  await Promise.all(workers);
+  return output;
 }
 
 export async function rebuildOverall(env, force = false) {
@@ -627,17 +673,33 @@ async function processProfileJobs(env) {
   }
 }
 
-async function createMigrationJob(env) {
-  const betaBoards = await runQuery(env, COLLECTIONS.betaTrack, null, 100);
-  const trackIds = [...new Set(betaBoards.map((board) => safeText(board.data.trackId || board.id, 80)).filter(Boolean))];
+async function createMigrationJob(env, prior = null) {
+  const [betaBoards, canonicalResults] = await Promise.all([
+    runQuery(env, COLLECTIONS.betaTrack, null, 100),
+    runQuery(env, COLLECTIONS.raceResults, null, 1000)
+  ]);
+  const trackIds = [...new Set([
+    ...betaBoards.map((board) => safeText(board.data.trackId || board.id, 80)),
+    ...canonicalResults.map((result) => safeText(result.data.trackId, 80))
+  ].filter(Boolean))].sort();
   const cutoff=betaCutoff(env);
   const betaCandidateIds=[...new Set(betaBoards.flatMap((board)=>Array.isArray(board.data.entries)?board.data.entries:[]).filter((entry)=>{
     const timestamp=Number(entry.pbAt||entry.createdAt||entry.timestamp||0);
     return safeText(entry.accountId||entry.userId,128)&&timestamp>0&&timestamp<=cutoff;
   }).map((entry)=>safeText(entry.accountId||entry.userId,128)))];
-  const job = { kind: 'migration', pendingTrackIds: trackIds, betaCandidateIds, pendingBadges: [], awardedBadgeIds: [], processedTracks: 0, awardedBadges: 0, createdAt: Date.now(), updatedAt: Date.now(), completedAt: 0 };
+  const previouslyAwarded = Array.isArray(prior?.awardedBadgeIds) ? prior.awardedBadgeIds.map((value) => safeText(value, 128)).filter(Boolean) : [];
+  const job = { kind: 'migration', migrationVersion: MIGRATION_VERSION, pendingTrackIds: trackIds, betaCandidateIds, pendingBadges: [], awardedBadgeIds: previouslyAwarded, processedTracks: 0, awardedBadges: previouslyAwarded.length, createdAt: Date.now(), updatedAt: Date.now(), completedAt: 0 };
   await writeDocument(env, COLLECTIONS.jobs, 'release_migration', job);
   return processMigrationJob(env, job);
+}
+
+async function resumeOrCreateMigration(env) {
+  const existing = (await readDocument(env, COLLECTIONS.jobs, 'release_migration'))?.data;
+  if (existing?.kind === 'migration' && Number(existing.completedAt || 0) === 0) return processMigrationJob(env, existing);
+  if (existing?.kind === 'migration' && Number(existing.completedAt || 0) > 0 && Number(existing.migrationVersion || 0) >= MIGRATION_VERSION) {
+    return { active: false, tracksRemaining: 0, badgesRemaining: 0, processedTracks: Number(existing.processedTracks || 0), awardedBadges: Number(existing.awardedBadges || 0), migrationVersion: MIGRATION_VERSION };
+  }
+  return createMigrationJob(env, existing);
 }
 
 async function processMigrationJob(env, supplied = null) {
@@ -647,16 +709,17 @@ async function processMigrationJob(env, supplied = null) {
   const candidates = new Set(Array.isArray(job.betaCandidateIds) ? job.betaCandidateIds.map((value) => safeText(value, 128)).filter(Boolean) : []);
   const pendingBadges = new Set(Array.isArray(job.pendingBadges) ? job.pendingBadges.map((value) => safeText(value, 128)).filter(Boolean) : []);
   const awardedBadgeIds = new Set(Array.isArray(job.awardedBadgeIds) ? job.awardedBadgeIds.map((value) => safeText(value, 128)).filter(Boolean) : []);
+  const batch = pendingTracks.slice(0, MIGRATION_TRACK_BATCH);
+  const rebuiltTracks = await mapConcurrent(batch, 2, (trackId) => rebuildTrack(env, trackId));
   let processedTracks = 0;
-  for (const trackId of pendingTracks.slice(0, 4)) {
-    const result = await rebuildTrack(env, trackId);
-    for (const entry of result.entries) if (entry.betaTester || candidates.has(entry.accountId)) pendingBadges.add(entry.accountId);
+  for (const result of rebuiltTracks) {
+    for (const entry of result.entries) if ((entry.betaTester || candidates.has(entry.accountId)) && !awardedBadgeIds.has(entry.accountId)) pendingBadges.add(entry.accountId);
     processedTracks += 1;
   }
   const remainingTracks = pendingTracks.slice(processedTracks);
   let awardedBadges = 0;
   if (!remainingTracks.length) {
-    for (const accountId of [...pendingBadges].slice(0, 10)) {
+    for (const accountId of [...pendingBadges].slice(0, MIGRATION_BADGE_BATCH)) {
       await writeDocument(env, COLLECTIONS.badges, accountId, { accountId, betaTester: true, awardedAt: Date.now(), cutoffAt: betaCutoff(env), source: 'release-migration' });
       pendingBadges.delete(accountId);
       awardedBadgeIds.add(accountId);
@@ -664,10 +727,10 @@ async function processMigrationJob(env, supplied = null) {
     }
   }
   const complete = !remainingTracks.length && pendingBadges.size === 0;
-  const next = { ...job, pendingTrackIds: remainingTracks, pendingBadges: [...pendingBadges], awardedBadgeIds: [...awardedBadgeIds], processedTracks: Math.max(0, Number(job.processedTracks || 0)) + processedTracks, awardedBadges: Math.max(0, Number(job.awardedBadges || 0)) + awardedBadges, updatedAt: Date.now(), completedAt: complete ? Date.now() : 0 };
+  const next = { ...job, migrationVersion: MIGRATION_VERSION, pendingTrackIds: remainingTracks, pendingBadges: [...pendingBadges], awardedBadgeIds: [...awardedBadgeIds], processedTracks: Math.max(0, Number(job.processedTracks || 0)) + processedTracks, awardedBadges: Math.max(0, Number(job.awardedBadges || 0)) + awardedBadges, updatedAt: Date.now(), completedAt: complete ? Date.now() : 0 };
   await writeDocument(env, COLLECTIONS.jobs, 'release_migration', next);
   if (processedTracks || complete) await rebuildOverall(env, complete);
-  return { active: !complete, tracksRemaining: remainingTracks.length, badgesRemaining: pendingBadges.size, processedTracks: next.processedTracks, awardedBadges: next.awardedBadges };
+  return { active: !complete, tracksRemaining: remainingTracks.length, badgesRemaining: pendingBadges.size, processedTracks: next.processedTracks, awardedBadges: next.awardedBadges, migrationVersion: MIGRATION_VERSION };
 }
 
 async function requestBody(request) {
@@ -678,6 +741,22 @@ async function requestBody(request) {
   return text ? JSON.parse(text) : {};
 }
 
+async function publicSnapshot(request, env, context, origin, collection, id) {
+  const cache = typeof caches !== 'undefined' ? caches.default : null;
+  const cacheUrl = new URL(request.url);
+  cacheUrl.searchParams.set('__origin', origin);
+  const cacheKey = new Request(cacheUrl.toString(), { method: 'GET' });
+  if (cache) {
+    const cached = await cache.match(cacheKey);
+    if (cached) return cached;
+  }
+  const snapshot = await readDocument(env, collection, id);
+  if (!snapshot) return json(origin, env, 404, { error: 'snapshot_not_ready' }, 'public, max-age=10, stale-while-revalidate=60');
+  const response = json(origin, env, 200, snapshot.data, 'public, max-age=30, stale-while-revalidate=300');
+  if (cache && context.waitUntil) context.waitUntil(cache.put(cacheKey, response.clone()));
+  return response;
+}
+
 export async function handleRequest(request, env, context = {}) {
   const origin = request.headers.get('Origin') || '';
   if (!allowedOrigins(env).has(origin)) return json(origin, env, 403, { error: 'origin_not_allowed' });
@@ -685,7 +764,13 @@ export async function handleRequest(request, env, context = {}) {
   if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: responseHeaders(origin, env) });
   if (request.method === 'GET' && path === '/v1/status') {
     const meta = (await readDocument(env, COLLECTIONS.meta, 'current').catch(() => null))?.data || {};
-    return json(origin, env, 200, { service: 'polytrack-ranked', algorithmVersion: ALGORITHM_VERSION, schemaVersion: TRACK_SCHEMA_VERSION, rankedWritesEnabled: String(env.RANKED_WRITES_ENABLED) !== 'false', multiplayerEnabled: String(env.MULTIPLAYER_ENABLED) !== 'false', revision: Number(meta.revision || 0), builtRevision: Number(meta.builtRevision || 0), updatedAt: Number(meta.updatedAt || 0) });
+    return json(origin, env, 200, { service: 'polytrack-ranked', algorithmVersion: ALGORITHM_VERSION, schemaVersion: TRACK_SCHEMA_VERSION, rankedWritesEnabled: String(env.RANKED_WRITES_ENABLED) !== 'false', multiplayerEnabled: String(env.MULTIPLAYER_ENABLED) !== 'false', revision: Number(meta.revision || 0), builtRevision: Number(meta.builtRevision || 0), dirty: meta.dirty === true, pendingRevisions: Math.max(0, Number(meta.revision || 0) - Number(meta.builtRevision || 0)), updatedAt: Number(meta.updatedAt || 0) });
+  }
+  if (request.method === 'GET' && path === '/v1/snapshot/overall') return publicSnapshot(request, env, context, origin, COLLECTIONS.overall, 'main');
+  if (request.method === 'GET' && path === '/v1/snapshot/track') {
+    const trackId = safeText(new URL(request.url).searchParams.get('trackId'), 80);
+    if (!/^[A-Za-z0-9_-]{8,80}$/.test(trackId)) return json(origin, env, 400, { error: 'invalid_track_id' });
+    return publicSnapshot(request, env, context, origin, COLLECTIONS.track, trackId);
   }
   if (request.method !== 'POST') return json(origin, env, 404, { error: 'not_found' });
   if (path === '/v1/admin/rebuild') {
@@ -695,7 +780,7 @@ export async function handleRequest(request, env, context = {}) {
   }
   if (path === '/v1/admin/migrate') {
     if (!env.ADMIN_REBUILD_TOKEN || request.headers.get('X-Admin-Token') !== env.ADMIN_REBUILD_TOKEN) return json(origin, env, 403, { error: 'admin_required' });
-    const result = await createMigrationJob(env);
+    const result = await resumeOrCreateMigration(env);
     return json(origin, env, 202, result);
   }
   if (path !== '/v1/pb/notify' && path !== '/v1/profile/notify') return json(origin, env, 404, { error: 'not_found' });
@@ -711,6 +796,7 @@ export async function handleRequest(request, env, context = {}) {
   const result = await readDocument(env, COLLECTIONS.raceResults, resultId);
   if (!result || result.data.ownerUid !== uid || resultId !== `${result.data.accountId}_${result.data.trackId}`) return json(origin, env, 403, { error: 'result_not_owned' });
   if (!structurallyValidResult(result.data)) return json(origin, env, 422, { error: 'result_failed_structural_validation' });
+  if (!(await replayIntegrityValid(result.data))) return json(origin, env, 422, { error: 'result_failed_integrity_validation' });
   const trackId = safeText(result.data.trackId, 80);
   const rebuilt = await mergeCanonicalResultIntoTrack(env, trackId, result.data);
   if (rebuilt.changed && context.waitUntil) context.waitUntil(rebuildOverall(env, false).catch((error) => console.error('Deferred overall rebuild failed', String(error?.message || error))));

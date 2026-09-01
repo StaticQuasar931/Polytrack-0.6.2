@@ -1303,7 +1303,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
       @media(max-width:1100px){.competition-track-main{align-items:flex-start;flex-direction:column;gap:2px}.overall-competition section small{padding-left:0!important}.profile-stat-primary{grid-template-columns:repeat(3,minmax(125px,1fr))!important}.profile-stat-secondary{grid-template-columns:repeat(3,minmax(125px,1fr))!important}}
       @media(max-width:700px){.overall-competition section{grid-template-columns:minmax(0,1fr) auto!important}.competition-track-main{grid-column:1/3;grid-row:1;align-items:center;flex-direction:row}.competition-track-name{font-size:19px!important}.competition-result{grid-column:1/3!important;grid-row:2!important;justify-self:stretch;text-align:center}.overall-competition section small{grid-row:3!important;padding-left:0!important}.profile-stat-primary,.profile-stat-secondary{grid-template-columns:1fr 1fr!important}.profile-stat-primary span{min-height:78px!important}.profile-stat-primary b{font-size:24px!important}.profile-achievement-medals .profile-medals>span{font-size:12px!important}.profile-guide-copy b{font-size:17px!important}.profile-guide-copy small{font-size:14px!important}}
       .sq-track-leaderboard-loading .leaderboard-ui>.container>button.main{visibility:hidden!important}.sq-track-leaderboard-loading .leaderboard-ui>.container::after{content:'Loading track leaderboard';display:block;margin:18px auto;padding:12px 18px;width:max-content;max-width:80%;background:#172653;border-left:4px solid #7ee7ff;color:#eaf7ff;font:18px ForcedSquare,Arial,sans-serif}.polytrack-track-freshness.is-loading{border-left-color:#7ee7ff}.profile-result.is-null{opacity:.72;border-left-color:#71809c!important}.profile-achievement-medals{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:6px!important}.profile-achievement-medals .profile-medal-card{display:grid!important;grid-template-columns:30px 1fr!important;grid-template-rows:auto auto!important;align-items:center!important;column-gap:6px!important;min-width:0!important;min-height:58px!important;padding:7px!important;background:#10214b}.profile-medal-card img{grid-row:1/3;width:27px!important;height:27px!important}.profile-medal-card b{font-size:19px}.profile-medal-card small{font-size:10px;letter-spacing:.6px}.profile-medal-card.gold b{color:#ffe381}.profile-medal-card.silver b{color:#f4f7ff}.profile-medal-card.bronze b{color:#ffb786}.profile-guide>summary [data-summary-track-id]{cursor:pointer}.profile-guide>summary [data-summary-track-id]:hover strong{color:#7ee7ff;text-decoration:underline}
-      .track-type-label{display:inline-flex!important;align-items:center;padding:2px 6px;border-left:3px solid #7ee7ff;background:#142654;color:#dceaff;text-transform:capitalize}.track-type-label.official,.track-type-official{--track-type-color:#ffd26c}.track-type-label.community,.track-type-community{--track-type-color:#72e7b4}.track-type-label.custom,.track-type-custom{--track-type-color:#d0a5ff}.track-type-label.official,.track-type-label.community,.track-type-label.custom{border-left-color:var(--track-type-color)}.profile-track-row[class*='track-type-']{border-left:3px solid var(--track-type-color,#7ee7ff)}.profile-track-row time{display:flex;flex-direction:column;gap:4px}.profile-track-row time small{color:#9fb7d8;font-size:10px;line-height:1.15}.overall-challenge-stack section{border-right:1px solid rgba(255,255,255,.1)}.overall-challenge-stack .competition-track-name{font-weight:normal}.overall-center-tools{align-content:center}.leaderboard-arcade>div{flex:1}.leaderboard-arcade button{flex:1;justify-content:center}.profile-beta-badge{padding:5px 8px;background:#ffd26c;color:#17224a;font-size:12px;letter-spacing:1px}
+      .track-type-label{display:inline-flex!important;align-items:center;padding:2px 6px;border-left:3px solid #7ee7ff;background:#142654;color:#dceaff;text-transform:capitalize}.track-type-label.official,.track-type-official{--track-type-color:#ffd26c}.track-type-label.community,.track-type-community{--track-type-color:#72e7b4}.track-type-label.custom,.track-type-custom{--track-type-color:#d0a5ff}.track-type-label.official,.track-type-label.community,.track-type-label.custom{border-left-color:var(--track-type-color)}.profile-track-row[class*='track-type-']{border-left:3px solid var(--track-type-color,#7ee7ff)}.profile-track-row time{display:flex;flex-direction:column;gap:4px}.profile-track-row time small{color:#9fb7d8;font-size:10px;line-height:1.15}.overall-challenge-stack section{border-right:1px solid rgba(255,255,255,.1)}.overall-challenge-stack .competition-track-name{font-weight:normal}.overall-center-tools{align-content:center}.leaderboard-arcade>div{flex:1}.leaderboard-arcade button{flex:1;justify-content:center}.profile-beta-badge{padding:5px 8px;background:#ffd26c;color:#17224a;font-size:12px;letter-spacing:1px}.profile-beta-badge.compact{padding:2px 5px;font-size:9px;line-height:1;border-radius:3px;white-space:nowrap}
       .overall-track-you{display:inline-flex;padding:2px 6px;background:#7ee7ff;color:#10214b;font-size:.86em;letter-spacing:.6px;box-shadow:0 0 10px rgba(126,231,255,.28)}.overall-track-entry .overall-best-line:nth-child(2){color:#dcecff}.profile-track-row{grid-template-columns:96px minmax(180px,1fr) 110px 150px 124px!important;min-height:82px!important;padding:7px 11px!important;border-left:0!important;box-shadow:inset 3px 0 0 var(--track-type-color,#7ee7ff)}.profile-track-row .profile-track-image-frame{width:92px!important;height:66px!important;background:#101f48}.profile-track-row .profile-track-thumb{width:92px!important;height:66px!important;object-fit:contain!important;image-rendering:auto}.profile-track-row .track-type-label{display:inline-flex!important;width:max-content;padding:0!important;border:0!important;background:transparent!important;color:var(--track-type-color,#9fb7d8)!important;font-size:12px!important;letter-spacing:.5px}.profile-track-row .profile-track-name b{font-size:19px!important}.profile-track-row time{font-size:16px!important}.profile-track-row time small{font-size:12px!important;color:#bdd2ee!important}.profile-track-head{grid-template-columns:minmax(0,1fr) 110px 150px 124px!important;padding-left:116px!important}
       .sq-multiplayer-relay{position:absolute;left:50%;bottom:16px;z-index:8;width:min(1020px,calc(100vw - 28px));box-sizing:border-box;padding:16px 18px;transform:translateX(-50%);background:linear-gradient(115deg,#101f47,#1b3268 72%,#17365f);color:#eaf5ff;font-family:ForcedSquare,Arial,sans-serif;border:1px solid rgba(126,231,255,.26);border-left:6px solid #7ee7ff;clip-path:polygon(12px 0,100% 0,calc(100% - 12px) 100%,0 100%);box-shadow:0 16px 42px rgba(0,0,0,.46)}.sq-multiplayer-relay[hidden],.sq-multiplayer-route-body[hidden],.sq-multiplayer-backup-drawer[hidden]{display:none!important}.sq-multiplayer-relay.is-collapsed{width:min(720px,calc(100vw - 28px));padding:10px 13px}.sq-multiplayer-relay-head{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:12px}.sq-multiplayer-relay-head>div{display:flex;flex-direction:column;gap:2px;min-width:0}.sq-multiplayer-kicker{color:#7ee7ff;font-size:11px;letter-spacing:1.4px}.sq-multiplayer-relay-head strong{font-size:24px;font-weight:normal;color:#fff;line-height:1.05}.sq-multiplayer-status{padding:7px 10px;background:#243b78;border-left:4px solid #7ee7ff;color:#d7efff;font-size:14px;white-space:nowrap}.sq-multiplayer-status.is-backup{border-color:#ffd56e;color:#ffe7a8}.sq-multiplayer-status.is-direct{border-color:#98a9c8;color:#ced8e9}.sq-multiplayer-collapse{min-height:38px;padding:7px 12px;border:1px solid rgba(126,231,255,.32);background:#20396f;color:#fff;font:14px ForcedSquare,Arial,sans-serif;cursor:pointer}.sq-multiplayer-collapse:hover,.sq-multiplayer-collapse:focus-visible{background:#7ee7ff;color:#10214b;outline:2px solid #fff;outline-offset:2px}.sq-multiplayer-intro{margin:10px 0 8px;color:#c3d7ee;font-size:15px}.sq-multiplayer-paths{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.sq-multiplayer-path{display:grid;grid-template-columns:34px minmax(0,1fr);grid-template-rows:auto auto;align-items:start;gap:2px 9px;min-width:0;min-height:100px;box-sizing:border-box;padding:11px 12px;background:#1b3168;border:0;border-top:4px solid #536fae;color:inherit;text-align:left;font-family:inherit}.sq-multiplayer-path.is-automatic:first-child{border-color:#77e6b0}.sq-multiplayer-path.is-automatic:nth-child(2){border-color:#7ee7ff}.sq-multiplayer-backup-toggle{border-color:#ffd56e;cursor:pointer}.sq-multiplayer-backup-toggle:hover,.sq-multiplayer-backup-toggle:focus-visible,.sq-multiplayer-backup-toggle.is-open{background:#2c4175;outline:2px solid #ffd56e;outline-offset:-2px}.sq-route-number{grid-column:1;grid-row:1/3;display:flex!important;align-items:center;justify-content:center;width:32px;height:32px;background:#0e1d43!important;color:#fff!important;font-size:20px!important}.sq-multiplayer-path>div{grid-column:2;grid-row:1}.sq-multiplayer-path b{display:block;margin-bottom:4px;font-size:18px;font-weight:normal;color:#fff}.sq-multiplayer-path div>span{display:block;color:#c2d3e9;font-size:13px;line-height:1.3}.sq-multiplayer-path em{grid-column:2;grid-row:2;align-self:end;width:max-content;margin-top:7px;padding:3px 6px;background:#10224c;color:#8ff1ff;font-size:10px;font-style:normal;letter-spacing:1px}.sq-multiplayer-backup-toggle em{color:#ffe49a}.sq-multiplayer-backup-drawer{display:grid;grid-template-columns:minmax(220px,.75fr) minmax(0,1.25fr);align-items:center;gap:14px;margin-top:9px;padding:11px 12px;background:#222f58;border-left:4px solid #ffd56e}.sq-multiplayer-backup-drawer>div:first-child{display:flex;flex-direction:column;gap:3px}.sq-multiplayer-backup-drawer b{font-size:17px;font-weight:normal;color:#fff}.sq-multiplayer-backup-drawer span{color:#b9cbe5;font-size:12px;line-height:1.25}.sq-multiplayer-code{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:7px}.sq-multiplayer-code input{min-width:0;padding:9px 10px;background:#0f1d43;border:2px solid #385594;color:#fff;font:16px ForcedSquare,Arial,sans-serif}.sq-multiplayer-code input:focus{outline:2px solid #7ee7ff;outline-offset:1px}.sq-multiplayer-code .button{display:flex!important;align-items:center;justify-content:center;min-width:86px;height:42px;font-size:15px}.sq-multiplayer-discord{padding:0 12px;color:#fff!important;text-decoration:none;background:#354d8d}.sq-multiplayer-note{margin:8px 2px 0;color:#9fb5d2;font-size:12px;line-height:1.25}
       @media(max-width:760px){.sq-multiplayer-relay,.sq-multiplayer-relay.is-collapsed{bottom:6px;width:calc(100vw - 10px);max-height:calc(100vh - 12px);overflow:auto;padding:11px 10px;border-left-width:4px;clip-path:none}.sq-multiplayer-relay-head{grid-template-columns:minmax(0,1fr) auto;gap:7px}.sq-multiplayer-relay-head strong{font-size:19px}.sq-multiplayer-kicker{font-size:9px}.sq-multiplayer-status{grid-column:1;padding:5px 7px;width:max-content;font-size:11px}.sq-multiplayer-collapse{grid-column:2;grid-row:1/3;min-height:42px;padding:6px 9px;font-size:12px}.sq-multiplayer-intro{margin:8px 0 6px;font-size:13px}.sq-multiplayer-paths{grid-template-columns:1fr;gap:5px}.sq-multiplayer-path{grid-template-columns:30px minmax(0,1fr) auto;grid-template-rows:auto;min-height:0;padding:8px 9px;border-top-width:3px}.sq-route-number{grid-column:1;grid-row:1;width:28px;height:28px;font-size:17px!important}.sq-multiplayer-path>div{grid-column:2;grid-row:1}.sq-multiplayer-path b{font-size:16px}.sq-multiplayer-path div>span{font-size:12px}.sq-multiplayer-path em{grid-column:3;grid-row:1;align-self:start;margin:0;font-size:8px}.sq-multiplayer-backup-drawer{grid-template-columns:1fr;gap:8px;padding:9px}.sq-multiplayer-code{grid-template-columns:minmax(0,1fr) auto}.sq-multiplayer-discord{grid-column:1/-1;min-height:38px}.sq-multiplayer-note{font-size:10px}}
@@ -1830,7 +1830,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     if (document.getElementById('overallLeaderboardPanel')) return;
     const panel = document.createElement('div');
     panel.id = 'overallLeaderboardPanel';
-    panel.innerHTML = `<div class="overall-shell"><div class="overall-top"><div class="overall-title-group"><h2>${tRankingsTitle()}</h2></div><div class="overall-actions"><button id="overallFindMeBtn" class="button overall-action-btn" type="button">Find me</button><button id="overallHelpBtn" class="button overall-action-btn" type="button">Help</button><button id="closeOverallLeaderboard" class="button overall-action-btn" type="button">${tr('close')}</button></div></div><div class="overall-columns" aria-hidden="true"><span>Place</span><span>Driver</span><span>Movement & bests</span><span>Score</span></div><div id="overallLeaderboardList"></div>${dailySpotlightMarkup()}<div id="overallProfilePopup"><div class="overall-profile-card" role="dialog" aria-modal="true" aria-label="Racer profile"><button id="overallProfileClose" class="button" type="button">Close</button><div id="overallProfileContent"></div></div></div><div id="overallHelpPopup"><div class="overall-help-card" role="dialog" aria-modal="true" aria-labelledby="overallHelpTitle"><div class="overall-help-head"><h3 id="overallHelpTitle">How Ranked works</h3></div><div class="overall-help-content"><section><b>Overall RP</b><p>Lower is better. Overall RP is 68% best-ten skill, 20% diminishing track coverage, and 12% protected all-track depth.</p></section><section><b>Track weight</b><p>Every screen uses the same track value: type multiplier, diminishing field size, and the track's time spread. Official tracks use 1.6x, community 1.0x, and custom 0.6x. Solo tracks score zero.</p></section><section><b>Eligibility</b><p>One or two eligible tracks are provisional. Three populated tracks establish a Ranked position.</p></section><section><b>Podium points</b><p>Recognized tracks with at least five drivers award 9 for first, 3 for second, and 1 for third. Podium rate requires three eligible tracks.</p></section><section><b>Route planner</b><p>Every plan is for you. Your profile shows ways to improve; another profile shows ways to catch that racer or extend your lead.</p></section><section><b>Saved data</b><p>Rankings stay available offline. Red means a cloud refresh failed; “up to date” means the cloud responded and no newer complete snapshot exists.</p></section><p class="overall-help-note">This beta resets once before release. Scoring updates and new track finishes can move positions.</p><p><strong>Please suggest new features and changes.</strong> Join the <a href="https://discord.gg/DP2hM7RRhR" target="_blank" rel="noopener noreferrer">Discord</a> or use the <a href="https://sites.google.com/view/staticquasar931/google-form?utm_source=polytrack&amp;utm_medium=game&amp;utm_campaign=ranked_feedback" target="_blank" rel="noopener noreferrer">feedback form</a>.</p><div class="overall-help-actions"><button id="overallHelpClose" class="button overall-action-btn" type="button">Close help</button></div></div></div></div></div>`;
+    panel.innerHTML = `<div class="overall-shell"><div class="overall-top"><div class="overall-title-group"><h2>${tRankingsTitle()}</h2></div><div class="overall-actions"><button id="overallFindMeBtn" class="button overall-action-btn" type="button">Find me</button><button id="overallHelpBtn" class="button overall-action-btn" type="button">Help</button><button id="closeOverallLeaderboard" class="button overall-action-btn" type="button">${tr('close')}</button></div></div><div class="overall-columns" aria-hidden="true"><span>Place</span><span>Driver</span><span>Movement & bests</span><span>Score</span></div><div id="overallLeaderboardList"></div>${dailySpotlightMarkup()}<div id="overallProfilePopup"><div class="overall-profile-card" role="dialog" aria-modal="true" aria-label="Racer profile"><button id="overallProfileClose" class="button" type="button">Close</button><div id="overallProfileContent"></div></div></div><div id="overallHelpPopup"><div class="overall-help-card" role="dialog" aria-modal="true" aria-labelledby="overallHelpTitle"><div class="overall-help-head"><h3 id="overallHelpTitle">How Ranked works</h3></div><div class="overall-help-content"><section><b>Overall RP</b><p>Lower is better. Overall RP is 68% best-ten skill, 20% diminishing track coverage, and 12% protected all-track depth.</p></section><section><b>Track weight</b><p>Every screen uses the same track value: type multiplier, diminishing field size, and the track's time spread. Official tracks use 1.6x, community 1.0x, and custom 0.6x. Solo tracks score zero.</p></section><section><b>Eligibility</b><p>One or two eligible tracks are provisional. Three populated tracks establish a Ranked position.</p></section><section><b>Podium points</b><p>Recognized tracks with at least five drivers award 9 for first, 3 for second, and 1 for third. Podium rate requires three eligible tracks.</p></section><section><b>Replay integrity</b><p>Ranked checks replay ownership, format, size, and SHA-256 integrity on the server. This detects damaged or substituted replays, but it is not yet full physics verification.</p></section><section><b>Badges</b><p>Badges such as Beta Tester are issued by the Ranked server and cannot be granted by the browser.</p></section><section><b>Route planner</b><p>Every plan is for you. Your profile shows ways to improve; another profile shows ways to catch that racer or extend your lead.</p></section><section><b>Saved data</b><p>Rankings stay available offline. Red means a cloud refresh failed; “up to date” means the cloud responded and no newer complete snapshot exists.</p></section><p class="overall-help-note">Rank movement resets once before release; saved PBs remain. New track finishes can still move positions.</p><p><strong>Please suggest new features and changes.</strong> Join the <a href="https://discord.gg/DP2hM7RRhR" target="_blank" rel="noopener noreferrer">Discord</a> or use the <a href="https://sites.google.com/view/staticquasar931/google-form?utm_source=polytrack&amp;utm_medium=game&amp;utm_campaign=ranked_feedback" target="_blank" rel="noopener noreferrer">feedback form</a>.</p><div class="overall-help-actions"><button id="overallHelpClose" class="button overall-action-btn" type="button">Close help</button></div></div></div></div></div>`;
     document.body.appendChild(panel);
     panel.addEventListener('click', (event)=>{
       if (event.target === panel) panel.style.display='none';
@@ -2064,6 +2064,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
           frames: safePositiveInt(parsedFrames || timeMs, 1),
           verifiedState: Number.isFinite(Number(row.verifiedState)) ? Number(row.verifiedState) : 0,
           replayHash: row.replayHash || null,
+          uploadId: safeRecordingId(row.uploadId || row.id) || null,
           carId: extractCarId(row) || null,
           carColors: normalizeCarColorId(row.carColors || ''),
           carStyle,
@@ -2072,7 +2073,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
           createdAt: pbTimestamp(row),
           pbAt: pbTimestamp(row),
           accountCreatedAt: Math.max(0,Number(row.accountCreatedAt||0)||0),
-          id: buildRecordingId(row, bestByUser.size + 1)
+          id: safeRecordingId(row.uploadId || row.id) || buildRecordingId(row, bestByUser.size + 1)
         });
       }
     }
@@ -2107,10 +2108,16 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     }
     try {
       if (!cacheHit || forceCloud) {
-        const d = await db();
-        const ref = d.collection(COLLECTIONS.leaderboardsTrack).doc(safeTrackId);
-        const doc = await ref.get();
-        const data = doc.data() || {};
+        let data=null;
+        let source='edge';
+        try{data=await fetchRankedSnapshot('track',safeTrackId);}catch(error){log('warn','[RANKED403] Edge track snapshot unavailable; trying Firestore',String(error&&(error.message||error)));}
+        if(!data){
+          const d = await db();
+          const ref = d.collection(COLLECTIONS.leaderboardsTrack).doc(safeTrackId);
+          const doc = await ref.get();
+          data = doc.data() || {};
+          source='firestore';
+        }
         entries = Array.isArray(data.entries) ? data.entries : [];
         if (Number(data.schemaVersion || 0) < TRACK_CACHE_SCHEMA) {
           entries = computeTrackTopEntries(entries.map((entry)=>({...entry,trackId:safeTrackId})),safeTrackId,500);
@@ -2120,7 +2127,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
           log('info','[CACHE209] Legacy timing normalized locally',{trackId:safeTrackId,participants:entries.length});
         }
         entries=applyCanonicalTrackWeight(safeTrackId,entries).slice(0,500);
-        writeTrackSnapshotCache(safeTrackId,entries,data.updatedAt||Date.now(),{revision:data.revision,sourceRevision:data.sourceRevision,algorithmVersion:data.algorithmVersion,schemaVersion:data.schemaVersion,source:'cloud'});
+        writeTrackSnapshotCache(safeTrackId,entries,data.updatedAt||Date.now(),{revision:data.revision,sourceRevision:data.sourceRevision,algorithmVersion:data.algorithmVersion,schemaVersion:data.schemaVersion,source});
         currentTrackLoadState={trackId:safeTrackId,status:'cloud',fetchedAt:Number(data.updatedAt||0)||Date.now(),checkedAt:Date.now(),nextRefreshAt:Date.now()+TRACK_REFRESH_MS};
       }
     } catch (error) {
@@ -2347,9 +2354,17 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     }
     overallLoadState = {status:'loading',message:'',fetchedAt:cached?.fetchedAt||0};
     try {
-      const d = await db();
-      const snap = await d.collection(COLLECTIONS.leaderboardsOverall).doc('main').get();
-      const data = snap.data() || {};
+      let data=null;
+      let source='edge';
+      let fromFirestoreCache=false;
+      try{data=await fetchRankedSnapshot('overall');}catch(error){log('warn','[RANKED404] Edge overall snapshot unavailable; trying Firestore',String(error&&(error.message||error)));}
+      if(!data){
+        const d = await db();
+        const snap = await d.collection(COLLECTIONS.leaderboardsOverall).doc('main').get();
+        data = snap.data() || {};
+        source='firestore';
+        fromFirestoreCache=Boolean(snap.metadata?.fromCache);
+      }
       direct = normalizeEntries(data.entries || []);
       const revision = Math.max(0,Number(data.revision || 0) || 0);
       const builtRevision = Math.max(0,Number(data.builtRevision || 0) || 0);
@@ -2359,13 +2374,13 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
       const schemaVersion=Math.max(0,Number(data.schemaVersion||0)||0);
       const signature = `${algorithmVersion}:${sourceRevision}:${builtRevision}:${updatedAt}`;
       const validDirect = Array.isArray(data.entries) && Array.isArray(data.trackSummaries) && algorithmVersion===RANK_MODEL && schemaVersion>=TRACK_CACHE_SCHEMA && builtRevision>=sourceRevision && (data.entries||[]).every((entry)=>String(entry?.rankModel||'')===RANK_MODEL&&Number(entry?.averageFinishVersion||0)>=AVERAGE_FINISH_VERSION&&Number(entry?.averagePlacementVersion||0)>=1);
-      if (snap.metadata?.fromCache) {
+      if (fromFirestoreCache) {
         const fallback=direct.length?direct:(cached?.entries||[]);
         if(fallback.length){overallLoadState={status:'stale',message:'Offline ranked snapshot',fetchedAt:cached?.serverUpdatedAt||updatedAt||cached?.fetchedAt};return annotateOverallMovement(fallback,cached?.signature||signature);}
       }
       if (validDirect) {
         overallTrackSummariesCache=Array.isArray(data.trackSummaries)?data.trackSummaries.slice(0,TOTAL_TRACKS):[];
-        writeOverallSnapshotCache(direct,{serverUpdatedAt:updatedAt,revision,builtRevision,sourceRevision,algorithmVersion,schemaVersion,source:'cloud',signature,trackSummaries:overallTrackSummariesCache});
+        writeOverallSnapshotCache(direct,{serverUpdatedAt:updatedAt,revision,builtRevision,sourceRevision,algorithmVersion,schemaVersion,source,signature,trackSummaries:overallTrackSummariesCache});
         overallLoadState={status:'cloud',message:'Community Ranked snapshot',fetchedAt:updatedAt||Date.now(),serverUpdatedAt:updatedAt||0,checkedAt:Date.now(),nextRefreshAt:Date.now()+OVERALL_REFRESH_CHECK_MS};
         return annotateOverallMovement(direct,signature);
       }
@@ -2569,7 +2584,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     const medalMeta=medalSummaryMarkup(medals,true);
     const identityMeta=overallCategory==='overall'?`${participationMeta}<span class="overall-weight-chip" title="${escapeHtml(rankedWeightTitle('',0,true))}">${Number(row?.weightedTracks||0).toFixed(2)}x</span>`:overallCategory==='medals'||overallCategory==='wins'?`${medalMeta}<span class="row-medal-denominator">/ ${races} ranked tracks</span>`:overallCategory==='tracks'||overallCategory==='official'||overallCategory==='community'?`${participationMeta}<span>${score.toFixed(2)} RP</span>`:overallCategory==='weight'?`${participationMeta}<span>${score.toFixed(2)} RP</span>`:overallCategory==='average'||overallCategory==='largestField'?`${participationMeta}`:overallCategory==='podiumRate'?`${medalMeta}<span>/ ${races} eligible tracks</span>`:`<span>${score.toFixed(2)} RP</span>${participationMeta}`;
     const provisional=Boolean(row.provisional)||races<MIN_RANKED_TRACKS;
-    return `<div class="overall-entry ${rank===1?'top-1':rank===2?'top-2':rank===3?'top-3':''} ${rank===4?'after-podium':''} ${isSelf?'is-self':''} ${provisional?'is-provisional':''} ${missingValue?'has-missing-value':''}" data-userid="${safeUserId}" data-category="${escapeHtml(overallCategory)}" tabindex="0" role="button" aria-label="View ${safeName} ranked profile. ${escapeHtml(categoryUnit)}: ${escapeHtml(categoryDisplay)}." style="animation-delay:${(index*0.03).toFixed(3)}s"><span class="overall-rank">${provisional&&overallCategory!=='rising'?'P':`#${rank}`}</span><span class="overall-name">${carModelPreview(savedCarStyle,row?.carColorId||row?.carColors,safeUserId)}<span class="overall-name-label"><span class="overall-name-main">${safeName}${countryFlagMarkup(row?.countryCode)}${isSelf?'<span class="overall-you-tag">YOU</span>':''}${provisional?'<span class="overall-provisional-tag">PROVISIONAL</span>':''}</span>${hintText?`<span class="overall-name-hint">${hintText}</span>`:''}<span class="overall-racer-meta">${identityMeta}</span></span></span><div class="overall-mid">${move}<div class="overall-best">${best}</div></div><div class="overall-stats" title="${escapeHtml(scoreTitle)}"><div class="overall-score">${categoryDisplay}</div><div class="overall-score-unit">${categoryUnit}</div></div></div>`;
+    return `<div class="overall-entry ${rank===1?'top-1':rank===2?'top-2':rank===3?'top-3':''} ${rank===4?'after-podium':''} ${isSelf?'is-self':''} ${provisional?'is-provisional':''} ${missingValue?'has-missing-value':''}" data-userid="${safeUserId}" data-category="${escapeHtml(overallCategory)}" tabindex="0" role="button" aria-label="View ${safeName} ranked profile. ${escapeHtml(categoryUnit)}: ${escapeHtml(categoryDisplay)}." style="animation-delay:${(index*0.03).toFixed(3)}s"><span class="overall-rank">${provisional&&overallCategory!=='rising'?'P':`#${rank}`}</span><span class="overall-name">${carModelPreview(savedCarStyle,row?.carColorId||row?.carColors,safeUserId)}<span class="overall-name-label"><span class="overall-name-main">${safeName}${countryFlagMarkup(row?.countryCode)}${isSelf?'<span class="overall-you-tag">YOU</span>':''}${row?.badges?.betaTester===true?'<span class="profile-beta-badge compact" title="Earned during the pre-release Ranked beta">BETA</span>':''}${provisional?'<span class="overall-provisional-tag">PROVISIONAL</span>':''}</span>${hintText?`<span class="overall-name-hint">${hintText}</span>`:''}<span class="overall-racer-meta">${identityMeta}</span></span></span><div class="overall-mid">${move}<div class="overall-best">${best}</div></div><div class="overall-stats" title="${escapeHtml(scoreTitle)}"><div class="overall-score">${categoryDisplay}</div><div class="overall-score-unit">${categoryUnit}</div></div></div>`;
   }
 
   const OVERALL_PAGE_SIZE = 15;
@@ -3284,6 +3299,22 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     }catch{return '';}
   }
 
+  async function fetchRankedSnapshot(kind,trackId=''){
+    const endpoint=rankedBrokerUrl();
+    if(!endpoint)return null;
+    const path=kind==='overall'?'/v1/snapshot/overall':`/v1/snapshot/track?trackId=${encodeURIComponent(String(trackId||'').slice(0,80))}`;
+    const response=await withTimeout(fetch(`${endpoint}${path}`,{
+      headers:{Accept:'application/json'},
+      cache:'default',
+      credentials:'omit',
+      referrerPolicy:'no-referrer'
+    }),5000,'Ranked snapshot timed out');
+    if(response.status===404)return null;
+    if(!response.ok)throw new Error(`Ranked snapshot failed (${response.status})`);
+    const payload=await response.json();
+    return payload&&typeof payload==='object'?payload:null;
+  }
+
   function rankedNotifyQueue(){
     const value=readJsonStorage(RANKED_NOTIFY_QUEUE_KEY,[]);
     return Array.isArray(value)?value.filter((item)=>item&&typeof item.resultId==='string').slice(-100):[];
@@ -3507,15 +3538,28 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
       const fromLocal = readRecordingStore(ids);
       try {
         const d = await db();
-        const snaps = await Promise.all(ids.map((id,index)=>fromLocal[index]?Promise.resolve(null):d.collection(COLLECTIONS.raceResults).where('uploadId','==',id).limit(1).get()));
-        return snaps.map((snap,index)=>{
+        const missingIds=ids.filter((id,index)=>!fromLocal[index]);
+        const chunks=[];
+        for(let index=0;index<missingIds.length;index+=30)chunks.push(missingIds.slice(index,index+30));
+        const snapshots=await Promise.all(chunks.map((chunk)=>d.collection(COLLECTIONS.raceResults).where('uploadId','in',chunk).get()));
+        const cloudRows=new Map();
+        for(const snapshot of snapshots){
+          for(const doc of snapshot.docs||[]){
+            const row=doc.data()||{};
+            const id=safeRecordingId(row.uploadId||row.id);
+            if(id&&!cloudRows.has(id))cloudRows.set(id,row);
+          }
+        }
+        return ids.map((id,index)=>{
           if (fromLocal[index]) return {recording:fromLocal[index].recording,verifiedState:Number(fromLocal[index].verifiedState)||0,frames:safePositiveInt(fromLocal[index].frames,1),carStyle:__pt062NormalizeStyle(fromLocal[index].carStyle||getDefaultCarStyle())};
-          const row = snap?.docs?.[0]?.data?.() || null;
+          const row = cloudRows.get(id) || null;
           if (!row || !String(row.replay || '')) return null;
           return {
             recording: normalizeReplayPayloadString(String(row.replay || '')),
             verifiedState: Number.isFinite(Number(row.verifiedState)) ? Number(row.verifiedState) : 0,
             frames: safePositiveInt(row.frames || row.raceTimeFrames || canonicalRaceTimeMs(row) || 1, 1),
+            carColors: normalizeCarColorId(row.carColors||''),
+            carId: cleanCarId(row.carId||'')||null,
             carStyle: __pt062NormalizeStyle(row.carStyle || getDefaultCarStyle())
           };
         });
