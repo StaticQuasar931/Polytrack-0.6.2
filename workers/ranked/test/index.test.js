@@ -14,13 +14,13 @@ test('solo tracks have zero weight and populated official tracks gain weight', (
 
 test('profile cosmetics are sanitized and unlocks are server enforced', () => {
   assert.deepEqual(sanitizeProfileCosmetics({ theme: 'script', stage: 'night', stripe: 'cyan', badge: 'admin' }), {
-    version: 1, theme: 'classic', stage: 'night', stripe: 'cyan', badge: 'none'
+    version: 2, theme: 'classic', stage: 'night', stripe: 'cyan', badge: 'auto', overridePodium: false
   });
-  assert.equal(profileCosmeticsUnlocked({ theme: 'cyan', stage: 'garage', stripe: 'cyan', badge: 'none' }, { raceCount: 0 }), true);
-  assert.equal(profileCosmeticsUnlocked({ theme: 'forest', stage: 'night', stripe: 'sunset', badge: 'none' }, { raceCount: 7 }), false);
-  assert.equal(profileCosmeticsUnlocked({ theme: 'forest', stage: 'night', stripe: 'sunset', badge: 'none' }, { raceCount: 8 }), true);
-  assert.equal(profileCosmeticsUnlocked({ theme: 'beta', stage: 'garage', stripe: 'beta', badge: 'betaTester' }, { raceCount: 1 }, false), false);
-  assert.equal(profileCosmeticsUnlocked({ theme: 'beta', stage: 'garage', stripe: 'beta', badge: 'betaTester' }, { raceCount: 1 }, true), true);
+  assert.equal(profileCosmeticsUnlocked({ version: 2, theme: 'ocean', stage: 'aqua', stripe: 'cyan', badge: 'auto' }, { raceCount: 0 }), true);
+  assert.equal(profileCosmeticsUnlocked({ version: 2, theme: 'forest', stage: 'night', stripe: 'circuit', badge: 'none' }, { raceCount: 7 }), false);
+  assert.equal(profileCosmeticsUnlocked({ version: 2, theme: 'forest', stage: 'night', stripe: 'circuit', badge: 'none', overridePodium: true }, { raceCount: 8 }), true);
+  assert.equal(profileCosmeticsUnlocked({ version: 2, theme: 'beta', stage: 'garage', stripe: 'beta', badge: 'betaTester' }, { raceCount: 1 }, false), false);
+  assert.equal(profileCosmeticsUnlocked({ version: 2, theme: 'beta', stage: 'garage', stripe: 'beta', badge: 'betaTester' }, { raceCount: 1 }, true), true);
 });
 
 test('unchanged track signatures are rewritten when schema or algorithm is obsolete', () => {
@@ -138,6 +138,38 @@ test('rejects notification for a result owned by another Firebase user', async (
   });
   assert.equal(response.status, 403);
   assert.deepEqual(await response.json(), { error: 'result_not_owned' });
+});
+
+test('cosmetic saves update the public overall snapshot before background propagation', async () => {
+  let overallWrite='';
+  const accountId='cosmetic-racer';
+  const response=await handleRequest(new Request('https://ranked.example/v1/profile/cosmetics',{
+    method:'POST',
+    headers:{Origin:'https://staticquasar931.github.io','Content-Type':'application/json'},
+    body:JSON.stringify({accountId,cosmetics:{version:2,theme:'forest',stage:'night',stripe:'circuit',badge:'auto',overridePodium:true}})
+  }),{
+    ALLOWED_ORIGINS:'https://staticquasar931.github.io',
+    __TEST_UID:'signed-in-user',
+    __TEST_FIRESTORE:async(path,init={})=>{
+      if(init.method==='PATCH'){
+        if(path.includes('s1_leaderboards_overall'))overallWrite=String(init.body||'');
+        return {};
+      }
+      if(path===':runQuery')return [];
+      if(path.includes('profiles_public'))return {fields:{accountId:{stringValue:accountId},ownerUid:{stringValue:'signed-in-user'},name:{stringValue:'Racer'},nickname:{stringValue:'Racer'},carStyle:{stringValue:'style'},isVerifier:{booleanValue:false},updatedAt:{integerValue:'1'}}};
+      if(path.includes('s1_leaderboards_overall'))return {fields:{
+        revision:{integerValue:'7'},
+        entries:{arrayValue:{values:[{mapValue:{fields:{
+          userId:{stringValue:accountId},raceCount:{integerValue:'8'},rank:{integerValue:'4'}
+        }}}]}}
+      }};
+      return null;
+    }
+  });
+  assert.equal(response.status,202);
+  assert.equal((await response.json()).accepted,true);
+  assert.match(overallWrite,/profileCosmetics/);
+  assert.match(overallWrite,/circuit/);
 });
 
 test('accepts an owned hash mismatch as pending without granting integrity verification', async () => {

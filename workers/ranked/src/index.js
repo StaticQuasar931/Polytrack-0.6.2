@@ -5,7 +5,7 @@ const ALGORITHM_VERSION = 'participation-v8-s1';
 const TRACK_SCHEMA_VERSION = 5;
 const AVERAGE_PLACEMENT_VERSION = 2;
 const INTEGRITY_STATE_VERSION = 1;
-const PROFILE_COSMETICS_VERSION = 1;
+const PROFILE_COSMETICS_VERSION = 2;
 const MIN_RANKED_TRACKS = 3;
 const PODIUM_MIN_FIELD = 5;
 const OVERALL_LIMIT = 200;
@@ -28,20 +28,22 @@ const COLLECTIONS = Object.freeze({
   jobs: '0.6.2_s1_worker_jobs'
 });
 const PROFILE_COSMETIC_OPTIONS = Object.freeze({
-  theme: new Set(['classic', 'cyan', 'sunset', 'forest', 'podium', 'beta']),
-  stage: new Set(['garage', 'grid', 'night', 'podium']),
-  stripe: new Set(['standard', 'cyan', 'sunset', 'gold', 'beta']),
-  badge: new Set(['none', 'betaTester'])
+  theme: new Set(['classic', 'cyan', 'ocean', 'sunset', 'forest', 'ember', 'podium', 'beta']),
+  stage: new Set(['garage', 'slate', 'aqua', 'grid', 'horizon', 'night', 'podium']),
+  stripe: new Set(['standard', 'cyan', 'chevron', 'sunset', 'grid', 'circuit', 'gold', 'beta']),
+  badge: new Set(['auto', 'none', 'betaTester'])
 });
 
 export function sanitizeProfileCosmetics(value) {
   const source = value && typeof value === 'object' ? value : {};
+  const legacy = Number(source.version || 0) < PROFILE_COSMETICS_VERSION;
   return {
     version: PROFILE_COSMETICS_VERSION,
     theme: PROFILE_COSMETIC_OPTIONS.theme.has(source.theme) ? source.theme : 'classic',
     stage: PROFILE_COSMETIC_OPTIONS.stage.has(source.stage) ? source.stage : 'garage',
     stripe: PROFILE_COSMETIC_OPTIONS.stripe.has(source.stripe) ? source.stripe : 'standard',
-    badge: PROFILE_COSMETIC_OPTIONS.badge.has(source.badge) ? source.badge : 'none'
+    badge: legacy ? 'auto' : (PROFILE_COSMETIC_OPTIONS.badge.has(source.badge) ? source.badge : 'auto'),
+    overridePodium: source.overridePodium === true
   };
 }
 
@@ -54,10 +56,11 @@ export function profileCosmeticsUnlocked(cosmetics, entry = {}, betaTester = fal
     theme: new Set(['classic', 'cyan']),
     stage: new Set(['garage']),
     stripe: new Set(['standard', 'cyan']),
-    badge: new Set(['none'])
+    badge: new Set(['auto', 'none'])
   };
-  if (tracks >= 3) { allowed.theme.add('sunset'); allowed.stage.add('grid'); allowed.stripe.add('sunset'); }
-  if (tracks >= 8) { allowed.theme.add('forest'); allowed.stage.add('night'); }
+  allowed.theme.add('ocean'); allowed.stage.add('slate'); allowed.stage.add('aqua');
+  if (tracks >= 3) { allowed.theme.add('sunset'); allowed.stage.add('grid'); allowed.stage.add('horizon'); allowed.stripe.add('sunset'); allowed.stripe.add('chevron'); }
+  if (tracks >= 8) { allowed.theme.add('forest'); allowed.theme.add('ember'); allowed.stage.add('night'); allowed.stripe.add('grid'); allowed.stripe.add('circuit'); }
   if (podium) { allowed.theme.add('podium'); allowed.stage.add('podium'); allowed.stripe.add('gold'); }
   if (betaTester) { allowed.theme.add('beta'); allowed.stripe.add('beta'); allowed.badge.add('betaTester'); }
   return allowed.theme.has(value.theme) && allowed.stage.has(value.stage) && allowed.stripe.has(value.stripe) && allowed.badge.has(value.badge);
@@ -779,6 +782,10 @@ async function updateProfileCosmetics(request, env, context, uid, body) {
   const betaTester = badge?.data?.betaTester === true || entry?.badges?.betaTester === true;
   if (!profileCosmeticsUnlocked(cosmetics, entry, betaTester)) return json(origin, env, 403, { error: 'cosmetic_locked' });
   await writeDocument(env, COLLECTIONS.profiles, accountId, { ...profile.data, profileCosmetics: cosmetics, updatedAt: Date.now() });
+  if (overall?.data && Array.isArray(overall.data.entries)) {
+    const entries = overall.data.entries.map((row) => safeText(row.userId || row.accountId, 128) === accountId ? { ...row, profileCosmetics: cosmetics } : row);
+    await writeDocument(env, COLLECTIONS.overall, 'main', { ...overall.data, entries, identityUpdatedAt: Date.now() });
+  }
   return notifyProfile(request, env, context, uid, { accountId });
 }
 
