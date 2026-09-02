@@ -6,7 +6,7 @@ const TRACK_SCHEMA_VERSION = 5;
 const AVERAGE_PLACEMENT_VERSION = 2;
 const DERIVED_METRICS_VERSION = 2;
 const INTEGRITY_STATE_VERSION = 1;
-const PROFILE_COSMETICS_VERSION = 2;
+const PROFILE_COSMETICS_VERSION = 3;
 const MIN_RANKED_TRACKS = 3;
 const PODIUM_MIN_FIELD = 5;
 const OVERALL_LIMIT = 200;
@@ -31,9 +31,14 @@ const COLLECTIONS = Object.freeze({
 });
 const PROFILE_COSMETIC_OPTIONS = Object.freeze({
   theme: new Set(['classic', 'cyan', 'ocean', 'ice', 'mono', 'sunset', 'neon', 'forest', 'ember', 'crimson', 'podium', 'beta']),
+  accent: new Set(['cyan', 'white', 'lime', 'gold', 'orange', 'coral', 'pink', 'violet', 'ice']),
+  finish: new Set(['gradient', 'solid', 'split', 'gloss', 'carbon', 'horizon']),
   stage: new Set(['garage', 'slate', 'aqua', 'grid', 'horizon', 'night', 'storm', 'dunes', 'podium']),
+  stageTint: new Set(['natural', 'blue', 'teal', 'gold', 'red', 'pink', 'mono']),
   stripe: new Set(['standard', 'cyan', 'apex', 'chevron', 'sunset', 'split', 'grid', 'circuit', 'scan', 'blocks', 'gold', 'beta']),
-  badge: new Set(['auto', 'none', 'betaTester'])
+  emblem: new Set(['none', 'bolt', 'star', 'flag', 'flame', 'crown']),
+  title: new Set(['auto', 'none', 'contender', 'pbHunter', 'trackGrinder', 'podiumRegular', 'betaRacer']),
+  badge: new Set(['auto', 'member', 'none', 'betaTester'])
 });
 
 export function sanitizeProfileCosmetics(value) {
@@ -42,9 +47,15 @@ export function sanitizeProfileCosmetics(value) {
   return {
     version: PROFILE_COSMETICS_VERSION,
     theme: PROFILE_COSMETIC_OPTIONS.theme.has(source.theme) ? source.theme : 'classic',
+    accent: PROFILE_COSMETIC_OPTIONS.accent.has(source.accent) ? source.accent : 'cyan',
+    finish: PROFILE_COSMETIC_OPTIONS.finish.has(source.finish) ? source.finish : 'gradient',
     stage: PROFILE_COSMETIC_OPTIONS.stage.has(source.stage) ? source.stage : 'garage',
+    stageTint: PROFILE_COSMETIC_OPTIONS.stageTint.has(source.stageTint) ? source.stageTint : 'natural',
     stripe: PROFILE_COSMETIC_OPTIONS.stripe.has(source.stripe) ? source.stripe : 'standard',
+    emblem: PROFILE_COSMETIC_OPTIONS.emblem.has(source.emblem) ? source.emblem : 'none',
+    title: PROFILE_COSMETIC_OPTIONS.title.has(source.title) ? source.title : 'auto',
     badge: legacy ? 'auto' : (PROFILE_COSMETIC_OPTIONS.badge.has(source.badge) ? source.badge : 'auto'),
+    favoriteTrackId: OFFICIAL_IDS.has(safeText(source.favoriteTrackId, 80)) || COMMUNITY_IDS.has(safeText(source.favoriteTrackId, 80)) ? safeText(source.favoriteTrackId, 80) : '',
     overridePodium: source.overridePodium === true
   };
 }
@@ -56,15 +67,20 @@ export function profileCosmeticsUnlocked(cosmetics, entry = {}, betaTester = fal
   const podium = rank > 0 && rank <= 3;
   const allowed = {
     theme: new Set(['classic', 'cyan', 'ocean', 'ice', 'mono']),
+    accent: new Set(['cyan', 'white', 'lime', 'gold', 'orange']),
+    finish: new Set(['gradient', 'solid', 'split']),
     stage: new Set(['garage', 'slate', 'aqua']),
+    stageTint: new Set(['natural', 'blue', 'teal']),
     stripe: new Set(['standard', 'cyan', 'apex']),
-    badge: new Set(['auto', 'none'])
+    emblem: new Set(['none', 'bolt', 'star']),
+    title: new Set(['auto', 'none']),
+    badge: new Set(['auto', 'member', 'none'])
   };
-  if (tracks >= 3) { allowed.theme.add('sunset'); allowed.theme.add('neon'); allowed.stage.add('grid'); allowed.stage.add('horizon'); allowed.stage.add('dunes'); allowed.stripe.add('sunset'); allowed.stripe.add('chevron'); allowed.stripe.add('split'); }
-  if (tracks >= 8) { allowed.theme.add('forest'); allowed.theme.add('ember'); allowed.theme.add('crimson'); allowed.stage.add('night'); allowed.stage.add('storm'); allowed.stripe.add('grid'); allowed.stripe.add('circuit'); allowed.stripe.add('scan'); allowed.stripe.add('blocks'); }
-  if (podium) { allowed.theme.add('podium'); allowed.stage.add('podium'); allowed.stripe.add('gold'); }
-  if (betaTester) { allowed.theme.add('beta'); allowed.stripe.add('beta'); allowed.badge.add('betaTester'); }
-  return allowed.theme.has(value.theme) && allowed.stage.has(value.stage) && allowed.stripe.has(value.stripe) && allowed.badge.has(value.badge);
+  if (tracks >= 3) { allowed.theme.add('sunset'); allowed.theme.add('neon'); allowed.accent.add('coral'); allowed.accent.add('pink'); allowed.finish.add('gloss'); allowed.stage.add('grid'); allowed.stage.add('horizon'); allowed.stage.add('dunes'); allowed.stageTint.add('gold'); allowed.stageTint.add('red'); allowed.stripe.add('sunset'); allowed.stripe.add('chevron'); allowed.stripe.add('split'); allowed.emblem.add('flag'); allowed.title.add('contender'); allowed.title.add('pbHunter'); }
+  if (tracks >= 8) { allowed.theme.add('forest'); allowed.theme.add('ember'); allowed.theme.add('crimson'); allowed.accent.add('violet'); allowed.accent.add('ice'); allowed.finish.add('carbon'); allowed.stage.add('night'); allowed.stage.add('storm'); allowed.stageTint.add('pink'); allowed.stageTint.add('mono'); allowed.stripe.add('grid'); allowed.stripe.add('circuit'); allowed.stripe.add('scan'); allowed.stripe.add('blocks'); allowed.emblem.add('flame'); allowed.title.add('trackGrinder'); }
+  if (podium) { allowed.theme.add('podium'); allowed.finish.add('horizon'); allowed.stage.add('podium'); allowed.stripe.add('gold'); allowed.emblem.add('crown'); allowed.title.add('podiumRegular'); }
+  if (betaTester) { allowed.theme.add('beta'); allowed.stripe.add('beta'); allowed.badge.add('betaTester'); allowed.title.add('betaRacer'); }
+  return allowed.theme.has(value.theme) && allowed.accent.has(value.accent) && allowed.finish.has(value.finish) && allowed.stage.has(value.stage) && allowed.stageTint.has(value.stageTint) && allowed.stripe.has(value.stripe) && allowed.emblem.has(value.emblem) && allowed.title.has(value.title) && allowed.badge.has(value.badge);
 }
 const OFFICIAL_IDS = new Set([
   '5803f9e963625804e3de3246d043dc7dde847aa32e991f7f7326b0453f1fa038','7eac4fee1111152cfba4d3737410264ca0f22c7f5a2211e79f0099589b8b48c0','148826aa16ffaa23dbc453b32cff05e025ddbce1773fc7733cc13d218926515a','93c7363dfea7fb09ca1d23b72cad5df43a30841d41c8ff25fb544c85bb03c7ae','7603aaeffa1989a649dfaa8e1804bed4481b49df233e377687d0669899566e52','c117823cf6788e3247b9ee63a0c091c07352bbe352c650a7790dc6718148c2fa','e4bcaca3a583bb0eb62a700a69d14e89c852f0c5bf740fca76e0519ebdfc9ab1','7239b17057127936907a805b0caa5d8c6f6c97eca9bdabf1a5312dce479629b7','99864b635d1891d22e17eb9267527a07a92c49c0f02893729fa2ded90e3ca0f9','a5341fe706097cff2a3812a3fc0d87399254557328351ae8e5c882700fc1a196','7d134c939df80c676a258266201beedd3b93572d5603f3ff4339ff8679803715','2fe4bd46b0075cc25fc770ce50adbb68447cf493c999635bb272d231811dd264','c20b4ee3cd517ca6cae7e43f047548757287fbd08ba81b97892a3ef520159a34','88647ea04145fbbbb19b55f1590e038fb0378acb2571110f02cb545cc46b0d57','2806030c503abb41a1a26fa9a570888be14296172bb273798ef0ad87a108a2ec','4697ea67b18c3f49b30a3d8884602115536650bc5435c88e3732e64d21a72d33','e5d084e06db4ab71196fea44efeceb23c8561266a78669c324a38f92581fe2db'
