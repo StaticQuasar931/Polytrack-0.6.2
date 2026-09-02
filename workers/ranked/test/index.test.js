@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { computeOverall, computeTrackEntries, handleRequest, reconcileCanonicalChanges, trackSnapshotIsCurrent, trackWeightParts } from '../src/index.js';
+import { computeOverall, computeTrackEntries, handleRequest, profileCosmeticsUnlocked, reconcileCanonicalChanges, sanitizeProfileCosmetics, trackSnapshotIsCurrent, trackWeightParts } from '../src/index.js';
 
 const TRACK = '5803f9e963625804e3de3246d043dc7dde847aa32e991f7f7326b0453f1fa038';
 const COMMUNITY_TRACK = '5159a8dac6a1f397407a7b5233ad570613531f6609f7dc897490c28c9f2c7a4e';
@@ -10,6 +10,17 @@ const validRun = (row) => ({ replay: 'structural-replay', replayHash: 'a'.repeat
 test('solo tracks have zero weight and populated official tracks gain weight', () => {
   assert.equal(trackWeightParts(TRACK, 1).finalWeight, 0);
   assert.ok(trackWeightParts(TRACK, 20).finalWeight > trackWeightParts(TRACK, 10).finalWeight);
+});
+
+test('profile cosmetics are sanitized and unlocks are server enforced', () => {
+  assert.deepEqual(sanitizeProfileCosmetics({ theme: 'script', stage: 'night', stripe: 'cyan', badge: 'admin' }), {
+    version: 1, theme: 'classic', stage: 'night', stripe: 'cyan', badge: 'none'
+  });
+  assert.equal(profileCosmeticsUnlocked({ theme: 'cyan', stage: 'garage', stripe: 'cyan', badge: 'none' }, { raceCount: 0 }), true);
+  assert.equal(profileCosmeticsUnlocked({ theme: 'forest', stage: 'night', stripe: 'sunset', badge: 'none' }, { raceCount: 7 }), false);
+  assert.equal(profileCosmeticsUnlocked({ theme: 'forest', stage: 'night', stripe: 'sunset', badge: 'none' }, { raceCount: 8 }), true);
+  assert.equal(profileCosmeticsUnlocked({ theme: 'beta', stage: 'garage', stripe: 'beta', badge: 'betaTester' }, { raceCount: 1 }, false), false);
+  assert.equal(profileCosmeticsUnlocked({ theme: 'beta', stage: 'garage', stripe: 'beta', badge: 'betaTester' }, { raceCount: 1 }, true), true);
 });
 
 test('unchanged track signatures are rewritten when schema or algorithm is obsolete', () => {

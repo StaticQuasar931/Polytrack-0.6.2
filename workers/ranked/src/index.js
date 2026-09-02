@@ -5,6 +5,7 @@ const ALGORITHM_VERSION = 'participation-v8-s1';
 const TRACK_SCHEMA_VERSION = 5;
 const AVERAGE_PLACEMENT_VERSION = 2;
 const INTEGRITY_STATE_VERSION = 1;
+const PROFILE_COSMETICS_VERSION = 1;
 const MIN_RANKED_TRACKS = 3;
 const PODIUM_MIN_FIELD = 5;
 const OVERALL_LIMIT = 200;
@@ -26,6 +27,41 @@ const COLLECTIONS = Object.freeze({
   meta: '0.6.2_s1_release_meta',
   jobs: '0.6.2_s1_worker_jobs'
 });
+const PROFILE_COSMETIC_OPTIONS = Object.freeze({
+  theme: new Set(['classic', 'cyan', 'sunset', 'forest', 'podium', 'beta']),
+  stage: new Set(['garage', 'grid', 'night', 'podium']),
+  stripe: new Set(['standard', 'cyan', 'sunset', 'gold', 'beta']),
+  badge: new Set(['none', 'betaTester'])
+});
+
+export function sanitizeProfileCosmetics(value) {
+  const source = value && typeof value === 'object' ? value : {};
+  return {
+    version: PROFILE_COSMETICS_VERSION,
+    theme: PROFILE_COSMETIC_OPTIONS.theme.has(source.theme) ? source.theme : 'classic',
+    stage: PROFILE_COSMETIC_OPTIONS.stage.has(source.stage) ? source.stage : 'garage',
+    stripe: PROFILE_COSMETIC_OPTIONS.stripe.has(source.stripe) ? source.stripe : 'standard',
+    badge: PROFILE_COSMETIC_OPTIONS.badge.has(source.badge) ? source.badge : 'none'
+  };
+}
+
+export function profileCosmeticsUnlocked(cosmetics, entry = {}, betaTester = false) {
+  const value = sanitizeProfileCosmetics(cosmetics);
+  const tracks = Math.max(0, Number(entry.raceCount || 0));
+  const rank = Math.max(0, Number(entry.rank || 0));
+  const podium = rank > 0 && rank <= 3;
+  const allowed = {
+    theme: new Set(['classic', 'cyan']),
+    stage: new Set(['garage']),
+    stripe: new Set(['standard', 'cyan']),
+    badge: new Set(['none'])
+  };
+  if (tracks >= 3) { allowed.theme.add('sunset'); allowed.stage.add('grid'); allowed.stripe.add('sunset'); }
+  if (tracks >= 8) { allowed.theme.add('forest'); allowed.stage.add('night'); }
+  if (podium) { allowed.theme.add('podium'); allowed.stage.add('podium'); allowed.stripe.add('gold'); }
+  if (betaTester) { allowed.theme.add('beta'); allowed.stripe.add('beta'); allowed.badge.add('betaTester'); }
+  return allowed.theme.has(value.theme) && allowed.stage.has(value.stage) && allowed.stripe.has(value.stripe) && allowed.badge.has(value.badge);
+}
 const OFFICIAL_IDS = new Set([
   '5803f9e963625804e3de3246d043dc7dde847aa32e991f7f7326b0453f1fa038','7eac4fee1111152cfba4d3737410264ca0f22c7f5a2211e79f0099589b8b48c0','148826aa16ffaa23dbc453b32cff05e025ddbce1773fc7733cc13d218926515a','93c7363dfea7fb09ca1d23b72cad5df43a30841d41c8ff25fb544c85bb03c7ae','7603aaeffa1989a649dfaa8e1804bed4481b49df233e377687d0669899566e52','c117823cf6788e3247b9ee63a0c091c07352bbe352c650a7790dc6718148c2fa','e4bcaca3a583bb0eb62a700a69d14e89c852f0c5bf740fca76e0519ebdfc9ab1','7239b17057127936907a805b0caa5d8c6f6c97eca9bdabf1a5312dce479629b7','99864b635d1891d22e17eb9267527a07a92c49c0f02893729fa2ded90e3ca0f9','a5341fe706097cff2a3812a3fc0d87399254557328351ae8e5c882700fc1a196','7d134c939df80c676a258266201beedd3b93572d5603f3ff4339ff8679803715','2fe4bd46b0075cc25fc770ce50adbb68447cf493c999635bb272d231811dd264','c20b4ee3cd517ca6cae7e43f047548757287fbd08ba81b97892a3ef520159a34','88647ea04145fbbbb19b55f1590e038fb0378acb2571110f02cb545cc46b0d57','2806030c503abb41a1a26fa9a570888be14296172bb273798ef0ad87a108a2ec','4697ea67b18c3f49b30a3d8884602115536650bc5435c88e3732e64d21a72d33','e5d084e06db4ab71196fea44efeceb23c8561266a78669c324a38f92581fe2db'
 ]);
@@ -418,6 +454,7 @@ export function computeTrackEntries(rows, trackId, env = {}) {
       carId: safeText(row.carId, 64) || null,
       carColors: safeText(row.carColors, 64) || null,
       carStyle: safeText(row.carStyle, 256),
+      profileCosmetics: sanitizeProfileCosmetics(row.profileCosmetics),
       pbCount: Math.max(0, Number(row.pbCount || 0)),
       totalPlaytimeMs: Math.max(0, Number(row.totalPlaytimeMs || 0)),
       pbAt: Math.max(0, Number(row.pbAt || row.createdAt || 0)),
@@ -460,7 +497,8 @@ async function persistTrackSnapshot(env, trackId, entries, prior = null) {
     entry.countryCode || '',
     entry.carId || '',
     entry.carColors || '',
-    entry.carStyle || ''
+    entry.carStyle || '',
+    JSON.stringify(entry.profileCosmetics || {})
   ].join(':')).join('|');
   const signature = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(signatureInput)).then((bytes) => base64Url(new Uint8Array(bytes)));
   if (trackSnapshotIsCurrent(prior?.data, signature)) return { changed: false, entries, revision: Number(prior.data.revision || 0) };
@@ -512,7 +550,7 @@ export function computeOverall(trackDocuments, priorEntries = [], betaTesterIds 
       const user = users.get(accountId) || { userId: accountId, finishes: [], officialCount: 0, communityCount: 0, customCount: 0, pbCount: 0, totalPlaytimeMs: 0, accountCreatedAt: 0, latestPbAt: 0, betaTester: false };
       Object.assign(user, {
         name: entry.name || user.name || 'Racer', countryCode: entry.countryCode || user.countryCode || '', carId: entry.carId || user.carId || null,
-        carColors: entry.carColors || user.carColors || null, carStyle: entry.carStyle || user.carStyle || ''
+        carColors: entry.carColors || user.carColors || null, carStyle: entry.carStyle || user.carStyle || '', profileCosmetics: sanitizeProfileCosmetics(entry.profileCosmetics || user.profileCosmetics)
       });
       user.pbCount = Math.max(user.pbCount, Number(entry.pbCount || 0));
       user.totalPlaytimeMs = Math.max(user.totalPlaytimeMs, Number(entry.totalPlaytimeMs || 0));
@@ -547,7 +585,7 @@ export function computeOverall(trackDocuments, priorEntries = [], betaTesterIds 
     const primaryBest = byPlace[0] || {};
     const podiums = medals.gold + medals.silver + medals.bronze;
     return {
-      userId: user.userId, name: safeText(user.name, 24), countryCode: safeText(user.countryCode, 8).toUpperCase(), carId: user.carId, carColors: user.carColors, carStyle: user.carStyle,
+      userId: user.userId, name: safeText(user.name, 24), countryCode: safeText(user.countryCode, 8).toUpperCase(), carId: user.carId, carColors: user.carColors, carStyle: user.carStyle, profileCosmetics: sanitizeProfileCosmetics(user.profileCosmetics),
       accountCreatedAt: user.accountCreatedAt, latestPbAt: user.latestPbAt, totalPlaytimeMs: user.totalPlaytimeMs, score, raceCount: played, eligibleTrackCount: played,
       provisional: played < MIN_RANKED_TRACKS, totalTracks: 78, officialCount: user.officialCount, communityCount: user.communityCount, customCount: user.customCount,
       weightedTracks: Number(allWeight.toFixed(3)), skillCost: Number(skillCost.toFixed(3)), coverageCost: Number(coverageCost.toFixed(3)), consistencyCost: Number(consistencyCost.toFixed(3)),
@@ -584,6 +622,7 @@ async function rebuildTrack(env, trackId, identityOverride = null) {
       row.carId = identityOverride.carId;
       row.carColors = identityOverride.carColors;
       row.carStyle = identityOverride.carStyle;
+      row.profileCosmetics = identityOverride.profileCosmetics;
     }
   }
   const entries = computeTrackEntries(rows, trackId, env);
@@ -704,7 +743,8 @@ async function notifyProfile(request, env, context, uid, body) {
     countryCode: safeText(profile.data.countryCode, 8).toUpperCase(),
     carId: safeText(profile.data.carId, 64) || null,
     carColors: safeText(profile.data.carColors, 64) || null,
-    carStyle: safeText(profile.data.carStyle, 256)
+    carStyle: safeText(profile.data.carStyle, 256),
+    profileCosmetics: sanitizeProfileCosmetics(profile.data.profileCosmetics)
   };
   const trackIds = [...new Set(results.map((result) => safeText(result.data.trackId, 80)).filter(Boolean))].slice(0, 100);
   const signature = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(identity))).then((bytes) => base64Url(new Uint8Array(bytes)));
@@ -720,6 +760,26 @@ async function notifyProfile(request, env, context, uid, body) {
   const task = processProfileJob(env, jobId, { kind: 'profile', active: true, accountId, identity, signature, pendingTrackIds });
   if (context.waitUntil) context.waitUntil(task.catch((error) => console.error('Deferred profile job failed', String(error?.message || error))));
   return json(request.headers.get('Origin') || '', env, 202, { accepted: true, accountId, queued: pendingTrackIds.length });
+}
+
+async function updateProfileCosmetics(request, env, context, uid, body) {
+  const origin = request.headers.get('Origin') || '';
+  const accountId = safeText(body.accountId, 128);
+  if (!accountId) return json(origin, env, 400, { error: 'invalid_account_id' });
+  const profile = await readDocument(env, COLLECTIONS.profiles, accountId);
+  if (!profile || profile.data.ownerUid !== uid || safeText(profile.data.accountId, 128) !== accountId) {
+    return json(origin, env, 403, { error: 'profile_not_owned' });
+  }
+  const cosmetics = sanitizeProfileCosmetics(body.cosmetics);
+  const [overall, badge] = await Promise.all([
+    readDocument(env, COLLECTIONS.overall, 'main'),
+    readDocument(env, COLLECTIONS.badges, accountId)
+  ]);
+  const entry = (Array.isArray(overall?.data?.entries) ? overall.data.entries : []).find((row) => safeText(row.userId || row.accountId, 128) === accountId) || {};
+  const betaTester = badge?.data?.betaTester === true || entry?.badges?.betaTester === true;
+  if (!profileCosmeticsUnlocked(cosmetics, entry, betaTester)) return json(origin, env, 403, { error: 'cosmetic_locked' });
+  await writeDocument(env, COLLECTIONS.profiles, accountId, { ...profile.data, profileCosmetics: cosmetics, updatedAt: Date.now() });
+  return notifyProfile(request, env, context, uid, { accountId });
 }
 
 async function processProfileJob(env, jobId, job) {
@@ -872,13 +932,14 @@ export async function handleRequest(request, env, context = {}) {
     const overall = await rebuildOverall(env, false);
     return json(origin, env, 200, { reconciliation, overall });
   }
-  if (path !== '/v1/pb/notify' && path !== '/v1/profile/notify') return json(origin, env, 404, { error: 'not_found' });
+  if (path !== '/v1/pb/notify' && path !== '/v1/profile/notify' && path !== '/v1/profile/cosmetics') return json(origin, env, 404, { error: 'not_found' });
   if (String(env.RANKED_WRITES_ENABLED) === 'false') return json(origin, env, 503, { error: 'ranked_writes_disabled' });
   let uid;
   try { uid = await verifyFirebaseUser(request, env); } catch { return json(origin, env, 401, { error: 'authentication_failed' }); }
   if (env.PB_NOTIFY_RATE_LIMITER && !(await env.PB_NOTIFY_RATE_LIMITER.limit({ key: uid })).success) return json(origin, env, 429, { error: 'rate_limited', retryAfterSeconds: 60 });
   let body;
   try { body = await requestBody(request); } catch { return json(origin, env, 400, { error: 'invalid_request' }); }
+  if (path === '/v1/profile/cosmetics') return updateProfileCosmetics(request, env, context, uid, body);
   if (path === '/v1/profile/notify') return notifyProfile(request, env, context, uid, body);
   const resultId = safeText(body.resultId, 220);
   if (!/^[A-Za-z0-9_.:-]{3,220}$/.test(resultId)) return json(origin, env, 400, { error: 'invalid_result_id' });
