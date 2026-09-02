@@ -169,6 +169,26 @@ test('serves a complete public snapshot from the Worker API', async () => {
   assert.match(response.headers.get('Cache-Control'), /^public/);
 });
 
+test('normalizes legacy integrity-approved track entries at the API boundary', async () => {
+  const response = await handleRequest(new Request(`https://ranked.example/v1/snapshot/track?trackId=${TRACK}`, {
+    headers: { Origin: 'https://staticquasar931.github.io' }
+  }), {
+    ALLOWED_ORIGINS: 'https://staticquasar931.github.io',
+    __TEST_FIRESTORE: async (path) => path.includes('leaderboards_track') ? { fields: {
+      revision: { integerValue: '8' },
+      entries: { arrayValue: { values: [{ mapValue: { fields: {
+        accountId: { stringValue: 'legacy-racer' },
+        integrityVerified: { booleanValue: true },
+        verifiedState: { integerValue: '0' }
+      } } }] } }
+    } } : null
+  });
+  assert.equal(response.status, 200);
+  const payload = await response.json();
+  assert.equal(payload.integrityStateVersion, 1);
+  assert.equal(payload.entries[0].verifiedState, 1);
+});
+
 test('structurally invalid runs are excluded from track snapshots', () => {
   const entries = computeTrackEntries([
     { accountId: 'missing-replay', trackId: TRACK, timeMs: 20000, raceTimeFrames: 1200 },
@@ -176,6 +196,7 @@ test('structurally invalid runs are excluded from track snapshots', () => {
   ], TRACK);
   assert.deepEqual(entries.map((entry) => entry.accountId), ['valid']);
   assert.equal(entries[0].verified, false);
+  assert.equal(entries[0].verifiedState, 1);
   assert.equal(entries[0].validationState, 'integrity');
 });
 
@@ -186,6 +207,8 @@ test('pending runs remain visible per track but cannot affect Overall RP', () =>
   ],TRACK);
   assert.deepEqual(entries.map((entry)=>entry.accountId),['pending','verified']);
   assert.equal(entries[0].validationState,'pending');
+  assert.equal(entries[0].verifiedState,0);
+  assert.equal(entries[1].verifiedState,1);
   const overall=computeOverall([{trackId:TRACK,entries}]);
   assert.equal(overall.some((entry)=>entry.userId==='pending'),false);
 });

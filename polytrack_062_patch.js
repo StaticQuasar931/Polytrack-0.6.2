@@ -349,10 +349,12 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
   function writeTrackSnapshotCache(trackId,entries,serverUpdatedAt=0,meta={}){
     const id=String(trackId||'').slice(0,80); if(!id) return;
     const store=trackSnapshotStore();
-    store[id]={entries:applyCanonicalTrackWeight(id,entries).slice(0,500),fetchedAt:Date.now(),serverUpdatedAt:Number(serverUpdatedAt||0)||0,revision:Number(meta.revision||0)||0,sourceRevision:Number(meta.sourceRevision||meta.revision||0)||0,algorithmVersion:String(meta.algorithmVersion||RANK_MODEL),schemaVersion:Number(meta.schemaVersion||TRACK_CACHE_SCHEMA),source:String(meta.source||'cloud')};
+    const normalizedEntries=applyCanonicalTrackWeight(id,entries).slice(0,500);
+    store[id]={entries:normalizedEntries,fetchedAt:Date.now(),serverUpdatedAt:Number(serverUpdatedAt||0)||0,revision:Number(meta.revision||0)||0,sourceRevision:Number(meta.sourceRevision||meta.revision||0)||0,algorithmVersion:String(meta.algorithmVersion||RANK_MODEL),schemaVersion:Number(meta.schemaVersion||TRACK_CACHE_SCHEMA),source:String(meta.source||'cloud')};
     const ids=Object.keys(store).sort((a,b)=>Number(store[b]?.fetchedAt||0)-Number(store[a]?.fetchedAt||0));
     for(const staleId of ids.length<=18?[]:ids.slice(18)) delete store[staleId];
     writeJsonStorage(TRACK_CACHE_KEY,store);
+    syncCachedRecordingVerification(normalizedEntries);
     trackOverlayCache=null;
   }
   function reconcileTrackEntriesWithLocal(trackId,entries,limit=500){
@@ -946,6 +948,24 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
       localStorage.setItem(LOCAL_RACE_STORE_KEY, JSON.stringify(canonical.slice(0, 5000)));
     } catch {}
   }
+  function syncCachedRecordingVerification(entries){
+    try{
+      const raw=localStorage.getItem(RECORDING_STORE_KEY);
+      if(!raw)return;
+      const data=JSON.parse(raw)||{};
+      let changed=false;
+      for(const entry of entries||[]){
+        const id=safeRecordingId(entry?.uploadId||entry?.id);
+        if(!id||!data[String(id)])continue;
+        const next=entry?.integrityVerified===true?1:Number(entry?.verifiedState||0)||0;
+        if(Number(data[String(id)].verifiedState||0)===next)continue;
+        data[String(id)].verifiedState=next;
+        data[String(id)].updatedAt=Date.now();
+        changed=true;
+      }
+      if(changed)localStorage.setItem(RECORDING_STORE_KEY,JSON.stringify(data));
+    }catch{}
+  }
   function addLocalRaceRow(row){
     writeLocalRaceRows([row,...readLocalRaceRows()]);
   }
@@ -974,7 +994,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
         carColorId: normalizeCarColorId(entry?.carColorId || entry?.carColors || 'ffffff8ec7ff28346a212b58'),
         carId: extractCarId(entry),
         carStyle,
-        verifiedState: Number.isFinite(Number(entry?.verifiedState)) ? Number(entry.verifiedState) : 0,
+        verifiedState: entry?.integrityVerified === true ? 1 : (Number.isFinite(Number(entry?.verifiedState)) ? Number(entry.verifiedState) : 0),
         integrityVerified: entry?.integrityVerified === true,
         validationState: entry?.integrityVerified === true ? 'integrity' : String(entry?.validationState || 'pending').slice(0,24),
         rank,
@@ -2089,7 +2109,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
           timingVersion:2,
           raceTimeFrames: Number(row.raceTimeFrames || 0) || null,
           frames: safePositiveInt(parsedFrames || timeMs, 1),
-          verifiedState: Number.isFinite(Number(row.verifiedState)) ? Number(row.verifiedState) : 0,
+          verifiedState: row.integrityVerified === true ? 1 : (Number.isFinite(Number(row.verifiedState)) ? Number(row.verifiedState) : 0),
           integrityVerified: row.integrityVerified === true,
           validationState: row.integrityVerified === true ? 'integrity' : String(row.validationState||'pending').slice(0,24),
           replayHash: row.replayHash || null,
@@ -3691,7 +3711,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
           if (!row || !String(row.replay || '')) return null;
           return {
             recording: normalizeReplayPayloadString(String(row.replay || '')),
-            verifiedState: Number.isFinite(Number(row.verifiedState)) ? Number(row.verifiedState) : 0,
+            verifiedState: row.integrityVerified === true ? 1 : (Number.isFinite(Number(row.verifiedState)) ? Number(row.verifiedState) : 0),
             frames: safePositiveInt(row.frames || row.raceTimeFrames || canonicalRaceTimeMs(row) || 1, 1),
             carColors: normalizeCarColorId(row.carColors||''),
             carId: cleanCarId(row.carId||'')||null,
@@ -4603,6 +4623,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     ensureReturningPlayerNotice();
     ensureWeeklyTrackHighlight();
     decoratePersonalBestPodiums();
+    syncIntegrityStateLabels();
   }
 
   function hideVerifiedOnlyToggle(){
@@ -4611,6 +4632,19 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
       const text = (el.textContent || '').trim().toLowerCase();
       if (text === 'verified only' || text.includes('verified only')) {
         el.style.display = 'none';
+      }
+    }
+  }
+
+  function syncIntegrityStateLabels(){
+    for(const state of document.querySelectorAll('.leaderboard-ui .verified-state')){
+      const date=Array.from(state.childNodes).filter((node)=>node.nodeType===Node.TEXT_NODE).map((node)=>node.textContent||'').join('').trim();
+      if(state.classList.contains('verified')){
+        state.title='Replay integrity verified';
+        state.setAttribute('aria-label',`${date?`${date}. `:''}Replay integrity verified`);
+      }else if(state.classList.contains('pending')){
+        state.title='Awaiting replay integrity check';
+        state.setAttribute('aria-label',`${date?`${date}. `:''}Awaiting replay integrity check`);
       }
     }
   }
@@ -4626,6 +4660,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     ensureSettingsEnhancements();
     syncMultiplayerRelayPanel();
     hideVerifiedOnlyToggle();
+    syncIntegrityStateLabels();
     ensureReturningPlayerNotice();
     ensureWeeklyTrackHighlight();
     updateTrackFreshnessBanner();

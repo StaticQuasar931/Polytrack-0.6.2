@@ -4,6 +4,7 @@ const PROJECT_ID = 'polytrack-052';
 const ALGORITHM_VERSION = 'participation-v8-s1';
 const TRACK_SCHEMA_VERSION = 5;
 const AVERAGE_PLACEMENT_VERSION = 2;
+const INTEGRITY_STATE_VERSION = 1;
 const MIN_RANKED_TRACKS = 3;
 const PODIUM_MIN_FIELD = 5;
 const OVERALL_LIMIT = 200;
@@ -423,7 +424,7 @@ export function computeTrackEntries(rows, trackId, env = {}) {
       createdAt: Math.max(0, Number(row.pbAt || row.createdAt || 0)),
       accountCreatedAt: Math.max(0, Number(row.accountCreatedAt || row.createdAt || 0)),
       verified: false,
-      verifiedState: 0,
+      verifiedState: row.integrityVerified === true ? 1 : 0,
       integrityVerified: row.integrityVerified === true,
       validationState: row.integrityVerified === true ? 'integrity' : 'pending',
       betaTester: betaCutoff(env) > 0 && Number(row.createdAt || 0) > 0 && Number(row.createdAt) <= betaCutoff(env)
@@ -816,6 +817,7 @@ async function publicSnapshot(request, env, context, origin, collection, id) {
   cacheUrl.searchParams.set('__schema', String(TRACK_SCHEMA_VERSION));
   cacheUrl.searchParams.set('__algorithm', ALGORITHM_VERSION);
   cacheUrl.searchParams.set('__averagePlacement', String(AVERAGE_PLACEMENT_VERSION));
+  cacheUrl.searchParams.set('__integrityState', String(INTEGRITY_STATE_VERSION));
   const cacheKey = new Request(cacheUrl.toString(), { method: 'GET' });
   if (cache) {
     const cached = await cache.match(cacheKey);
@@ -823,7 +825,17 @@ async function publicSnapshot(request, env, context, origin, collection, id) {
   }
   const snapshot = await readDocument(env, collection, id);
   if (!snapshot) return json(origin, env, 404, { error: 'snapshot_not_ready' }, 'public, max-age=10, stale-while-revalidate=60');
-  const response = json(origin, env, 200, snapshot.data, 'public, max-age=10, stale-while-revalidate=20');
+  const data = collection === COLLECTIONS.track && Array.isArray(snapshot.data.entries)
+    ? {
+        ...snapshot.data,
+        integrityStateVersion: INTEGRITY_STATE_VERSION,
+        entries: snapshot.data.entries.map((entry) => ({
+          ...entry,
+          verifiedState: entry.integrityVerified === true ? 1 : 0,
+        })),
+      }
+    : snapshot.data;
+  const response = json(origin, env, 200, data, 'public, max-age=10, stale-while-revalidate=20');
   if (cache && context.waitUntil) context.waitUntil(cache.put(cacheKey, response.clone()));
   return response;
 }
