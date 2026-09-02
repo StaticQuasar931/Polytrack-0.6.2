@@ -3,6 +3,7 @@ const FIREBASE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
 const PROJECT_ID = 'polytrack-052';
 const ALGORITHM_VERSION = 'participation-v8-s1';
 const TRACK_SCHEMA_VERSION = 5;
+const AVERAGE_PLACEMENT_VERSION = 2;
 const MIN_RANKED_TRACKS = 3;
 const PODIUM_MIN_FIELD = 5;
 const OVERALL_LIMIT = 200;
@@ -550,7 +551,7 @@ export function computeOverall(trackDocuments, priorEntries = [], betaTesterIds 
       provisional: played < MIN_RANKED_TRACKS, totalTracks: 78, officialCount: user.officialCount, communityCount: user.communityCount, customCount: user.customCount,
       weightedTracks: Number(allWeight.toFixed(3)), skillCost: Number(skillCost.toFixed(3)), coverageCost: Number(coverageCost.toFixed(3)), consistencyCost: Number(consistencyCost.toFixed(3)),
       averageFinish: Number((user.finishes.reduce((sum, finish) => sum + finish.rank, 0) / Math.max(1, played)).toFixed(2)), averageFinishVersion: 2,
-      averagePlacement: Number((user.finishes.reduce((sum, finish) => sum + (finish.fieldSize < 2 ? 0 : 100 * (finish.rank - 1) / (finish.fieldSize - 1)), 0) / Math.max(1, played)).toFixed(2)), averagePlacementVersion: 1,
+      averagePlacement: Number((user.finishes.reduce((sum, finish) => sum + finish.rank, 0) / Math.max(1, played)).toFixed(2)), averagePlacementVersion: AVERAGE_PLACEMENT_VERSION,
       podiumEligibleTracks: podiumEligible.length, podiumRate: podiumEligible.length >= MIN_RANKED_TRACKS ? Number((podiums / podiumEligible.length * 100).toFixed(1)) : 0, pbCount: user.pbCount,
       bestTracks: byPlace.slice(0, 2).map(finishSummary), strongestTrack: finishSummary(byContribution[0] || primaryBest), worstTrack: finishSummary([...user.finishes].sort((a, b) => b.rank / b.fieldSize - a.rank / a.fieldSize)[0] || primaryBest),
       improvementTrack: finishSummary(byImprovement[0] || primaryBest), weightedResults: byContribution.slice(0, 2).map(finishSummary), opportunityTracks: byImprovement.slice(0, 3).map(finishSummary),
@@ -656,7 +657,8 @@ export async function rebuildOverall(env, force = false) {
   const metaDoc = await readDocument(env, COLLECTIONS.meta, 'current');
   const meta = metaDoc?.data || {};
   const now = Date.now();
-  if (!force && (!meta.dirty || now - Number(meta.lastOverallBuildAt || 0) < REBUILD_COOLDOWN_MS)) return { rebuilt: false, reason: meta.dirty ? 'cooldown' : 'clean', revision: Number(meta.builtRevision || 0) };
+  const metricsOutdated = Number(meta.averagePlacementVersion || 0) < AVERAGE_PLACEMENT_VERSION;
+  if (!force && !metricsOutdated && (!meta.dirty || now - Number(meta.lastOverallBuildAt || 0) < REBUILD_COOLDOWN_MS)) return { rebuilt: false, reason: meta.dirty ? 'cooldown' : 'clean', revision: Number(meta.builtRevision || 0) };
   const boards = (await runQuery(env, COLLECTIONS.track, null, 100)).map((document) => document.data);
   const prior = (await readDocument(env, COLLECTIONS.overall, 'main'))?.data || {};
   const migration = (await readDocument(env, COLLECTIONS.jobs, 'release_migration'))?.data || {};
@@ -682,8 +684,8 @@ export async function rebuildOverall(env, force = false) {
     };
   }).filter((summary) => summary.trackId).sort((a, b) => b.weight - a.weight || b.fieldSize - a.fieldSize || a.trackId.localeCompare(b.trackId));
   const revision = Number(meta.revision || 0);
-  await writeDocument(env, COLLECTIONS.overall, 'main', { entries, trackSummaries, updatedAt: now, builtAt: now, seededBy: 'polytrack-ranked-worker', revision, builtRevision: revision, sourceRevision: revision, algorithmVersion: ALGORITHM_VERSION, schemaVersion: TRACK_SCHEMA_VERSION, entryLimit: OVERALL_LIMIT, trackLimit: TRACK_LIMIT });
-  await writeDocument(env, COLLECTIONS.meta, 'current', { ...meta, dirty: false, revision, builtRevision: revision, lastOverallBuildAt: now, updatedAt: now, algorithmVersion: ALGORITHM_VERSION, schemaVersion: TRACK_SCHEMA_VERSION, rankedWritesEnabled: String(env.RANKED_WRITES_ENABLED) !== 'false', multiplayerEnabled: String(env.MULTIPLAYER_ENABLED) !== 'false' });
+  await writeDocument(env, COLLECTIONS.overall, 'main', { entries, trackSummaries, updatedAt: now, builtAt: now, seededBy: 'polytrack-ranked-worker', revision, builtRevision: revision, sourceRevision: revision, algorithmVersion: ALGORITHM_VERSION, schemaVersion: TRACK_SCHEMA_VERSION, averagePlacementVersion: AVERAGE_PLACEMENT_VERSION, entryLimit: OVERALL_LIMIT, trackLimit: TRACK_LIMIT });
+  await writeDocument(env, COLLECTIONS.meta, 'current', { ...meta, dirty: false, revision, builtRevision: revision, lastOverallBuildAt: now, updatedAt: now, algorithmVersion: ALGORITHM_VERSION, schemaVersion: TRACK_SCHEMA_VERSION, averagePlacementVersion: AVERAGE_PLACEMENT_VERSION, rankedWritesEnabled: String(env.RANKED_WRITES_ENABLED) !== 'false', multiplayerEnabled: String(env.MULTIPLAYER_ENABLED) !== 'false' });
   return { rebuilt: true, revision, racers: entries.length, tracks: trackSummaries.length };
 }
 
@@ -813,6 +815,7 @@ async function publicSnapshot(request, env, context, origin, collection, id) {
   cacheUrl.searchParams.set('__origin', origin);
   cacheUrl.searchParams.set('__schema', String(TRACK_SCHEMA_VERSION));
   cacheUrl.searchParams.set('__algorithm', ALGORITHM_VERSION);
+  cacheUrl.searchParams.set('__averagePlacement', String(AVERAGE_PLACEMENT_VERSION));
   const cacheKey = new Request(cacheUrl.toString(), { method: 'GET' });
   if (cache) {
     const cached = await cache.match(cacheKey);
@@ -832,7 +835,7 @@ export async function handleRequest(request, env, context = {}) {
   if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: responseHeaders(origin, env) });
   if (request.method === 'GET' && path === '/v1/status') {
     const meta = (await readDocument(env, COLLECTIONS.meta, 'current').catch(() => null))?.data || {};
-    return json(origin, env, 200, { service: 'polytrack-ranked', algorithmVersion: ALGORITHM_VERSION, schemaVersion: TRACK_SCHEMA_VERSION, rankedWritesEnabled: String(env.RANKED_WRITES_ENABLED) !== 'false', multiplayerEnabled: String(env.MULTIPLAYER_ENABLED) !== 'false', revision: Number(meta.revision || 0), builtRevision: Number(meta.builtRevision || 0), dirty: meta.dirty === true, pendingRevisions: Math.max(0, Number(meta.revision || 0) - Number(meta.builtRevision || 0)), updatedAt: Number(meta.updatedAt || 0) });
+    return json(origin, env, 200, { service: 'polytrack-ranked', algorithmVersion: ALGORITHM_VERSION, schemaVersion: TRACK_SCHEMA_VERSION, averagePlacementVersion: AVERAGE_PLACEMENT_VERSION, rankedWritesEnabled: String(env.RANKED_WRITES_ENABLED) !== 'false', multiplayerEnabled: String(env.MULTIPLAYER_ENABLED) !== 'false', revision: Number(meta.revision || 0), builtRevision: Number(meta.builtRevision || 0), dirty: meta.dirty === true, pendingRevisions: Math.max(0, Number(meta.revision || 0) - Number(meta.builtRevision || 0)), updatedAt: Number(meta.updatedAt || 0) });
   }
   if (request.method === 'GET' && path === '/v1/snapshot/overall') return publicSnapshot(request, env, context, origin, COLLECTIONS.overall, 'main');
   if (request.method === 'GET' && path === '/v1/snapshot/track') {

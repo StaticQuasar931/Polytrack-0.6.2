@@ -190,6 +190,21 @@ test('pending runs remain visible per track but cannot affect Overall RP', () =>
   assert.equal(overall.some((entry)=>entry.userId==='pending'),false);
 });
 
+test('average placement is the literal mean finishing place', () => {
+  const firstTrack=computeTrackEntries([
+    validRun({accountId:'average-racer',trackId:TRACK,timeMs:20000,createdAt:1}),
+    validRun({accountId:'other-a',trackId:TRACK,timeMs:21000,createdAt:2})
+  ],TRACK);
+  const secondTrack=computeTrackEntries([
+    validRun({accountId:'other-b',trackId:COMMUNITY_TRACK,timeMs:19000,createdAt:3}),
+    validRun({accountId:'other-c',trackId:COMMUNITY_TRACK,timeMs:20000,createdAt:4}),
+    validRun({accountId:'average-racer',trackId:COMMUNITY_TRACK,timeMs:21000,createdAt:5})
+  ],COMMUNITY_TRACK);
+  const racer=computeOverall([{trackId:TRACK,entries:firstTrack},{trackId:COMMUNITY_TRACK,entries:secondTrack}]).find((entry)=>entry.userId==='average-racer');
+  assert.equal(racer.averagePlacement,2);
+  assert.equal(racer.averagePlacementVersion,2);
+});
+
 test('scheduled reconciliation discovers canonical PBs without a client Worker notification', async () => {
   const canonical={
     ownerUid:'owner',accountId:'blocked-client',trackId:TRACK,timeMs:20500,raceTimeFrames:1230,
