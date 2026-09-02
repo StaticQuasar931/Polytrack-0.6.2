@@ -17,6 +17,8 @@ test('profile cosmetics are sanitized and unlocks are server enforced', () => {
     version: 2, theme: 'classic', stage: 'night', stripe: 'cyan', badge: 'auto', overridePodium: false
   });
   assert.equal(profileCosmeticsUnlocked({ version: 2, theme: 'ocean', stage: 'aqua', stripe: 'cyan', badge: 'auto' }, { raceCount: 0 }), true);
+  assert.equal(profileCosmeticsUnlocked({ version: 2, theme: 'ice', stage: 'slate', stripe: 'apex', badge: 'auto' }, { raceCount: 0 }), true);
+  assert.equal(profileCosmeticsUnlocked({ version: 2, theme: 'neon', stage: 'dunes', stripe: 'split', badge: 'auto' }, { raceCount: 3 }), true);
   assert.equal(profileCosmeticsUnlocked({ version: 2, theme: 'forest', stage: 'night', stripe: 'circuit', badge: 'none' }, { raceCount: 7 }), false);
   assert.equal(profileCosmeticsUnlocked({ version: 2, theme: 'forest', stage: 'night', stripe: 'circuit', badge: 'none', overridePodium: true }, { raceCount: 8 }), true);
   assert.equal(profileCosmeticsUnlocked({ version: 2, theme: 'beta', stage: 'garage', stripe: 'beta', badge: 'betaTester' }, { raceCount: 1 }, false), false);
@@ -269,6 +271,47 @@ test('average placement is the literal mean finishing place', () => {
   const racer=computeOverall([{trackId:TRACK,entries:firstTrack},{trackId:COMMUNITY_TRACK,entries:secondTrack}]).find((entry)=>entry.userId==='average-racer');
   assert.equal(racer.averagePlacement,2);
   assert.equal(racer.averagePlacementVersion,2);
+});
+
+test('competitive average excludes custom and fields smaller than five', () => {
+  const populated = (trackId, racerRank, size = 5) => ({
+    trackId,
+    entries: Array.from({ length: size }, (_, index) => ({
+      accountId: index === racerRank - 1 ? 'average-racer' : `${trackId}-${index}`,
+      rank: index + 1,
+      weight: 2,
+      timeMs: 20000 + index,
+      integrityVerified: true,
+    })),
+  });
+  const racer = computeOverall([
+    populated(TRACK, 3, 5),
+    populated(COMMUNITY_TRACK, 1, 4),
+    populated(CUSTOM_TRACK, 1, 8),
+  ]).find((entry) => entry.userId === 'average-racer');
+  assert.equal(racer.averagePlacement, 1.67);
+  assert.equal(racer.competitiveAveragePlacement, 3);
+  assert.equal(racer.competitiveAverageEligibleTracks, 1);
+  assert.equal(racer.trackWins, 0);
+});
+
+test('track wins count every eligible recognized first place', () => {
+  const populated = (trackId, winner) => ({
+    trackId,
+    entries: Array.from({ length: 5 }, (_, index) => ({
+      accountId: index === 0 ? winner : `${trackId}-opponent-${index}`,
+      rank: index + 1,
+      weight: 2,
+      timeMs: 20000 + index,
+      integrityVerified: true,
+    })),
+  });
+  const racer = computeOverall([
+    populated(TRACK, 'winner'),
+    populated(COMMUNITY_TRACK, 'winner'),
+  ]).find((entry) => entry.userId === 'winner');
+  assert.equal(racer.trackWins, 2);
+  assert.equal(racer.medals.gold, 2);
 });
 
 test('scheduled reconciliation discovers canonical PBs without a client Worker notification', async () => {

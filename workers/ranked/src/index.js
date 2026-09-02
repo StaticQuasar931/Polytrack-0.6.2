@@ -4,6 +4,7 @@ const PROJECT_ID = 'polytrack-052';
 const ALGORITHM_VERSION = 'participation-v8-s1';
 const TRACK_SCHEMA_VERSION = 5;
 const AVERAGE_PLACEMENT_VERSION = 2;
+const DERIVED_METRICS_VERSION = 2;
 const INTEGRITY_STATE_VERSION = 1;
 const PROFILE_COSMETICS_VERSION = 2;
 const MIN_RANKED_TRACKS = 3;
@@ -25,12 +26,13 @@ const COLLECTIONS = Object.freeze({
   overall: '0.6.2_s1_leaderboards_overall',
   badges: '0.6.2_s1_badges',
   meta: '0.6.2_s1_release_meta',
-  jobs: '0.6.2_s1_worker_jobs'
+  jobs: '0.6.2_s1_worker_jobs',
+  cosmeticJobs: '0.6.2_s1_cosmetic_jobs'
 });
 const PROFILE_COSMETIC_OPTIONS = Object.freeze({
-  theme: new Set(['classic', 'cyan', 'ocean', 'sunset', 'forest', 'ember', 'podium', 'beta']),
-  stage: new Set(['garage', 'slate', 'aqua', 'grid', 'horizon', 'night', 'podium']),
-  stripe: new Set(['standard', 'cyan', 'chevron', 'sunset', 'grid', 'circuit', 'gold', 'beta']),
+  theme: new Set(['classic', 'cyan', 'ocean', 'ice', 'mono', 'sunset', 'neon', 'forest', 'ember', 'crimson', 'podium', 'beta']),
+  stage: new Set(['garage', 'slate', 'aqua', 'grid', 'horizon', 'night', 'storm', 'dunes', 'podium']),
+  stripe: new Set(['standard', 'cyan', 'apex', 'chevron', 'sunset', 'split', 'grid', 'circuit', 'scan', 'blocks', 'gold', 'beta']),
   badge: new Set(['auto', 'none', 'betaTester'])
 });
 
@@ -53,14 +55,13 @@ export function profileCosmeticsUnlocked(cosmetics, entry = {}, betaTester = fal
   const rank = Math.max(0, Number(entry.rank || 0));
   const podium = rank > 0 && rank <= 3;
   const allowed = {
-    theme: new Set(['classic', 'cyan']),
-    stage: new Set(['garage']),
-    stripe: new Set(['standard', 'cyan']),
+    theme: new Set(['classic', 'cyan', 'ocean', 'ice', 'mono']),
+    stage: new Set(['garage', 'slate', 'aqua']),
+    stripe: new Set(['standard', 'cyan', 'apex']),
     badge: new Set(['auto', 'none'])
   };
-  allowed.theme.add('ocean'); allowed.stage.add('slate'); allowed.stage.add('aqua');
-  if (tracks >= 3) { allowed.theme.add('sunset'); allowed.stage.add('grid'); allowed.stage.add('horizon'); allowed.stripe.add('sunset'); allowed.stripe.add('chevron'); }
-  if (tracks >= 8) { allowed.theme.add('forest'); allowed.theme.add('ember'); allowed.stage.add('night'); allowed.stripe.add('grid'); allowed.stripe.add('circuit'); }
+  if (tracks >= 3) { allowed.theme.add('sunset'); allowed.theme.add('neon'); allowed.stage.add('grid'); allowed.stage.add('horizon'); allowed.stage.add('dunes'); allowed.stripe.add('sunset'); allowed.stripe.add('chevron'); allowed.stripe.add('split'); }
+  if (tracks >= 8) { allowed.theme.add('forest'); allowed.theme.add('ember'); allowed.theme.add('crimson'); allowed.stage.add('night'); allowed.stage.add('storm'); allowed.stripe.add('grid'); allowed.stripe.add('circuit'); allowed.stripe.add('scan'); allowed.stripe.add('blocks'); }
   if (podium) { allowed.theme.add('podium'); allowed.stage.add('podium'); allowed.stripe.add('gold'); }
   if (betaTester) { allowed.theme.add('beta'); allowed.stripe.add('beta'); allowed.badge.add('betaTester'); }
   return allowed.theme.has(value.theme) && allowed.stage.has(value.stage) && allowed.stripe.has(value.stripe) && allowed.badge.has(value.badge);
@@ -583,6 +584,7 @@ export function computeOverall(trackDocuments, priorEntries = [], betaTesterIds 
     const byImprovement = [...user.finishes].filter((finish) => finish.rank > 1).sort((a, b) => b.improvementValue - a.improvementValue);
     const medals = { gold: 0, silver: 0, bronze: 0 };
     const podiumEligible = user.finishes.filter((finish) => finish.fieldSize >= PODIUM_MIN_FIELD && finish.type !== 'custom');
+    const competitiveAverageEligible = user.finishes.filter((finish) => finish.fieldSize >= PODIUM_MIN_FIELD && finish.type !== 'custom');
     for (const finish of podiumEligible) if (finish.rank <= 3) medals[finish.rank === 1 ? 'gold' : finish.rank === 2 ? 'silver' : 'bronze'] += 1;
     const score = Math.max(1.000001, 0.68 * skillCost + 0.20 * coverageCost + 0.12 * consistencyCost);
     const primaryBest = byPlace[0] || {};
@@ -594,7 +596,9 @@ export function computeOverall(trackDocuments, priorEntries = [], betaTesterIds 
       weightedTracks: Number(allWeight.toFixed(3)), skillCost: Number(skillCost.toFixed(3)), coverageCost: Number(coverageCost.toFixed(3)), consistencyCost: Number(consistencyCost.toFixed(3)),
       averageFinish: Number((user.finishes.reduce((sum, finish) => sum + finish.rank, 0) / Math.max(1, played)).toFixed(2)), averageFinishVersion: 2,
       averagePlacement: Number((user.finishes.reduce((sum, finish) => sum + finish.rank, 0) / Math.max(1, played)).toFixed(2)), averagePlacementVersion: AVERAGE_PLACEMENT_VERSION,
-      podiumEligibleTracks: podiumEligible.length, podiumRate: podiumEligible.length >= MIN_RANKED_TRACKS ? Number((podiums / podiumEligible.length * 100).toFixed(1)) : 0, pbCount: user.pbCount,
+      competitiveAveragePlacement: competitiveAverageEligible.length ? Number((competitiveAverageEligible.reduce((sum, finish) => sum + finish.rank, 0) / competitiveAverageEligible.length).toFixed(2)) : null,
+      competitiveAverageEligibleTracks: competitiveAverageEligible.length,
+      podiumEligibleTracks: podiumEligible.length, podiumRate: podiumEligible.length >= MIN_RANKED_TRACKS ? Number((podiums / podiumEligible.length * 100).toFixed(1)) : 0, trackWins: medals.gold, pbCount: user.pbCount,
       bestTracks: byPlace.slice(0, 2).map(finishSummary), strongestTrack: finishSummary(byContribution[0] || primaryBest), worstTrack: finishSummary([...user.finishes].sort((a, b) => b.rank / b.fieldSize - a.rank / a.fieldSize)[0] || primaryBest),
       improvementTrack: finishSummary(byImprovement[0] || primaryBest), weightedResults: byContribution.slice(0, 2).map(finishSummary), opportunityTracks: byImprovement.slice(0, 3).map(finishSummary),
       medals, bestTrackId: primaryBest.trackId || null, bestTrackRank: primaryBest.rank || 0, bestTrackField: primaryBest.fieldSize || 0, rankTier: rankTitle(score, played), rankModel: ALGORITHM_VERSION,
@@ -700,7 +704,7 @@ export async function rebuildOverall(env, force = false) {
   const metaDoc = await readDocument(env, COLLECTIONS.meta, 'current');
   const meta = metaDoc?.data || {};
   const now = Date.now();
-  const metricsOutdated = Number(meta.averagePlacementVersion || 0) < AVERAGE_PLACEMENT_VERSION;
+  const metricsOutdated = Number(meta.averagePlacementVersion || 0) < AVERAGE_PLACEMENT_VERSION || Number(meta.derivedMetricsVersion || 0) < DERIVED_METRICS_VERSION;
   if (!force && !metricsOutdated && (!meta.dirty || now - Number(meta.lastOverallBuildAt || 0) < REBUILD_COOLDOWN_MS)) return { rebuilt: false, reason: meta.dirty ? 'cooldown' : 'clean', revision: Number(meta.builtRevision || 0) };
   const boards = (await runQuery(env, COLLECTIONS.track, null, 100)).map((document) => document.data);
   const prior = (await readDocument(env, COLLECTIONS.overall, 'main'))?.data || {};
@@ -727,8 +731,8 @@ export async function rebuildOverall(env, force = false) {
     };
   }).filter((summary) => summary.trackId).sort((a, b) => b.weight - a.weight || b.fieldSize - a.fieldSize || a.trackId.localeCompare(b.trackId));
   const revision = Number(meta.revision || 0);
-  await writeDocument(env, COLLECTIONS.overall, 'main', { entries, trackSummaries, updatedAt: now, builtAt: now, seededBy: 'polytrack-ranked-worker', revision, builtRevision: revision, sourceRevision: revision, algorithmVersion: ALGORITHM_VERSION, schemaVersion: TRACK_SCHEMA_VERSION, averagePlacementVersion: AVERAGE_PLACEMENT_VERSION, entryLimit: OVERALL_LIMIT, trackLimit: TRACK_LIMIT });
-  await writeDocument(env, COLLECTIONS.meta, 'current', { ...meta, dirty: false, revision, builtRevision: revision, lastOverallBuildAt: now, updatedAt: now, algorithmVersion: ALGORITHM_VERSION, schemaVersion: TRACK_SCHEMA_VERSION, averagePlacementVersion: AVERAGE_PLACEMENT_VERSION, rankedWritesEnabled: String(env.RANKED_WRITES_ENABLED) !== 'false', multiplayerEnabled: String(env.MULTIPLAYER_ENABLED) !== 'false' });
+  await writeDocument(env, COLLECTIONS.overall, 'main', { entries, trackSummaries, updatedAt: now, builtAt: now, seededBy: 'polytrack-ranked-worker', revision, builtRevision: revision, sourceRevision: revision, algorithmVersion: ALGORITHM_VERSION, schemaVersion: TRACK_SCHEMA_VERSION, averagePlacementVersion: AVERAGE_PLACEMENT_VERSION, derivedMetricsVersion: DERIVED_METRICS_VERSION, entryLimit: OVERALL_LIMIT, trackLimit: TRACK_LIMIT });
+  await writeDocument(env, COLLECTIONS.meta, 'current', { ...meta, dirty: false, revision, builtRevision: revision, lastOverallBuildAt: now, updatedAt: now, algorithmVersion: ALGORITHM_VERSION, schemaVersion: TRACK_SCHEMA_VERSION, averagePlacementVersion: AVERAGE_PLACEMENT_VERSION, derivedMetricsVersion: DERIVED_METRICS_VERSION, rankedWritesEnabled: String(env.RANKED_WRITES_ENABLED) !== 'false', multiplayerEnabled: String(env.MULTIPLAYER_ENABLED) !== 'false' });
   return { rebuilt: true, revision, racers: entries.length, tracks: trackSummaries.length };
 }
 
@@ -786,6 +790,7 @@ async function updateProfileCosmetics(request, env, context, uid, body) {
     const entries = overall.data.entries.map((row) => safeText(row.userId || row.accountId, 128) === accountId ? { ...row, profileCosmetics: cosmetics } : row);
     await writeDocument(env, COLLECTIONS.overall, 'main', { ...overall.data, entries, identityUpdatedAt: Date.now() });
   }
+  await writeDocument(env, COLLECTIONS.cosmeticJobs, accountId, { accountId, ownerUid: uid, cosmetics, active: false, updatedAt: Date.now(), completedAt: Date.now(), error: '' });
   return notifyProfile(request, env, context, uid, { accountId });
 }
 
@@ -806,6 +811,40 @@ async function processProfileJobs(env) {
     if (job.data.kind !== 'profile') continue;
     if (!Array.isArray(job.data.pendingTrackIds) || !job.data.pendingTrackIds.length) continue;
     await processProfileJob(env, job.id, job.data);
+  }
+}
+
+async function processCosmeticJobs(env) {
+  const jobs = await runQuery(env, COLLECTIONS.cosmeticJobs, { field: 'active', value: true }, 10);
+  for (const job of jobs) {
+    const accountId = safeText(job.data.accountId, 128);
+    const ownerUid = safeText(job.data.ownerUid, 128);
+    const profile = accountId ? await readDocument(env, COLLECTIONS.profiles, accountId) : null;
+    if (!profile || profile.data.ownerUid !== ownerUid || safeText(profile.data.accountId, 128) !== accountId) {
+      await writeDocument(env, COLLECTIONS.cosmeticJobs, job.id, { ...job.data, active: false, error: 'profile_not_owned', completedAt: Date.now() });
+      continue;
+    }
+    const cosmetics = sanitizeProfileCosmetics(job.data.cosmetics);
+    const [overall, badge] = await Promise.all([
+      readDocument(env, COLLECTIONS.overall, 'main'),
+      readDocument(env, COLLECTIONS.badges, accountId)
+    ]);
+    const entry = (Array.isArray(overall?.data?.entries) ? overall.data.entries : []).find((row) => safeText(row.userId || row.accountId, 128) === accountId) || {};
+    const betaTester = badge?.data?.betaTester === true || entry?.badges?.betaTester === true;
+    if (!profileCosmeticsUnlocked(cosmetics, entry, betaTester)) {
+      await writeDocument(env, COLLECTIONS.cosmeticJobs, job.id, { ...job.data, active: false, error: 'cosmetic_locked', completedAt: Date.now() });
+      continue;
+    }
+    await writeDocument(env, COLLECTIONS.profiles, accountId, { ...profile.data, profileCosmetics: cosmetics, updatedAt: Math.max(Number(profile.data.updatedAt || 0), Number(job.data.updatedAt || 0)) });
+    if (overall?.data && Array.isArray(overall.data.entries)) {
+      const entries = overall.data.entries.map((row) => safeText(row.userId || row.accountId, 128) === accountId ? { ...row, profileCosmetics: cosmetics } : row);
+      await writeDocument(env, COLLECTIONS.overall, 'main', { ...overall.data, entries, identityUpdatedAt: Date.now() });
+    }
+    const deferred = [];
+    const origin = [...allowedOrigins(env)][0] || '';
+    await notifyProfile(new Request('https://polytrack-ranked.internal/v1/profile/notify', { headers: { Origin: origin } }), env, { waitUntil(task) { deferred.push(task); } }, ownerUid, { accountId });
+    await Promise.allSettled(deferred);
+    await writeDocument(env, COLLECTIONS.cosmeticJobs, job.id, { ...job.data, active: false, completedAt: Date.now(), error: '' });
   }
 }
 
@@ -914,7 +953,7 @@ export async function handleRequest(request, env, context = {}) {
   if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: responseHeaders(origin, env) });
   if (request.method === 'GET' && path === '/v1/status') {
     const meta = (await readDocument(env, COLLECTIONS.meta, 'current').catch(() => null))?.data || {};
-    return json(origin, env, 200, { service: 'polytrack-ranked', algorithmVersion: ALGORITHM_VERSION, schemaVersion: TRACK_SCHEMA_VERSION, averagePlacementVersion: AVERAGE_PLACEMENT_VERSION, rankedWritesEnabled: String(env.RANKED_WRITES_ENABLED) !== 'false', multiplayerEnabled: String(env.MULTIPLAYER_ENABLED) !== 'false', revision: Number(meta.revision || 0), builtRevision: Number(meta.builtRevision || 0), dirty: meta.dirty === true, pendingRevisions: Math.max(0, Number(meta.revision || 0) - Number(meta.builtRevision || 0)), updatedAt: Number(meta.updatedAt || 0) });
+    return json(origin, env, 200, { service: 'polytrack-ranked', algorithmVersion: ALGORITHM_VERSION, schemaVersion: TRACK_SCHEMA_VERSION, averagePlacementVersion: AVERAGE_PLACEMENT_VERSION, derivedMetricsVersion: Number(meta.derivedMetricsVersion || 0), currentDerivedMetricsVersion: DERIVED_METRICS_VERSION, rankedWritesEnabled: String(env.RANKED_WRITES_ENABLED) !== 'false', multiplayerEnabled: String(env.MULTIPLAYER_ENABLED) !== 'false', revision: Number(meta.revision || 0), builtRevision: Number(meta.builtRevision || 0), dirty: meta.dirty === true, pendingRevisions: Math.max(0, Number(meta.revision || 0) - Number(meta.builtRevision || 0)), updatedAt: Number(meta.updatedAt || 0) });
   }
   if (request.method === 'GET' && path === '/v1/snapshot/overall') return publicSnapshot(request, env, context, origin, COLLECTIONS.overall, 'main');
   if (request.method === 'GET' && path === '/v1/snapshot/track') {
@@ -970,6 +1009,7 @@ export default {
   },
   scheduled(_event, env, context) {
     context.waitUntil((async()=>{
+      await processCosmeticJobs(env);
       await processProfileJobs(env);
       await resumeOrCreateMigration(env);
       await reconcileCanonicalChanges(env);
