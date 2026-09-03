@@ -665,6 +665,13 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     cosmeticEpoch+=1;
     writeJsonStorage(COSMETIC_DIRECTORY_KEY,value);
   }
+  function hasExplicitProfileCosmetics(entry){
+    const accountId=cleanUserId(entry?.userId||entry?.accountId||'');
+    const local=accountId&&accountId===activeRankedAccountId()?readJsonStorage(PROFILE_COSMETICS_KEY,null):null;
+    const shared=accountId?readCosmeticDirectory().entries[accountId]?.value:null;
+    const value=sanitizeProfileCosmetics(local||shared||entry?.profileCosmetics);
+    return ['theme','accent','finish','plate','edge','stage','stageTint','stripe','emblem'].some((kind)=>value[kind]!==COSMETIC_DEFAULTS[kind])||value.overridePodium===true;
+  }
   /* Public designs travel through each racer's own profile document, so a blocked
      Ranked Worker never stops another device from seeing them. Only documents that
      changed since the last sync are fetched, which keeps this a few reads per session. */
@@ -745,6 +752,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     return Number(entry?.raceCount||0)>=Number(requirement||0);
   }
   function racerCosmeticClasses(entry){
+    if(!hasExplicitProfileCosmetics(entry))return '';
     const value=cosmeticsForEntry(entry);
     return [`cosmetic-theme-${value.theme}`,`cosmetic-accent-${value.accent}`,`cosmetic-finish-${value.finish}`,`cosmetic-plate-${value.plate}`,`cosmetic-edge-${value.edge}`,`cosmetic-stage-${value.stage}`,`cosmetic-stage-tint-${value.stageTint}`,`cosmetic-stripe-${value.stripe}`,`cosmetic-emblem-${value.emblem}`,value.overridePodium?'cosmetic-podium-override':''].filter(Boolean).join(' ');
   }
@@ -1587,6 +1595,54 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
 
     `;
     document.head.appendChild(style);
+    const rankedPolish=document.createElement('style');
+    rankedPolish.id='polytrack-ranked-polish-v1';
+    rankedPolish.textContent=`
+      /* One restrained pattern system across Overall, track rows and studio previews. */
+      .cosmetic-stripe-standard{--sq-stripe-art:linear-gradient(90deg,transparent 0 76%,color-mix(in srgb,var(--fx-accent,#7ee7ff) 16%,transparent) 100%)}
+      .cosmetic-stripe-cyan{--sq-stripe-art:repeating-linear-gradient(112deg,transparent 0 42px,color-mix(in srgb,var(--fx-accent,#7ee7ff) 36%,transparent) 43px 47px,transparent 48px 72px)}
+      .cosmetic-stripe-apex{--sq-stripe-art:linear-gradient(118deg,transparent 0 61%,color-mix(in srgb,var(--fx-accent,#7ee7ff) 52%,transparent) 62% 65%,transparent 66%),linear-gradient(118deg,transparent 0 74%,color-mix(in srgb,var(--fx-accent,#7ee7ff) 25%,transparent) 75% 77%,transparent 78%)}
+      .cosmetic-stripe-chevron{--sq-stripe-art:repeating-linear-gradient(135deg,transparent 0 42px,color-mix(in srgb,var(--fx-accent,#7ee7ff) 31%,transparent) 43px 50px,transparent 51px 74px)}
+      .cosmetic-stripe-sunset{--sq-stripe-art:linear-gradient(102deg,transparent 0 44%,rgba(255,210,119,.30) 45% 48%,transparent 49% 64%,rgba(255,112,92,.34) 65% 69%,transparent 70%)}
+      .cosmetic-stripe-split{--sq-stripe-art:linear-gradient(106deg,transparent 0 52%,color-mix(in srgb,var(--fx-accent,#7ee7ff) 40%,transparent) 53% 56%,rgba(255,255,255,.07) 57% 72%,transparent 73%)}
+      .cosmetic-stripe-grid{--sq-stripe-art:linear-gradient(color-mix(in srgb,var(--fx-accent,#7ee7ff) 15%,transparent) 1px,transparent 1px),linear-gradient(90deg,color-mix(in srgb,var(--fx-accent,#7ee7ff) 15%,transparent) 1px,transparent 1px);--sq-stripe-size:28px 28px}
+      .cosmetic-stripe-circuit{--sq-stripe-art:radial-gradient(circle at 73% 31%,var(--fx-accent,#7ee7ff) 0 2px,transparent 3px),radial-gradient(circle at 88% 70%,var(--fx-accent,#7ee7ff) 0 2px,transparent 3px),linear-gradient(90deg,transparent 59%,color-mix(in srgb,var(--fx-accent,#7ee7ff) 32%,transparent) 60% 60.5%,transparent 61%),linear-gradient(154deg,transparent 73%,color-mix(in srgb,var(--fx-accent,#7ee7ff) 28%,transparent) 74% 75%,transparent 76%)}
+      .cosmetic-stripe-scan{--sq-stripe-art:repeating-linear-gradient(0deg,transparent 0 7px,color-mix(in srgb,var(--fx-accent,#7ee7ff) 17%,transparent) 8px 9px)}
+      .cosmetic-stripe-blocks{--sq-stripe-art:linear-gradient(90deg,transparent 0 55%,color-mix(in srgb,var(--fx-accent,#7ee7ff) 22%,transparent) 56% 66%,transparent 67% 71%,color-mix(in srgb,var(--fx-accent,#7ee7ff) 34%,transparent) 72% 84%,transparent 85%)}
+      .cosmetic-stripe-gold{--sq-stripe-art:linear-gradient(110deg,transparent 0 57%,rgba(255,238,146,.42) 58% 61%,transparent 62% 70%,rgba(255,200,62,.30) 71% 77%,transparent 78%)}
+      .cosmetic-stripe-beta{--sq-stripe-art:repeating-linear-gradient(125deg,transparent 0 44px,rgba(255,130,217,.30) 45px 50px,rgba(126,231,255,.24) 51px 56px,transparent 57px 84px)}
+      .overall-entry[class*='cosmetic-stripe-']::before,
+      .leaderboard-ui>.container>button.main.sq-racer-cosmetic[class*='cosmetic-stripe-']::before{background-image:var(--sq-stripe-art)!important;background-size:var(--sq-stripe-size,auto)!important;opacity:.5!important;mask-image:linear-gradient(90deg,transparent 0,#000 34%,#000 100%)}
+      [class*='cosmetic-stripe-'] .showcase-row::before{background-image:var(--sq-stripe-art)!important;background-size:var(--sq-stripe-size,auto)!important;opacity:.5!important;mask-image:linear-gradient(90deg,transparent 0,#000 28%,#000 100%)}
+      .overall-profile-card[class*='cosmetic-stripe-'] .profile-hero{background-image:var(--sq-stripe-art)!important;background-size:var(--sq-stripe-size,auto)!important;background-position:center}
+      .sq-plain-racer-themes .overall-entry[class*='cosmetic-stripe-']::before,
+      .sq-plain-racer-themes .leaderboard-ui button.main[class*='cosmetic-stripe-']::before{display:none!important}
+
+      /* Compact, balanced footer controls. */
+      .overall-center-tools .overall-pager{display:grid!important;grid-template-columns:48px minmax(0,1fr) 48px!important;gap:8px!important;padding:6px 8px!important}
+      .overall-page-button{width:48px!important;min-width:48px!important;margin:0!important}
+      .overall-page-status{min-width:0!important;text-align:center!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      .overall-center-tools .overall-freshness{justify-content:center!important;padding:6px 10px!important;text-align:center!important;line-height:1.2}
+      .overall-category-control{position:relative;display:grid!important;grid-template-columns:minmax(0,1fr) 34px!important;gap:7px!important;align-items:center;padding:8px!important;background:#172754!important;border-left:4px solid #7ee7ff}
+      .overall-category-select{grid-column:1;display:grid!important;grid-template-columns:auto minmax(0,1fr)!important;align-items:center;gap:9px!important;min-width:0}
+      .overall-category-select>span{font-size:11px!important;white-space:nowrap}
+      .overall-category-select>select{width:100%!important;min-width:0!important;height:40px!important;padding:6px 34px 6px 11px!important;background:#0f1e45!important;border:1px solid #4e6fac!important;color:#fff!important;font-size:16px!important}
+      .overall-category-info{grid-column:2;display:flex;align-items:center;justify-content:center;width:34px;height:34px;padding:0;border:2px solid #7ee7ff;border-radius:50%;background:#203b75;color:#dff9ff;font:20px Georgia,serif;font-weight:700;cursor:pointer}
+      .overall-category-info:hover,.overall-category-info:focus-visible,.overall-category-control.is-explaining .overall-category-info{background:#7ee7ff;color:#10214b;outline:2px solid #fff;outline-offset:2px}
+      .overall-category-description{display:none;position:absolute;right:0;bottom:calc(100% + 7px);z-index:8;width:min(390px,80vw);box-sizing:border-box;padding:10px 12px;background:#0d1939;border:1px solid #7ee7ff;border-left-width:5px;color:#e5f3ff;font-size:13px;line-height:1.35;box-shadow:0 10px 24px rgba(0,0,0,.38)}
+      .overall-category-info:hover+.overall-category-description,.overall-category-info:focus-visible+.overall-category-description,.overall-category-control.is-explaining .overall-category-description{display:block}
+      .overall-challenge-stack .competition-kicker{max-width:108px!important;font-size:9px!important;letter-spacing:.8px!important}
+      .overall-challenge-stack .competition-track-name{font-size:19px!important}
+      .overall-challenge-stack .competition-result{font-size:12px!important;white-space:nowrap}
+      .overall-challenge-stack section{grid-template-columns:minmax(0,1fr) auto!important;grid-template-rows:auto auto!important}
+      .overall-challenge-stack .competition-track-main{grid-column:1/-1!important;grid-row:1!important}
+      .overall-challenge-stack .competition-result{grid-column:1!important;grid-row:2!important;justify-self:start}
+      .overall-challenge-stack section small{grid-column:2!important;grid-row:2!important;padding-left:0!important;font-size:10px!important;text-align:right}
+      @media(max-width:1100px){.overall-challenge-stack section small{padding-left:0!important}.overall-category-description{position:static;grid-column:1/-1;width:auto;margin-top:1px}}
+      @media(max-width:900px) and (min-width:621px){#overallLeaderboardPanel{--rank-columns:70px minmax(220px,1.15fr) minmax(180px,1fr) 105px!important}.overall-entry{grid-template-columns:var(--rank-columns)!important;grid-template-areas:none!important;min-height:108px!important;padding-right:12px!important;gap:9px!important}.overall-rank{grid-area:auto!important;width:70px!important}.overall-name,.overall-mid,.overall-stats{grid-area:auto!important}.overall-stats{min-width:0!important}.overall-car-model{width:80px!important;height:80px!important;margin-right:8px!important}.overall-entry.top-1 .overall-car-model{width:86px!important;height:88px!important}.overall-name{font-size:20px!important}.overall-racer-meta{font-size:10px!important}.overall-challenge-stack section{grid-template-rows:auto auto auto!important}.overall-challenge-stack section small{grid-column:1/-1!important;grid-row:3!important;justify-self:end}}
+      @media(max-width:620px){.overall-category-control{grid-template-columns:minmax(0,1fr) 32px!important}.overall-category-select{grid-template-columns:1fr!important;gap:3px!important}.overall-category-select>select{height:38px!important;font-size:14px!important}.overall-category-info{width:32px;height:32px}.overall-category-description{font-size:12px}.overall-challenge-stack .competition-kicker{max-width:none!important}.overall-challenge-stack section small{padding-left:0!important}.overall-entry{grid-template-columns:62px minmax(0,1fr) auto!important;grid-template-areas:'rank name stats' 'rank mid stats'!important;min-height:104px!important}.overall-entry.top-1{min-height:110px!important}.overall-rank{grid-area:rank!important}.overall-name{grid-area:name!important}.overall-mid{grid-area:mid!important}.overall-stats{grid-area:stats!important}.overall-entry .overall-racer-meta{display:none!important}.overall-entry .overall-best-line+.overall-best-line{display:none!important}.overall-entry .overall-name-main{font-size:18px!important}.overall-entry .overall-name-hint{font-size:10px!important}.overall-entry .overall-mid{gap:3px!important}.overall-entry .overall-best{font-size:11px!important}}
+    `;
+    document.head.appendChild(rankedPolish);
   }
 
   function setUnofficialMessage(){
@@ -2091,8 +2147,8 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     return false;
   }
 
-  /* The picker is the game's own select again. The description follows the choice on
-     the control itself, so no separate info button is needed. */
+  /* Keep the native select for keyboard and touch reliability. Its compact info
+     control exposes the active category definition without occupying footer space. */
   function syncCategorySelect(root=document){
     const select=root.querySelector('#overallCategorySelect');
     const control=root.querySelector('.overall-category-control');
@@ -2100,7 +2156,28 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     const tip=LEADERBOARD_INFO[overallCategory]||'This ranking uses the current complete Ranked snapshot.';
     if(select&&select.value!==overallCategory)select.value=overallCategory;
     if(select)select.title=`${label}. ${tip}`;
-    if(control)control.dataset.tip=tip;
+    if(control){
+      control.dataset.tip=tip;
+      let info=control.querySelector('[data-category-info]');
+      let copy=control.querySelector('.overall-category-description');
+      if(!info){
+        info=document.createElement('button');
+        info.type='button';
+        info.className='overall-category-info';
+        info.dataset.categoryInfo='';
+        info.setAttribute('aria-expanded','false');
+        info.textContent='i';
+        control.appendChild(info);
+      }
+      if(!copy){
+        copy=document.createElement('span');
+        copy.className='overall-category-description';
+        copy.setAttribute('role','tooltip');
+        control.appendChild(copy);
+      }
+      if(info){info.title=tip;info.setAttribute('aria-label',`${label}: ${tip}`);}
+      if(copy)copy.textContent=tip;
+    }
   }
   function setOverallCategory(next){
     const selected=String(next||'overall');
@@ -2124,6 +2201,11 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     panel.innerHTML = `<div class="overall-shell"><div class="overall-top"><div class="overall-title-group"><h2>${tRankingsTitle()}</h2></div><div class="overall-actions"><button id="overallFindMeBtn" class="button overall-action-btn" type="button">Find me</button><button id="overallHelpBtn" class="button overall-action-btn" type="button">Help</button><button id="closeOverallLeaderboard" class="button overall-action-btn" type="button">${tr('close')}</button></div></div><div class="overall-columns" aria-hidden="true"><span>Place</span><span>Driver</span><span>Movement & bests</span><span>Score</span></div><div id="overallLeaderboardList"></div>${dailySpotlightMarkup()}<div id="overallProfilePopup"><div class="overall-profile-card" role="dialog" aria-modal="true" aria-label="Racer profile"><button id="overallProfileClose" class="button" type="button">Close</button><div id="overallProfileContent"></div></div></div><div id="overallHelpPopup"><div class="overall-help-card" role="dialog" aria-modal="true" aria-labelledby="overallHelpTitle"><div class="overall-help-head"><h3 id="overallHelpTitle">How Ranked works</h3></div><div class="overall-help-content"><section><b>Overall RP</b><p>Lower is better. Overall RP is 68% best-ten skill, 20% diminishing track coverage, and 12% protected all-track depth.</p></section><section><b>Track weight</b><p>Every screen uses the same track value: type multiplier, diminishing field size, and the track's time spread. Official tracks use 1.6x, community 1.0x, and custom 0.6x. Solo tracks score zero.</p></section><section><b>Eligibility</b><p>One or two eligible tracks are provisional. Three populated tracks establish a Ranked position.</p></section><section><b>Podium points</b><p>Recognized tracks with at least five drivers award 9 for first, 3 for second, and 1 for third. Podium rate requires three eligible tracks.</p></section><section><b>Replay integrity</b><p>Ranked checks replay ownership, format, size, and SHA-256 integrity on the server. This detects damaged or substituted replays, but it is not yet full physics verification.</p></section><section><b>Badges</b><p>Badges such as Beta Tester are issued by the Ranked server and cannot be granted by the browser.</p></section><section><b>Route planner</b><p>Every plan is for you. Your profile shows ways to improve; another profile shows ways to catch that racer or extend your lead.</p></section><section><b>Saved data</b><p>Rankings stay available offline. Red means a cloud refresh failed; “up to date” means the cloud responded and no newer complete snapshot exists.</p></section><p class="overall-help-note">Rank movement resets once before release; saved PBs remain. New track finishes can still move positions.</p><p><strong>Please suggest new features and changes.</strong> Join the <a href="https://discord.gg/DP2hM7RRhR" target="_blank" rel="noopener noreferrer">Discord</a> or use the <a href="https://sites.google.com/view/staticquasar931/google-form?utm_source=polytrack&amp;utm_medium=game&amp;utm_campaign=ranked_feedback" target="_blank" rel="noopener noreferrer">feedback form</a>.</p><div class="overall-help-actions"><button id="overallHelpClose" class="button overall-action-btn" type="button">Close help</button></div></div></div></div></div>`;
     document.body.appendChild(panel);
     panel.addEventListener('click', (event)=>{
+      if(!event.target.closest?.('[data-category-info]')){
+        const categoryControl=panel.querySelector('.overall-category-control');
+        categoryControl?.classList.remove('is-explaining');
+        categoryControl?.querySelector('[data-category-info]')?.setAttribute('aria-expanded','false');
+      }
       if (event.target === panel) panel.style.display='none';
       if (event.target === panel.querySelector('#overallProfilePopup')) closeRankedDialog(panel.querySelector('#overallProfilePopup'));
       if (event.target === panel.querySelector('#overallHelpPopup')) closeRankedDialog(panel.querySelector('#overallHelpPopup'));
@@ -2175,6 +2257,14 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
           const badges=profileBadgeMarkup(studioEntry,true,draft);
           card.querySelectorAll('[data-cosmetic-badge-preview]').forEach((node)=>{node.innerHTML=badges;});
         }
+        return;
+      }
+      const categoryInfo=event.target.closest?.('[data-category-info]');
+      if(categoryInfo){
+        const control=categoryInfo.closest('.overall-category-control');
+        const open=!control.classList.contains('is-explaining');
+        control.classList.toggle('is-explaining',open);
+        categoryInfo.setAttribute('aria-expanded',String(open));
         return;
       }
       const studioTab=event.target.closest?.('[data-studio-tab]');
@@ -3838,12 +3928,18 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
       const user=window.firebase?.auth?.().currentUser;
       if(!user)throw new Error('Sign-in is not ready.');
       const now=Date.now();
-      const batch=fire.batch();
-      batch.set(fire.collection('0.6.2_profiles_public').doc(safeId),{profileCosmetics:cosmetics,cosmeticsUpdatedAt:now,updatedAt:now},{merge:true});
-      batch.set(fire.collection('0.6.2_s1_cosmetic_jobs').doc(safeId),{accountId:safeId,ownerUid:user.uid,cosmetics,active:true,updatedAt:now});
-      await batch.commit();
+      // The public profile is the school-safe path. The Worker job is optional and
+      // must never make the public save fail when workers.dev is blocked.
+      await fire.collection('0.6.2_profiles_public').doc(safeId).set({profileCosmetics:cosmetics,cosmeticsUpdatedAt:now,updatedAt:now},{merge:true});
+      try{
+        await fire.collection('0.6.2_s1_cosmetic_jobs').doc(safeId).set({accountId:safeId,ownerUid:user.uid,cosmetics,active:true,updatedAt:now});
+      }catch(jobError){
+        log('warn','[COSMETIC202] Public design saved; optional Worker job deferred',String(jobError&&(jobError.message||jobError)));
+      }
       const directory=readCosmeticDirectory();
-      writeCosmeticDirectory({...directory,cursor:Math.max(Number(directory.cursor||0)||0,now),entries:{...directory.entries,[safeId]:{at:now,value:cosmetics}}});
+      // Do not move the shared-query cursor to this one local write. Doing so can
+      // skip every other racer update between the prior cursor and this timestamp.
+      writeCosmeticDirectory({...directory,entries:{...directory.entries,[safeId]:{at:now,value:cosmetics}}});
       if(status)status.textContent='Published. Other racers see it next time they open Ranked.';
       if(button)button.textContent='Saved';
       if(endpoint&&rankedEdgeAvailable()){
