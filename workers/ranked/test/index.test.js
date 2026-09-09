@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { computeOverall, computeTrackEntries, handleRequest, profileCosmeticsUnlocked, reconcileCanonicalChanges, sanitizeProfileCosmetics, trackSnapshotIsCurrent, trackWeightParts } from '../src/index.js';
+import { rebuildOverall, mergeCanonicalResultIntoTrack, computeOverall, computeTrackEntries, handleRequest, profileCosmeticsUnlocked, reconcileCanonicalChanges, sanitizeProfileCosmetics, trackSnapshotIsCurrent, trackWeightParts } from '../src/index.js';
 
 const TRACK = '5803f9e963625804e3de3246d043dc7dde847aa32e991f7f7326b0453f1fa038';
 const COMMUNITY_TRACK = '5159a8dac6a1f397407a7b5233ad570613531f6609f7dc897490c28c9f2c7a4e';
@@ -150,7 +150,7 @@ test('rejects notification for a result owned by another Firebase user', async (
 });
 
 test('cosmetic saves update the public overall snapshot before background propagation', async () => {
-  let overallWrite='';
+  let overallWrite='';const guardedPaths=[];
   const accountId='cosmetic-racer';
   const response=await handleRequest(new Request('https://ranked.example/v1/profile/cosmetics',{
     method:'POST',
@@ -160,13 +160,15 @@ test('cosmetic saves update the public overall snapshot before background propag
     ALLOWED_ORIGINS:'https://staticquasar931.github.io',
     __TEST_UID:'signed-in-user',
     __TEST_FIRESTORE:async(path,init={})=>{
+      if(path===':commit'){for(const write of JSON.parse(init.body).writes){guardedPaths.push(write.currentDocument.updateTime);if(write.update.name.includes('s1_leaderboards_overall'))overallWrite=JSON.stringify(write.update);}return {writeResults:[{updateTime:'2026-09-09T00:00:00Z'}]};}
       if(init.method==='PATCH'){
+        if(path.includes('profiles_public')||path.includes('s1_leaderboards_overall'))guardedPaths.push(path);
         if(path.includes('s1_leaderboards_overall'))overallWrite=String(init.body||'');
         return {};
       }
       if(path===':runQuery')return [];
-      if(path.includes('profiles_public'))return {fields:{accountId:{stringValue:accountId},ownerUid:{stringValue:'signed-in-user'},name:{stringValue:'Racer'},nickname:{stringValue:'Racer'},carStyle:{stringValue:'style'},isVerifier:{booleanValue:false},updatedAt:{integerValue:'1'}}};
-      if(path.includes('s1_leaderboards_overall'))return {fields:{
+      if(path.includes('profiles_public'))return {updateTime:'2026-09-05T00:00:00Z',fields:{accountId:{stringValue:accountId},ownerUid:{stringValue:'signed-in-user'},name:{stringValue:'Racer'},nickname:{stringValue:'Racer'},carStyle:{stringValue:'style'},isVerifier:{booleanValue:false},updatedAt:{integerValue:'1'}}};
+      if(path.includes('s1_leaderboards_overall'))return {updateTime:'2026-09-05T00:00:00Z',fields:{
         revision:{integerValue:'7'},
         entries:{arrayValue:{values:[{mapValue:{fields:{
           userId:{stringValue:accountId},raceCount:{integerValue:'8'},rank:{integerValue:'4'}
@@ -179,6 +181,8 @@ test('cosmetic saves update the public overall snapshot before background propag
   assert.equal((await response.json()).accepted,true);
   assert.match(overallWrite,/profileCosmetics/);
   assert.match(overallWrite,/circuit/);
+  assert.equal(guardedPaths.length,2);
+  for(const version of guardedPaths)assert.equal(version,'2026-09-05T00:00:00Z');
 });
 
 test('accepts an owned hash mismatch as pending without granting integrity verification', async () => {
@@ -221,7 +225,7 @@ test('serves a complete public snapshot from the Worker API', async () => {
   assert.match(response.headers.get('Cache-Control'), /^public/);
 });
 
-test('normalizes legacy integrity-approved track entries at the API boundary', async () => {
+test('replay integrity alone never grants run verification at the API boundary', async () => {
   const response = await handleRequest(new Request(`https://ranked.example/v1/snapshot/track?trackId=${TRACK}`, {
     headers: { Origin: 'https://staticquasar931.github.io' }
   }), {
@@ -238,7 +242,7 @@ test('normalizes legacy integrity-approved track entries at the API boundary', a
   assert.equal(response.status, 200);
   const payload = await response.json();
   assert.equal(payload.integrityStateVersion, 1);
-  assert.equal(payload.entries[0].verifiedState, 1);
+  assert.equal(payload.entries[0].verifiedState, 0);
 });
 
 test('structurally invalid runs are excluded from track snapshots', () => {
@@ -248,7 +252,7 @@ test('structurally invalid runs are excluded from track snapshots', () => {
   ], TRACK);
   assert.deepEqual(entries.map((entry) => entry.accountId), ['valid']);
   assert.equal(entries[0].verified, false);
-  assert.equal(entries[0].verifiedState, 1);
+  assert.equal(entries[0].verifiedState, 0);
   assert.equal(entries[0].validationState, 'integrity');
 });
 
@@ -260,7 +264,7 @@ test('pending runs remain visible per track but cannot affect Overall RP', () =>
   assert.deepEqual(entries.map((entry)=>entry.accountId),['pending','verified']);
   assert.equal(entries[0].validationState,'pending');
   assert.equal(entries[0].verifiedState,0);
-  assert.equal(entries[1].verifiedState,1);
+  assert.equal(entries[1].verifiedState,0);
   const overall=computeOverall([{trackId:TRACK,entries}]);
   assert.equal(overall.some((entry)=>entry.userId==='pending'),false);
 });
@@ -330,6 +334,7 @@ test('scheduled reconciliation discovers canonical PBs without a client Worker n
   const env={
     ALGORITHM_VERSION:'participation-v8-s1',
     __TEST_FIRESTORE:async(path,init={})=>{
+      if(path===':commit'){const writes=JSON.parse(init.body).writes;assert.equal(writes.length,2);assert.ok(writes.every(w=>w.currentDocument));wroteTrack=writes.some(w=>w.update.name.includes('s1_leaderboards_track'));return {};}
       if(init.method==='PATCH'){
         if(path.includes('s1_leaderboards_track'))wroteTrack=true;
         return {};
@@ -345,7 +350,7 @@ test('scheduled reconciliation discovers canonical PBs without a client Worker n
     }
   };
   const result=await reconcileCanonicalChanges(env);
-  assert.equal(result.scanned,1);
+  assert.equal(result.scanned,2);
   assert.equal(result.rebuilt,1);
   assert.equal(wroteTrack,true);
 });
@@ -355,7 +360,7 @@ test('idle canonical reconciliation performs no recurring Firestore write', asyn
   const result=await reconcileCanonicalChanges({
     __TEST_FIRESTORE:async(path,init={})=>{
       if(init.method==='PATCH'){writes++;return {};}
-      if(path.includes('canonical_reconcile'))return {fields:{cursorUpdatedAt:{integerValue:'200'},pendingTrackIds:{arrayValue:{values:[]}}}};
+      if(path.includes('canonical_reconcile'))return {fields:{backfillComplete:{booleanValue:true},cursorIngestedAt:{stringValue:'2026-09-09T00:00:00.000000123Z'},pendingTrackIds:{arrayValue:{values:[]}}}};
       if(path===':runQuery')return [];
       return null;
     }
@@ -371,4 +376,106 @@ test('synthetic ranking sizes remain capped and deterministic', () => {
     assert.equal(entries.length, Math.min(size, 500));
     assert.deepEqual(entries.map((entry) => entry.rank), Array.from({ length: entries.length }, (_, index) => index + 1));
   }
+});
+
+
+test('canonical cursor resumes after timestamp AND document ID',async()=>{
+ let query;
+ await reconcileCanonicalChanges({__TEST_FIRESTORE:async(path,init={})=>{
+ if(path.includes('canonical_reconcile'))return {fields:{backfillComplete:{booleanValue:true},cursorIngestedAt:{stringValue:'2026-09-09T00:00:00.000000123Z'},cursorDocumentId:{stringValue:'last-id'},pendingTrackIds:{arrayValue:{values:[]}}},updateTime:'2026-09-01T00:00:00Z'};
+ if(path===':runQuery'){query=JSON.parse(init.body).structuredQuery;return [];}
+ return null;
+ }});
+ assert.equal(query.where.fieldFilter.op,'GREATER_THAN_OR_EQUAL');
+ assert.equal(query.orderBy[1].field.fieldPath,'__name__');
+ assert.equal(query.startAt.before,false);
+ assert.equal(query.startAt.values[0].timestampValue,'2026-09-09T00:00:00.000000123Z');
+ assert.equal(query.orderBy[0].field.fieldPath,'ingestedAt');
+ assert.match(query.startAt.values[1].referenceValue,/0.6.2_race_results\/last-id$/);
+});
+
+test('snapshot and dirty metadata are one guarded commit; conflict keeps track queued',async()=>{
+ const canonical=validRun({ownerUid:'owner',accountId:'racer',trackId:TRACK,timeMs:20500,updatedAt:200});
+ let commit,job;
+ const result=await reconcileCanonicalChanges({__TEST_FIRESTORE:async(path,init={})=>{
+ if(path===':runQuery')return [{document:{name:'projects/test/databases/(default)/documents/results/racer',fields:Object.fromEntries(Object.entries(canonical).map(([k,v])=>[k,typeof v==='number'?{integerValue:String(v)}:typeof v==='boolean'?{booleanValue:v}:{stringValue:v}]))}}];
+ if(path===':commit'){commit=JSON.parse(init.body);throw Error('FIRESTORE_409');}
+ if(init.method==='PATCH'){job=JSON.parse(init.body);return {};}
+ if(path.includes('s1_leaderboards_track'))return {fields:{revision:{integerValue:'4'}},updateTime:'2026-09-01T00:00:00Z'};
+ if(path.includes('s1_release_meta'))return {fields:{revision:{integerValue:'6'}},updateTime:'2026-09-01T00:00:01Z'};
+ return null;
+ }});
+ assert.equal(result.rebuilt,0);assert.equal(result.pending,1);
+ assert.equal(commit.writes.length,2);
+ assert.equal(commit.writes[0].currentDocument.updateTime,'2026-09-01T00:00:00Z');
+ assert.equal(commit.writes[1].currentDocument.updateTime,'2026-09-01T00:00:01Z');
+ assert.match(commit.writes[0].update.name,/^projects\/polytrack-052\/databases\/\(default\)\/documents\//);
+ assert.equal(job.fields.pendingTrackIds.arrayValue.values[0].stringValue,TRACK);
+});
+
+
+test('late same-racer notification cannot regress a faster published PB',async()=>{
+ let writes=0;
+ const env={__TEST_FIRESTORE:async(_path,init={})=>{if(init.method){writes++;return {}};return {fields:{algorithmVersion:{stringValue:'participation-v8-s1'},revision:{integerValue:'2'},entries:{arrayValue:{values:[{mapValue:{fields:{accountId:{stringValue:'racer'},timeMs:{integerValue:'20000'},uploadId:{integerValue:'222'}}}}]}}},updateTime:'2026-09-09T00:00:00Z'};}};
+ const result=await mergeCanonicalResultIntoTrack(env,TRACK,validRun({ownerUid:'owner',accountId:'racer',trackId:TRACK,timeMs:25000,updatedAt:1}),true);
+ assert.equal(result.changed,false);assert.equal(result.entries[0].timeMs,20000);assert.equal(writes,0);
+});
+
+
+function wire(value){
+ if(Array.isArray(value))return {arrayValue:{values:value.map(wire)}};
+ if(value===null)return {nullValue:null};
+ if(typeof value==='object')return {mapValue:{fields:Object.fromEntries(Object.entries(value).map(([k,v])=>[k,wire(v)]))}};
+ if(typeof value==='boolean')return {booleanValue:value};
+ if(typeof value==='number')return {doubleValue:value};
+ return {stringValue:String(value)};
+}
+test('200-racer entitlement initialization uses one atomic batch within the Free request budget',async()=>{
+ let requests=0,commit;
+ const boards=[TRACK,COMMUNITY_TRACK,'7eac4fee1111152cfba4d3737410264ca0f22c7f5a2211e79f0099589b8b48c0'].map(trackId=>({trackId,entries:Array.from({length:200},(_,i)=>({accountId:'racer-'+i,rank:i+1,timeMs:20000+i,weight:3,integrityVerified:true}))}));
+ const result=await rebuildOverall({__TEST_FIRESTORE:async(path,init={})=>{
+  requests++;
+  if(path===':commit'){commit=JSON.parse(init.body);return {};}
+  if(path===':runQuery')return boards.map(b=>({document:{fields:wire(b).mapValue.fields}}));
+  if(path.includes('s1_release_meta'))return {fields:wire({dirty:true,revision:10}).mapValue.fields,updateTime:'2026-09-09T00:00:00Z'};
+  return null;
+ }},true);
+ assert.equal(result.racers,200);assert.equal(commit.writes.length,202);assert.equal(requests,5);
+ assert.ok(commit.writes.slice(0,200).every(w=>w.update.name.includes('cosmetic_entitlements')&&!w.currentDocument));
+ assert.equal(commit.writes.at(-1).currentDocument.updateTime,'2026-09-09T00:00:00Z');
+ assert.ok(JSON.stringify(commit).length<10*1024*1024);
+});
+test('permanently failing tracks rotate behind healthy reconciliation work',async()=>{
+ let job={backfillComplete:true,cursorIngestedAt:'2026-09-09T00:00:00Z',pendingTrackIds:['fail1','fail2','fail3','fail4',TRACK]},healthyWritten=false;
+ const env={__TEST_FIRESTORE:async(path,init={})=>{
+  if(path===':commit'){
+   const writes=JSON.parse(init.body).writes;
+   const state=writes.find(w=>w.update.name.endsWith('/canonical_reconcile_v2'));
+   if(state)job.pendingTrackIds=state.update.fields.pendingTrackIds.arrayValue.values.map(v=>v.stringValue);
+   if(writes.some(w=>w.update.name.includes('s1_leaderboards_track/'+TRACK)))healthyWritten=true;
+   return {};
+  }
+  if(path.includes('canonical_reconcile_v2'))return {fields:wire(job).mapValue.fields,updateTime:'2026-09-09T00:00:00Z'};
+  if(path.includes('s1_leaderboards_track/fail'))throw Error('permanent capacity failure');
+  if(path===':runQuery')return [];
+  return null;
+ }};
+ await reconcileCanonicalChanges(env);assert.equal(job.pendingTrackIds[0],TRACK);
+ await reconcileCanonicalChanges(env);assert.equal(healthyWritten,true);assert.ok(!job.pendingTrackIds.includes(TRACK));
+});
+
+
+test('finishing the final queued track persists an empty queue instead of repeating it forever',async()=>{
+ let queueSaved=false;
+ const result=await reconcileCanonicalChanges({__TEST_FIRESTORE:async(path,init={})=>{
+  if(path===':commit'){
+   const write=JSON.parse(init.body).writes.find(w=>w.update.name.endsWith('/canonical_reconcile_v2'));
+   if(write){assert.deepEqual(write.update.fields.pendingTrackIds.arrayValue.values,[]);queueSaved=true;}
+   return {};
+  }
+  if(path.includes('canonical_reconcile_v2'))return {fields:wire({backfillComplete:true,cursorIngestedAt:'2026-09-09T00:00:00Z',pendingTrackIds:[TRACK]}).mapValue.fields,updateTime:'2026-09-09T00:00:00Z'};
+  if(path===':runQuery')return [];
+  return null;
+ }});
+ assert.equal(result.rebuilt,1);assert.equal(result.pending,0);assert.equal(queueSaved,true);
 });

@@ -13,7 +13,7 @@ const OVERALL_LIMIT = 200;
 const TRACK_LIMIT = 500;
 const REBUILD_COOLDOWN_MS = 5 * 60 * 1000;
 const MAX_REPLAY_LENGTH = 10000;
-const MIGRATION_TRACK_BATCH = 8;
+const MIGRATION_TRACK_BATCH = 4;
 const MIGRATION_BADGE_BATCH = 25;
 const MIGRATION_VERSION = 4;
 const RECONCILE_RESULT_BATCH = 50;
@@ -88,6 +88,11 @@ export function profileCosmeticsUnlocked(cosmetics, entry = {}, betaTester = fal
   if (betaTester) { allowed.theme.add('beta'); allowed.stripe.add('beta'); allowed.badge.add('betaTester'); allowed.title.add('betaRacer'); }
   return allowed.theme.has(value.theme) && allowed.accent.has(value.accent) && allowed.finish.has(value.finish) && allowed.plate.has(value.plate) && allowed.edge.has(value.edge) && allowed.stage.has(value.stage) && allowed.stageTint.has(value.stageTint) && allowed.stripe.has(value.stripe) && allowed.emblem.has(value.emblem) && allowed.title.has(value.title) && allowed.badge.has(value.badge);
 }
+function cosmeticEntitlement(entry={},beta=false){
+  const defaults=sanitizeProfileCosmetics({});
+  return Object.fromEntries(Object.entries(PROFILE_COSMETIC_OPTIONS).map(([kind,values])=>[kind,[...values].filter(value=>profileCosmeticsUnlocked({...defaults,[kind]:value},entry,beta))]));
+}
+
 const OFFICIAL_IDS = new Set([
   '5803f9e963625804e3de3246d043dc7dde847aa32e991f7f7326b0453f1fa038','7eac4fee1111152cfba4d3737410264ca0f22c7f5a2211e79f0099589b8b48c0','148826aa16ffaa23dbc453b32cff05e025ddbce1773fc7733cc13d218926515a','93c7363dfea7fb09ca1d23b72cad5df43a30841d41c8ff25fb544c85bb03c7ae','7603aaeffa1989a649dfaa8e1804bed4481b49df233e377687d0669899566e52','c117823cf6788e3247b9ee63a0c091c07352bbe352c650a7790dc6718148c2fa','e4bcaca3a583bb0eb62a700a69d14e89c852f0c5bf740fca76e0519ebdfc9ab1','7239b17057127936907a805b0caa5d8c6f6c97eca9bdabf1a5312dce479629b7','99864b635d1891d22e17eb9267527a07a92c49c0f02893729fa2ded90e3ca0f9','a5341fe706097cff2a3812a3fc0d87399254557328351ae8e5c882700fc1a196','7d134c939df80c676a258266201beedd3b93572d5603f3ff4339ff8679803715','2fe4bd46b0075cc25fc770ce50adbb68447cf493c999635bb272d231811dd264','c20b4ee3cd517ca6cae7e43f047548757287fbd08ba81b97892a3ef520159a34','88647ea04145fbbbb19b55f1590e038fb0378acb2571110f02cb545cc46b0d57','2806030c503abb41a1a26fa9a570888be14296172bb273798ef0ad87a108a2ec','4697ea67b18c3f49b30a3d8884602115536650bc5435c88e3732e64d21a72d33','e5d084e06db4ab71196fea44efeceb23c8561266a78669c324a38f92581fe2db'
 ]);
@@ -278,6 +283,7 @@ function encodeValue(value) {
   if (Array.isArray(value)) return { arrayValue: { values: value.map(encodeValue) } };
   if (typeof value === 'boolean') return { booleanValue: value };
   if (typeof value === 'number') return Number.isInteger(value) ? { integerValue: String(value) } : { doubleValue: value };
+  if (typeof value === 'object' && typeof value.__firestoreTimestamp==='string') return {timestampValue:value.__firestoreTimestamp};
   if (typeof value === 'object') return { mapValue: { fields: encodeFields(value) } };
   return { stringValue: String(value) };
 }
@@ -293,7 +299,7 @@ function decodeValue(value) {
   if ('integerValue' in value) return Number(value.integerValue);
   if ('doubleValue' in value) return Number(value.doubleValue);
   if ('booleanValue' in value) return Boolean(value.booleanValue);
-  if ('timestampValue' in value) return Date.parse(value.timestampValue);
+  if ('timestampValue' in value) return {__firestoreTimestamp:value.timestampValue};
   if ('arrayValue' in value) return (value.arrayValue.values || []).map(decodeValue);
   if ('mapValue' in value) return decodeFields(value.mapValue.fields || {});
   return null;
@@ -321,11 +327,24 @@ async function readDocument(env, collection, id) {
   return payload ? { id, data: decodeFields(payload.fields || {}), updateTime: payload.updateTime || '' } : null;
 }
 
-async function writeDocument(env, collection, id, data) {
-  return firestoreRequest(env, `/${encodeURIComponent(collection)}/${encodeURIComponent(id)}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ fields: encodeFields(data) })
+async function writeDocument(env, collection, id, data, updateTime = '') {
+  if(updateTime){
+    const result=await commitDocuments(env,[{collection,id,data,prior:{updateTime}}]);
+    return {updateTime:result?.writeResults?.[0]?.updateTime||''};
+  }
+  return firestoreRequest(env, '/' + encodeURIComponent(collection) + '/' + encodeURIComponent(id), {
+    method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({fields:encodeFields(data)})
+  });
+}
+
+// Snapshot and dirty metadata must commit together; conflicts are retried by the caller/job.
+async function commitDocuments(env, documents) {
+  return firestoreRequest(env, ':commit', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({writes: documents.map(({collection,id,data,prior,unconditional=false}) => ({
+      update: {name: documentBase(env).replace('https://firestore.googleapis.com/v1/','') + '/' + collection + '/' + id, fields: encodeFields(data)},
+      ...(unconditional ? {} : {currentDocument: prior ? {updateTime: prior.updateTime} : {exists: false}})
+    }))})
   });
 }
 
@@ -344,23 +363,16 @@ async function runQuery(env, collection, where = null, limit = 500) {
   }] : []);
 }
 
-async function runChangedResultsQuery(env, updatedAfter, limit = RECONCILE_RESULT_BATCH) {
+async function runChangedResultsQuery(env, timestamp, limit, afterId = '', legacy = false) {
+  const reference = id => ({referenceValue:documentBase(env).replace('https://firestore.googleapis.com/v1/','')+'/'+COLLECTIONS.raceResults+'/'+id});
   const structuredQuery = {
-    from: [{ collectionId: COLLECTIONS.raceResults }],
-    where: { fieldFilter: { field: { fieldPath: 'updatedAt' }, op: 'GREATER_THAN', value: encodeValue(Math.max(0, Number(updatedAfter || 0))) } },
-    orderBy: [{ field: { fieldPath: 'updatedAt' }, direction: 'ASCENDING' }],
-    limit
+    from:[{collectionId:COLLECTIONS.raceResults}], limit,
+    ...(legacy ? {} : {where:{fieldFilter:{field:{fieldPath:'ingestedAt'},op:'GREATER_THAN_OR_EQUAL',value:{timestampValue:timestamp}}}}),
+    orderBy: legacy ? [{field:{fieldPath:'__name__'},direction:'ASCENDING'}] : [{field:{fieldPath:'ingestedAt'},direction:'ASCENDING'},{field:{fieldPath:'__name__'},direction:'ASCENDING'}],
+    ...(afterId ? {startAt:{before:false,values:legacy?[reference(afterId)]:[{timestampValue:timestamp},reference(afterId)]}} : {})
   };
-  const payload = await firestoreRequest(env, ':runQuery', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ structuredQuery })
-  });
-  return (Array.isArray(payload) ? payload : []).flatMap((item) => item.document ? [{
-    id: decodeURIComponent(String(item.document.name || '').split('/').pop()),
-    data: decodeFields(item.document.fields || {}),
-    updateTime: item.document.updateTime || ''
-  }] : []);
+  const payload=await firestoreRequest(env,':runQuery',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({structuredQuery})});
+  return (Array.isArray(payload)?payload:[]).flatMap(item=>item.document?[{id:decodeURIComponent(item.document.name.split('/').pop()),data:decodeFields(item.document.fields||{}),ingestedAt:item.document.fields?.ingestedAt?.timestampValue||'',updateTime:item.document.updateTime||''}]:[]);
 }
 
 function safeText(value, max) {
@@ -487,7 +499,8 @@ export function computeTrackEntries(rows, trackId, env = {}) {
       createdAt: Math.max(0, Number(row.pbAt || row.createdAt || 0)),
       accountCreatedAt: Math.max(0, Number(row.accountCreatedAt || row.createdAt || 0)),
       verified: false,
-      verifiedState: row.integrityVerified === true ? 1 : 0,
+      runVerified: false,
+      verifiedState: 0,
       integrityVerified: row.integrityVerified === true,
       validationState: row.integrityVerified === true ? 'integrity' : 'pending',
       betaTester: betaCutoff(env) > 0 && Number(row.createdAt || 0) > 0 && Number(row.createdAt) <= betaCutoff(env)
@@ -530,9 +543,12 @@ async function persistTrackSnapshot(env, trackId, entries, prior = null) {
   if (trackSnapshotIsCurrent(prior?.data, signature)) return { changed: false, entries, revision: Number(prior.data.revision || 0) };
   const revision = Math.max(0, Number(prior?.data?.revision || 0)) + 1;
   const now = Date.now();
-  await writeDocument(env, COLLECTIONS.track, trackId, { trackId, entries, updatedAt: now, builtAt: now, schemaVersion: TRACK_SCHEMA_VERSION, algorithmVersion: ALGORITHM_VERSION, revision, sourceRevision: revision, signature });
-  const meta = (await readDocument(env, COLLECTIONS.meta, 'current'))?.data || {};
-  await writeDocument(env, COLLECTIONS.meta, 'current', { ...meta, algorithmVersion: ALGORITHM_VERSION, schemaVersion: TRACK_SCHEMA_VERSION, dirty: true, revision: Math.max(Number(meta.revision || 0) + 1, revision), builtRevision: Number(meta.builtRevision || 0), lastPbAt: now, updatedAt: now, rankedWritesEnabled: String(env.RANKED_WRITES_ENABLED) !== 'false', multiplayerEnabled: String(env.MULTIPLAYER_ENABLED) !== 'false' });
+  const metaDoc = await readDocument(env, COLLECTIONS.meta, 'current');
+  const meta = metaDoc?.data || {};
+  await commitDocuments(env, [
+    {collection:COLLECTIONS.track,id:trackId,prior,data:{trackId,entries,updatedAt:now,builtAt:now,schemaVersion:TRACK_SCHEMA_VERSION,algorithmVersion:ALGORITHM_VERSION,revision,sourceRevision:revision,signature}},
+    {collection:COLLECTIONS.meta,id:'current',prior:metaDoc,data:{...meta,algorithmVersion:ALGORITHM_VERSION,schemaVersion:TRACK_SCHEMA_VERSION,dirty:true,revision:Math.max(Number(meta.revision||0)+1,revision),builtRevision:Number(meta.builtRevision||0),lastPbAt:now,updatedAt:now,rankedWritesEnabled:String(env.RANKED_WRITES_ENABLED)!=='false',multiplayerEnabled:String(env.MULTIPLAYER_ENABLED)!=='false'}}
+  ]);
   return { changed: true, entries, revision };
 }
 
@@ -639,7 +655,9 @@ export function computeOverall(trackDocuments, priorEntries = [], betaTesterIds 
 }
 
 async function rebuildTrack(env, trackId, identityOverride = null) {
-  const candidates = (await runQuery(env, COLLECTIONS.raceResults, { field: 'trackId', value: trackId }, TRACK_LIMIT)).map((document) => document.data);
+  const prior = await readDocument(env, COLLECTIONS.track, trackId);
+  const candidates = (await runQuery(env, COLLECTIONS.raceResults, { field: 'trackId', value: trackId }, TRACK_LIMIT + 1)).map((document) => document.data);
+  if(candidates.length > TRACK_LIMIT) throw new Error('TRACK_CAP_REQUIRES_PAGINATION');
   const integrity = await Promise.all(candidates.map((row) => replayIntegrityValid(row)));
   const rows = candidates.map((row, index) => ({ ...row, integrityVerified: integrity[index], validationState: integrity[index] ? 'integrity' : 'pending' }));
   if (identityOverride?.accountId) {
@@ -655,15 +673,16 @@ async function rebuildTrack(env, trackId, identityOverride = null) {
     }
   }
   const entries = computeTrackEntries(rows, trackId, env);
-  const prior = await readDocument(env, COLLECTIONS.track, trackId);
   return persistTrackSnapshot(env, trackId, entries, prior);
 }
 
-async function mergeCanonicalResultIntoTrack(env, trackId, canonicalResult, integrityVerified = false) {
+export async function mergeCanonicalResultIntoTrack(env, trackId, canonicalResult, integrityVerified = false) {
   const prior = await readDocument(env, COLLECTIONS.track, trackId);
   if (!prior || prior.data?.algorithmVersion !== ALGORITHM_VERSION || !Array.isArray(prior.data?.entries)) return rebuildTrack(env, trackId);
   const normalized = computeTrackEntries([{ ...canonicalResult, integrityVerified, validationState: integrityVerified ? 'integrity' : 'pending' }], trackId, env)[0];
   if (!normalized) throw new Error('Canonical PB failed structural validation');
+  const existing=prior.data.entries.find(row=>safeText(row.accountId||row.userId,128)===normalized.accountId);
+  if(existing && (Number(existing.timeMs)<normalized.timeMs || (Number(existing.timeMs)===normalized.timeMs && Number(existing.uploadId||0)>=Number(normalized.uploadId||0))))return {changed:false,entries:prior.data.entries,revision:Number(prior.data.revision||0)};
   const entries = rankTrustedTrackEntries([
     ...prior.data.entries.filter((entry) => safeText(entry.accountId || entry.userId, 128) !== normalized.accountId),
     normalized
@@ -672,41 +691,31 @@ async function mergeCanonicalResultIntoTrack(env, trackId, canonicalResult, inte
 }
 
 export async function reconcileCanonicalChanges(env) {
-  const jobId = 'canonical_reconcile';
-  const priorJobDocument = await readDocument(env, COLLECTIONS.jobs, jobId);
-  const priorJob = priorJobDocument?.data || {};
-  const meta = priorJobDocument ? {} : ((await readDocument(env, COLLECTIONS.meta, 'current'))?.data || {});
-  const cursor = Math.max(0, Number(priorJob.cursorUpdatedAt || meta.lastPbAt || 0));
-  const changed = await runChangedResultsQuery(env, cursor, RECONCILE_RESULT_BATCH);
-  const queued = new Set((Array.isArray(priorJob.pendingTrackIds) ? priorJob.pendingTrackIds : []).map((value) => safeText(value, 80)).filter(Boolean));
-  let nextCursor = cursor;
-  for (const document of changed) {
-    const trackId = safeText(document.data?.trackId, 80);
-    const updatedAt = Math.max(0, Number(document.data?.updatedAt || 0));
-    if (trackId && structurallyValidResult(document.data, trackId)) queued.add(trackId);
-    nextCursor = Math.max(nextCursor, updatedAt);
+  // New namespace discards any cursor poisoned by legacy client-clock timestamps.
+  const jobId='canonical_reconcile_v2';
+  const document=await readDocument(env,COLLECTIONS.jobs,jobId);
+  const job=document?.data||{};
+  const timestamp=typeof job.cursorIngestedAt==='string'?job.cursorIngestedAt:'1970-01-01T00:00:00.000000000Z';
+  const queued=new Set((job.pendingTrackIds||[]).map(id=>safeText(id,80)).filter(Boolean));
+  const capacity=Math.max(0,200-queued.size);
+  const budget=Math.min(RECONCILE_RESULT_BATCH,Math.floor(capacity/2));
+  const changed=budget?await runChangedResultsQuery(env,timestamp,budget,safeText(job.cursorDocumentId,256)):[];
+  const legacy=budget&&!job.backfillComplete?await runChangedResultsQuery(env,timestamp,budget,safeText(job.backfillDocumentId,256),true):[];
+  for(const row of [...changed,...legacy])if(structurallyValidResult(row.data,row.data.trackId))queued.add(safeText(row.data.trackId,80));
+  let rebuilt=0;
+  for(const id of [...queued].slice(0,RECONCILE_TRACK_BATCH)){
+    try{await rebuildTrack(env,id);queued.delete(id);rebuilt++;}
+    catch(error){queued.delete(id);queued.add(id);console.error('Canonical track reconciliation failed',id,String(error?.message||error));}
   }
-  const batch = [...queued].slice(0, RECONCILE_TRACK_BATCH);
-  const failed = [];
-  let rebuilt = 0;
-  for (const trackId of batch) {
-    try { await rebuildTrack(env, trackId); rebuilt += 1; }
-    catch (error) { failed.push(trackId); console.error('Canonical track reconciliation failed', trackId, String(error?.message || error)); }
-    queued.delete(trackId);
-  }
-  for (const trackId of failed) queued.add(trackId);
-  if (priorJobDocument && changed.length === 0 && batch.length === 0) {
-    return { scanned: 0, rebuilt: 0, pending: 0, cursorUpdatedAt: cursor, unchanged: true };
-  }
-  await writeDocument(env, COLLECTIONS.jobs, jobId, {
-    cursorUpdatedAt: nextCursor,
-    pendingTrackIds: [...queued].slice(0, 200),
-    lastScanAt: Date.now(),
-    lastChangedDocuments: changed.length,
-    lastRebuiltTracks: rebuilt,
-    schemaVersion: 1
-  });
-  return { scanned: changed.length, rebuilt, pending: queued.size, cursorUpdatedAt: nextCursor };
+  if(document&&!changed.length&&!legacy.length&&!queued.size&&!rebuilt&&job.backfillComplete)return {scanned:0,rebuilt:0,pending:0,unchanged:true};
+  await writeDocument(env,COLLECTIONS.jobs,jobId,{
+    cursorIngestedAt:changed.length?changed.at(-1).ingestedAt:timestamp,
+    cursorDocumentId:changed.length?changed.at(-1).id:safeText(job.cursorDocumentId,256),
+    backfillDocumentId:legacy.length?legacy.at(-1).id:safeText(job.backfillDocumentId,256),
+    backfillComplete:Boolean(job.backfillComplete||(budget&&legacy.length<budget)),
+    pendingTrackIds:[...queued],lastScanAt:Date.now(),schemaVersion:2
+  },document?.updateTime||'');
+  return {scanned:changed.length+legacy.length,rebuilt,pending:queued.size};
 }
 
 async function mapConcurrent(values, concurrency, mapper) {
@@ -726,10 +735,11 @@ export async function rebuildOverall(env, force = false) {
   const metaDoc = await readDocument(env, COLLECTIONS.meta, 'current');
   const meta = metaDoc?.data || {};
   const now = Date.now();
-  const metricsOutdated = Number(meta.averagePlacementVersion || 0) < AVERAGE_PLACEMENT_VERSION || Number(meta.derivedMetricsVersion || 0) < DERIVED_METRICS_VERSION;
+  const metricsOutdated = Number(meta.cosmeticEntitlementVersion||0)<1 || Number(meta.averagePlacementVersion || 0) < AVERAGE_PLACEMENT_VERSION || Number(meta.derivedMetricsVersion || 0) < DERIVED_METRICS_VERSION;
   if (!force && !metricsOutdated && (!meta.dirty || now - Number(meta.lastOverallBuildAt || 0) < REBUILD_COOLDOWN_MS)) return { rebuilt: false, reason: meta.dirty ? 'cooldown' : 'clean', revision: Number(meta.builtRevision || 0) };
   const boards = (await runQuery(env, COLLECTIONS.track, null, 100)).map((document) => document.data);
-  const prior = (await readDocument(env, COLLECTIONS.overall, 'main'))?.data || {};
+  const priorDoc = await readDocument(env, COLLECTIONS.overall, 'main');
+  const prior = priorDoc?.data || {};
   const migration = (await readDocument(env, COLLECTIONS.jobs, 'release_migration'))?.data || {};
   const betaTesterIds = new Set([...(migration.awardedBadgeIds || []),...(migration.pendingBadges || [])].map((value) => safeText(value, 128)).filter(Boolean));
   const entries = computeOverall(boards, prior.entries || [], betaTesterIds);
@@ -752,9 +762,15 @@ export async function rebuildOverall(env, force = false) {
       }
     };
   }).filter((summary) => summary.trackId).sort((a, b) => b.weight - a.weight || b.fieldSize - a.fieldSize || a.trackId.localeCompare(b.trackId));
+  const priorById=new Map((prior.entries||[]).map(row=>[row.userId,row]));
+  const entitlementWrites=[];
+  for(const row of entries){
+    const allowance=cosmeticEntitlement(row,betaTesterIds.has(row.userId));
+    const old=priorById.get(row.userId);
+    if(Number(meta.cosmeticEntitlementVersion||0)<1||!old||JSON.stringify(allowance)!==JSON.stringify(cosmeticEntitlement(old,old.badges?.betaTester===true)))entitlementWrites.push({collection:'0.6.2_s1_cosmetic_entitlements',id:row.userId,data:allowance,unconditional:true});
+  }
   const revision = Number(meta.revision || 0);
-  await writeDocument(env, COLLECTIONS.overall, 'main', { entries, trackSummaries, updatedAt: now, builtAt: now, seededBy: 'polytrack-ranked-worker', revision, builtRevision: revision, sourceRevision: revision, algorithmVersion: ALGORITHM_VERSION, schemaVersion: TRACK_SCHEMA_VERSION, averagePlacementVersion: AVERAGE_PLACEMENT_VERSION, derivedMetricsVersion: DERIVED_METRICS_VERSION, entryLimit: OVERALL_LIMIT, trackLimit: TRACK_LIMIT });
-  await writeDocument(env, COLLECTIONS.meta, 'current', { ...meta, dirty: false, revision, builtRevision: revision, lastOverallBuildAt: now, updatedAt: now, algorithmVersion: ALGORITHM_VERSION, schemaVersion: TRACK_SCHEMA_VERSION, averagePlacementVersion: AVERAGE_PLACEMENT_VERSION, derivedMetricsVersion: DERIVED_METRICS_VERSION, rankedWritesEnabled: String(env.RANKED_WRITES_ENABLED) !== 'false', multiplayerEnabled: String(env.MULTIPLAYER_ENABLED) !== 'false' });
+  await commitDocuments(env,[...entitlementWrites,{collection:COLLECTIONS.overall,id:'main',prior:priorDoc,data: { entries, trackSummaries, updatedAt: now, builtAt: now, seededBy: 'polytrack-ranked-worker', revision, builtRevision: revision, sourceRevision: revision, algorithmVersion: ALGORITHM_VERSION, schemaVersion: TRACK_SCHEMA_VERSION, averagePlacementVersion: AVERAGE_PLACEMENT_VERSION, derivedMetricsVersion: DERIVED_METRICS_VERSION, entryLimit: OVERALL_LIMIT, trackLimit: TRACK_LIMIT }},{collection:COLLECTIONS.meta,id:'current',prior:metaDoc,data: { ...meta, cosmeticEntitlementVersion:1, dirty: false, revision, builtRevision: revision, lastOverallBuildAt: now, updatedAt: now, algorithmVersion: ALGORITHM_VERSION, schemaVersion: TRACK_SCHEMA_VERSION, averagePlacementVersion: AVERAGE_PLACEMENT_VERSION, derivedMetricsVersion: DERIVED_METRICS_VERSION, rankedWritesEnabled: String(env.RANKED_WRITES_ENABLED) !== 'false', multiplayerEnabled: String(env.MULTIPLAYER_ENABLED) !== 'false' }}]);
   return { rebuilt: true, revision, racers: entries.length, tracks: trackSummaries.length };
 }
 
@@ -778,15 +794,16 @@ async function notifyProfile(request, env, context, uid, body) {
   const trackIds = [...new Set(results.map((result) => safeText(result.data.trackId, 80)).filter(Boolean))].slice(0, 100);
   const signature = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(identity))).then((bytes) => base64Url(new Uint8Array(bytes)));
   const jobId = `profile_${accountId}`;
-  const existing = (await readDocument(env, COLLECTIONS.jobs, jobId))?.data || {};
+  const existingDoc=await readDocument(env,COLLECTIONS.jobs,jobId);
+  const existing=existingDoc?.data||{};
   if (existing.signature === signature && (!Array.isArray(existing.pendingTrackIds) || existing.pendingTrackIds.length === 0)) {
     return json(request.headers.get('Origin') || '', env, 200, { accepted: true, accountId, queued: 0, unchanged: true });
   }
   const pendingTrackIds = existing.signature === signature
     ? [...new Set([...(existing.pendingTrackIds || []), ...trackIds])]
     : trackIds;
-  await writeDocument(env, COLLECTIONS.jobs, jobId, { kind: 'profile', active: pendingTrackIds.length > 0, accountId, identity, signature, pendingTrackIds, createdAt: Number(existing.createdAt || Date.now()), updatedAt: Date.now() });
-  const task = processProfileJob(env, jobId, { kind: 'profile', active: true, accountId, identity, signature, pendingTrackIds });
+  const written=await writeDocument(env, COLLECTIONS.jobs, jobId, { kind: 'profile', active: pendingTrackIds.length > 0, accountId, identity, signature, pendingTrackIds, createdAt: Number(existing.createdAt || Date.now()), updatedAt: Date.now() },existingDoc?.updateTime||'');
+  const task = processProfileJob(env, jobId, { kind: 'profile', active: true, accountId, identity, signature, pendingTrackIds },written?.updateTime||'');
   if (context.waitUntil) context.waitUntil(task.catch((error) => console.error('Deferred profile job failed', String(error?.message || error))));
   return json(request.headers.get('Origin') || '', env, 202, { accepted: true, accountId, queued: pendingTrackIds.length });
 }
@@ -800,6 +817,7 @@ async function updateProfileCosmetics(request, env, context, uid, body) {
     return json(origin, env, 403, { error: 'profile_not_owned' });
   }
   const cosmetics = sanitizeProfileCosmetics(body.cosmetics);
+  if(profile.data.cosmeticsSyncedAt && JSON.stringify(cosmetics)!==JSON.stringify(sanitizeProfileCosmetics(profile.data.profileCosmetics)))return json(origin,env,409,{error:'cosmetics_superseded'});
   const [overall, badge] = await Promise.all([
     readDocument(env, COLLECTIONS.overall, 'main'),
     readDocument(env, COLLECTIONS.badges, accountId)
@@ -807,43 +825,47 @@ async function updateProfileCosmetics(request, env, context, uid, body) {
   const entry = (Array.isArray(overall?.data?.entries) ? overall.data.entries : []).find((row) => safeText(row.userId || row.accountId, 128) === accountId) || {};
   const betaTester = badge?.data?.betaTester === true || entry?.badges?.betaTester === true;
   if (!profileCosmeticsUnlocked(cosmetics, entry, betaTester)) return json(origin, env, 403, { error: 'cosmetic_locked' });
-  await writeDocument(env, COLLECTIONS.profiles, accountId, { ...profile.data, profileCosmetics: cosmetics, updatedAt: Date.now() });
+  await writeDocument(env, COLLECTIONS.profiles, accountId, { ...profile.data, profileCosmetics: cosmetics, updatedAt: Date.now() }, profile.updateTime);
   if (overall?.data && Array.isArray(overall.data.entries)) {
     const entries = overall.data.entries.map((row) => safeText(row.userId || row.accountId, 128) === accountId ? { ...row, profileCosmetics: cosmetics } : row);
-    await writeDocument(env, COLLECTIONS.overall, 'main', { ...overall.data, entries, identityUpdatedAt: Date.now() });
+    await writeDocument(env, COLLECTIONS.overall, 'main', { ...overall.data, entries, identityUpdatedAt: Date.now() }, overall.updateTime);
   }
-  await writeDocument(env, COLLECTIONS.cosmeticJobs, accountId, { accountId, ownerUid: uid, cosmetics, active: false, updatedAt: Date.now(), completedAt: Date.now(), error: '' });
   return notifyProfile(request, env, context, uid, { accountId });
 }
 
-async function processProfileJob(env, jobId, job) {
+async function processProfileJob(env, jobId, job, updateTime='') {
   const pending = Array.isArray(job.pendingTrackIds) ? job.pendingTrackIds.map((value) => safeText(value, 80)).filter(Boolean) : [];
-  const batch = pending.slice(0, 8);
+  const batch = pending.slice(0, 3);
   let changed = 0;
   for (const trackId of batch) if ((await rebuildTrack(env, trackId, job.identity)).changed) changed += 1;
   const remaining = pending.slice(batch.length);
-  await writeDocument(env, COLLECTIONS.jobs, jobId, { ...job, active: remaining.length > 0, pendingTrackIds: remaining, processed: Math.max(0, Number(job.processed || 0)) + batch.length, changed: Math.max(0, Number(job.changed || 0)) + changed, updatedAt: Date.now(), completedAt: remaining.length ? 0 : Date.now() });
+  await writeDocument(env, COLLECTIONS.jobs, jobId, { ...job, active: remaining.length > 0, pendingTrackIds: remaining, processed: Math.max(0, Number(job.processed || 0)) + batch.length, changed: Math.max(0, Number(job.changed || 0)) + changed, updatedAt: Date.now(), completedAt: remaining.length ? 0 : Date.now() },updateTime);
   if (changed) await rebuildOverall(env, false);
   return { checked: batch.length, changed, remaining: remaining.length };
 }
 
 async function processProfileJobs(env) {
   const jobs = await runQuery(env, COLLECTIONS.jobs, { field: 'active', value: true }, 5);
-  for (const job of jobs) {
+  for (const job of jobs.slice(0,1)) {
     if (job.data.kind !== 'profile') continue;
     if (!Array.isArray(job.data.pendingTrackIds) || !job.data.pendingTrackIds.length) continue;
-    await processProfileJob(env, job.id, job.data);
+    await processProfileJob(env, job.id, job.data,job.updateTime);
   }
 }
 
 async function processCosmeticJobs(env) {
-  const jobs = await runQuery(env, COLLECTIONS.cosmeticJobs, { field: 'active', value: true }, 10);
+  const jobs = await runQuery(env, COLLECTIONS.cosmeticJobs, { field: 'active', value: true }, 1);
   for (const job of jobs) {
     const accountId = safeText(job.data.accountId, 128);
     const ownerUid = safeText(job.data.ownerUid, 128);
     const profile = accountId ? await readDocument(env, COLLECTIONS.profiles, accountId) : null;
     if (!profile || profile.data.ownerUid !== ownerUid || safeText(profile.data.accountId, 128) !== accountId) {
-      await writeDocument(env, COLLECTIONS.cosmeticJobs, job.id, { ...job.data, active: false, error: 'profile_not_owned', completedAt: Date.now() });
+      await writeDocument(env, COLLECTIONS.cosmeticJobs, job.id, { ...job.data, active: false, error: 'profile_not_owned', completedAt: Date.now() },job.updateTime);
+      continue;
+    }
+    // A delayed job must not restore a design superseded by a direct profile save.
+    if (JSON.stringify(sanitizeProfileCosmetics(profile.data.profileCosmetics)) !== JSON.stringify(sanitizeProfileCosmetics(job.data.cosmetics))) {
+      await writeDocument(env, COLLECTIONS.cosmeticJobs, job.id, { ...job.data, active: false, error: 'superseded', completedAt: Date.now() },job.updateTime);
       continue;
     }
     const cosmetics = sanitizeProfileCosmetics(job.data.cosmetics);
@@ -854,19 +876,19 @@ async function processCosmeticJobs(env) {
     const entry = (Array.isArray(overall?.data?.entries) ? overall.data.entries : []).find((row) => safeText(row.userId || row.accountId, 128) === accountId) || {};
     const betaTester = badge?.data?.betaTester === true || entry?.badges?.betaTester === true;
     if (!profileCosmeticsUnlocked(cosmetics, entry, betaTester)) {
-      await writeDocument(env, COLLECTIONS.cosmeticJobs, job.id, { ...job.data, active: false, error: 'cosmetic_locked', completedAt: Date.now() });
+      await writeDocument(env, COLLECTIONS.cosmeticJobs, job.id, { ...job.data, active: false, error: 'cosmetic_locked', completedAt: Date.now() },job.updateTime);
       continue;
     }
-    await writeDocument(env, COLLECTIONS.profiles, accountId, { ...profile.data, profileCosmetics: cosmetics, updatedAt: Math.max(Number(profile.data.updatedAt || 0), Number(job.data.updatedAt || 0)) });
+    await writeDocument(env, COLLECTIONS.profiles, accountId, { ...profile.data, profileCosmetics: cosmetics, updatedAt: Math.max(Number(profile.data.updatedAt || 0), Number(job.data.updatedAt || 0)) }, profile.updateTime);
     if (overall?.data && Array.isArray(overall.data.entries)) {
       const entries = overall.data.entries.map((row) => safeText(row.userId || row.accountId, 128) === accountId ? { ...row, profileCosmetics: cosmetics } : row);
-      await writeDocument(env, COLLECTIONS.overall, 'main', { ...overall.data, entries, identityUpdatedAt: Date.now() });
+      await writeDocument(env, COLLECTIONS.overall, 'main', { ...overall.data, entries, identityUpdatedAt: Date.now() }, overall.updateTime);
     }
     const deferred = [];
     const origin = [...allowedOrigins(env)][0] || '';
     await notifyProfile(new Request('https://polytrack-ranked.internal/v1/profile/notify', { headers: { Origin: origin } }), env, { waitUntil(task) { deferred.push(task); } }, ownerUid, { accountId });
     await Promise.allSettled(deferred);
-    await writeDocument(env, COLLECTIONS.cosmeticJobs, job.id, { ...job.data, active: false, completedAt: Date.now(), error: '' });
+    await writeDocument(env, COLLECTIONS.cosmeticJobs, job.id, { ...job.data, active: false, completedAt: Date.now(), error: '' },job.updateTime);
   }
 }
 
@@ -916,12 +938,14 @@ async function processMigrationJob(env, supplied = null) {
   const remainingTracks = pendingTracks.slice(processedTracks);
   let awardedBadges = 0;
   if (!remainingTracks.length) {
+    const badgeWrites=[];
     for (const accountId of [...pendingBadges].slice(0, MIGRATION_BADGE_BATCH)) {
-      await writeDocument(env, COLLECTIONS.badges, accountId, { accountId, betaTester: true, awardedAt: Date.now(), cutoffAt: betaCutoff(env), source: 'release-migration' });
+      badgeWrites.push({collection:COLLECTIONS.badges,id:accountId,data:{accountId,betaTester:true,awardedAt:Date.now(),cutoffAt:betaCutoff(env),source:'release-migration'},unconditional:true});
       pendingBadges.delete(accountId);
       awardedBadgeIds.add(accountId);
       awardedBadges += 1;
     }
+    if(badgeWrites.length)await commitDocuments(env,badgeWrites);
   }
   const complete = !remainingTracks.length && pendingBadges.size === 0;
   const next = { ...job, migrationVersion: MIGRATION_VERSION, pendingTrackIds: remainingTracks, pendingBadges: [...pendingBadges], awardedBadgeIds: [...awardedBadgeIds], processedTracks: Math.max(0, Number(job.processedTracks || 0)) + processedTracks, awardedBadges: Math.max(0, Number(job.awardedBadges || 0)) + awardedBadges, updatedAt: Date.now(), completedAt: complete ? Date.now() : 0 };
@@ -959,7 +983,7 @@ async function publicSnapshot(request, env, context, origin, collection, id) {
         integrityStateVersion: INTEGRITY_STATE_VERSION,
         entries: snapshot.data.entries.map((entry) => ({
           ...entry,
-          verifiedState: entry.integrityVerified === true ? 1 : 0,
+          verifiedState: entry.runVerified === true ? 1 : 0,
         })),
       }
     : snapshot.data;
@@ -1031,10 +1055,13 @@ export default {
   },
   scheduled(_event, env, context) {
     context.waitUntil((async()=>{
-      await processCosmeticJobs(env);
-      await processProfileJobs(env);
-      await resumeOrCreateMigration(env);
-      await reconcileCanonicalChanges(env);
+      // Separate cron invocations keep PB recovery and optional maintenance within Free-plan subrequests.
+      const maintenance=_event.cron==='2-59/5 * * * *';
+      const tasks=maintenance?[[processCosmeticJobs,processProfileJobs,resumeOrCreateMigration][Math.floor(Number(_event.scheduledTime||Date.now())/300000)%3]]:[reconcileCanonicalChanges];
+      for (const task of tasks) {
+        try { await task(env); }
+        catch (error) { console.error('Scheduled task failed', task.name, String(error?.message || error)); }
+      }
       await rebuildOverall(env, false);
     })().catch((error) => console.error('Scheduled Ranked work failed', String(error?.message || error))));
   }
