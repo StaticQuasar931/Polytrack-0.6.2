@@ -1,1 +1,23 @@
-<!doctype html><html><head><meta charset="utf-8"><link rel="preload" href="forced_square.woff2" as="font" type="font/woff2" crossorigin="anonymous"/><link rel="preload" href="images/logo.svg" as="image" type="image/svg+xml"/><link rel="preload" href="images/discord.svg" as="image" type="image/svg+xml"/><link rel="manifest" href="manifest.json"/><meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,viewport-fit=cover,user-scalable=no"><script defer="defer" src="error_screen.bundle.js"></script><script defer="defer" src="main.bundle.js"></script></head><body><canvas id="screen"></canvas><div id="ui"></div><div id="transition-layer"></div></body></html>
+<script>
+  const PASSWORD = "precious_bundles67";
+
+  function checkPassword() {
+    const input = document.getElementById("password").value;
+    const error = document.getElementById("error");
+
+    if (input === PASSWORD) {
+      document.getElementById("password-screen").style.display = "none";
+      document.getElementById("game").style.display = "block";
+
+      const script1 = document.createElement("script");
+      script1.src = "error_screen.bundle.js";
+      document.body.appendChild(script1);
+
+      const script2 = document.createElement("script");
+      script2.src = "main.bundle.js";
+      document.body.appendChild(script2);
+    } else {
+      error.textContent = "Incorrect password 💀";
+    }
+  }
+</script>
