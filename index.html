@@ -1,1 +1,160 @@
-<!doctype html><html><head><meta charset="utf-8"><link rel="preload" href="forced_square.woff2" as="font" type="font/woff2" crossorigin="anonymous"/><link rel="preload" href="images/logo.svg" as="image" type="image/svg+xml"/><link rel="preload" href="images/discord.svg" as="image" type="image/svg+xml"/><link rel="manifest" href="manifest.json"/><meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,viewport-fit=cover,user-scalable=no"><script defer="defer" src="error_screen.bundle.js"></script><script defer="defer" src="main.bundle.js"></script></head><body><canvas id="screen"></canvas><div id="ui"></div><div id="transition-layer"></div></body></html>
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+
+  <link rel="preload" href="forced_square.woff2"
+        as="font" type="font/woff2" crossorigin="anonymous"/>
+
+  <link rel="preload" href="images/logo.svg"
+        as="image" type="image/svg+xml"/>
+
+  <link rel="preload" href="images/discord.svg"
+        as="image" type="image/svg+xml"/>
+
+  <link rel="manifest" href="manifest.json"/>
+
+  <meta name="viewport"
+        content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,viewport-fit=cover,user-scalable=no">
+
+  <script defer src="error_screen.bundle.js"></script>
+  <script defer src="main.bundle.js"></script>
+
+  <style>
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #111;
+    }
+
+    #screen {
+      width: 100%;
+      height: 100%;
+    }
+
+    #ui {
+      width: 100%;
+      height: 100%;
+    }
+
+    #transition-layer {
+      width: 100%;
+      height: 100%;
+    }
+
+    /* PASSWORD SCREEN */
+    #password-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 999999;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #111;
+      color: white;
+      font-family: Arial, sans-serif;
+    }
+
+    #password-box {
+      text-align: center;
+      background: #1c1c1c;
+      padding: 35px;
+      border-radius: 15px;
+      box-shadow: 0 0 30px rgba(0,0,0,0.6);
+    }
+
+    #password-box h1 {
+      margin-top: 0;
+    }
+
+    #password {
+      width: 220px;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      outline: none;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+
+    #enter-button {
+      margin-top: 12px;
+      padding: 12px 25px;
+      border: none;
+      border-radius: 8px;
+      background: white;
+      color: black;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 15px;
+    }
+
+    #enter-button:hover {
+      transform: scale(1.05);
+    }
+
+    #error {
+      color: #ff5555;
+      margin-top: 12px;
+      min-height: 20px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ORIGINAL POLYTRACK -->
+  <canvas id="screen"></canvas>
+  <div id="ui"></div>
+  <div id="transition-layer"></div>
+
+  <!-- PASSWORD SCREEN -->
+  <div id="password-screen">
+    <div id="password-box">
+      <h1>🔒 PolyTrack</h1>
+      <p>Enter password to play</p>
+
+      <input
+        type="password"
+        id="password"
+        placeholder="Password"
+        autocomplete="off"
+      >
+
+      <br>
+
+      <button id="enter-button" onclick="checkPassword()">
+        ENTER
+      </button>
+
+      <div id="error"></div>
+    </div>
+  </div>
+
+  <script>
+    const PASSWORD = "precious_bundles67";
+
+    function checkPassword() {
+      const input = document.getElementById("password").value;
+      const error = document.getElementById("error");
+
+      if (input === PASSWORD) {
+        document.getElementById("password-screen").style.display = "none";
+      } else {
+        error.textContent = "Incorrect password 💀";
+        document.getElementById("password").value = "";
+        document.getElementById("password").focus();
+      }
+    }
+
+    document.getElementById("password").addEventListener("keydown", function(event) {
+      if (event.key === "Enter") {
+        checkPassword();
+      }
+    });
+  </script>
+
+</body>
+</html>
