@@ -512,3 +512,11 @@ test('a caller boolean alone cannot promote a run but a bound server verdict can
 });
 
 test('first reconciliation creation cannot overwrite a concurrent verifier wake-up',async()=>{let guarded=false;await assert.rejects(reconcileCanonicalChanges({__TEST_FIRESTORE:async(path,init={})=>{if(path===':runQuery')return [];if(path===':commit'){const w=JSON.parse(init.body).writes[0];guarded=w.currentDocument.exists===false;throw Error('FIRESTORE_409');}return null;}}),/409/);assert.equal(guarded,true);});
+
+
+test('diamond is free and twin stars require eight Ranked tracks',()=>{
+ assert.equal(profileCosmeticsUnlocked({version:4,emblem:'diamond'},{raceCount:0}),true);
+ assert.equal(profileCosmeticsUnlocked({version:4,emblem:'twinStars'},{raceCount:7}),false);
+ assert.equal(profileCosmeticsUnlocked({version:4,emblem:'twinStars'},{raceCount:8}),true);
+ assert.equal(sanitizeProfileCosmetics({version:4,emblem:'twinStars'}).emblem,'twinStars');
+});

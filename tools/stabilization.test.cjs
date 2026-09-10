@@ -1,7 +1,7 @@
 const fs=require('node:fs');const vm=require('node:vm');const test=require('node:test');const assert=require('node:assert/strict');
 const source=fs.readFileSync(require('node:path').join(__dirname,'..','polytrack_062_patch.js'),'utf8');
 function extract(name){const start=source.search(new RegExp('^  (?:async )?function '+name+'\\(','m'));assert.ok(start>=0,name);const tail=source.slice(start);const end=tail.indexOf('\n  }');assert.ok(end>0,name);return tail.slice(0,end+4);}
-function run(name,context={}){vm.createContext(context);vm.runInContext(extract(name),context);return context[name];}
+function run(name,context={}){vm.createContext(context);if(['recommendationAction','rivalRecommendationAction','simulateRecommendation'].includes(name)&&!context.projectedFinish){context.trackInfo||=()=>({type:'official'});vm.runInContext(extract('rankedTrackWeightParts')+'\n'+extract('projectedFinish'),context);}vm.runInContext(extract(name),context);return context[name];}
 for(const direction of [1,-1])test(`profile unknown results sort last in direction ${direction}`,()=>{
  const ctx={profileSort:'time',profileSortDirection:direction,knownFinishWeight:x=>x.weight,trackInfo:()=>({name:'track'})};
  const result=run('sortProfileFinishes',ctx)([{timeMs:null},{timeMs:2000},{timeMs:1000},{timeMs:undefined}]);
@@ -207,4 +207,21 @@ test('Firebase failed initialization clears its memoized promise with retry back
  const ctx={Date,firestorePromise:null,firebaseRetryAt:0,loadScript:async()=>{throw Error('blocked')}};
  const get=run('db',ctx);await assert.rejects(get(),/blocked/);assert.equal(ctx.firestorePromise,null);assert.ok(ctx.firebaseRetryAt>Date.now());
  await assert.rejects(get(),/cooling down/);
+});
+
+
+test('new-track projection recomputes weight when a second racer becomes three',()=>{
+ const ctx={trackInfo:()=>({type:'official'})};vm.createContext(ctx);vm.runInContext(extract('rankedTrackWeightParts')+'\n'+extract('projectedFinish'),ctx);
+ const old=ctx.rankedTrackWeightParts('a',2,1,1).finalWeight;
+ const next=ctx.projectedFinish({trackId:'a',fieldSize:2,weight:old},1,3);
+ assert.ok(next.weight>old);assert.equal(next.weight,ctx.rankedTrackWeightParts('a',3,1,1).finalWeight);
+});
+test('self planner cannot reintroduce stale cached finishes after freshness resolution',()=>{
+ assert.doesNotMatch(extract('profileGuideMarkup'),/isSelf\?cachedFinishes/);
+});
+test('rival routes and personal routes do not share unlike percentage denominators',()=>{
+ assert.match(extract('profileGuideMarkup'),/rivalMode&&rival.length\?rival:personal/);
+});
+test('No badge is first and has a separate control style',()=>{
+ assert.match(source,/badge:\[\['none','No badge'/);assert.match(extract('profileCustomizerMarkup'),/badge-off-control/);
 });

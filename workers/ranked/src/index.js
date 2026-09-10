@@ -39,7 +39,7 @@ const PROFILE_COSMETIC_OPTIONS = Object.freeze({
   stage: new Set(['garage', 'slate', 'aqua', 'grid', 'horizon', 'night', 'storm', 'dunes', 'podium']),
   stageTint: new Set(['natural', 'blue', 'teal', 'gold', 'red', 'pink', 'mono']),
   stripe: new Set(['standard', 'cyan', 'apex', 'chevron', 'sunset', 'split', 'grid', 'circuit', 'scan', 'blocks', 'gold', 'beta']),
-  emblem: new Set(['none', 'bolt', 'star', 'flag', 'flame', 'crown']),
+  emblem: new Set(['none', 'bolt', 'star', 'diamond', 'twinStars', 'flag', 'flame', 'crown']),
   title: new Set(['auto', 'none', 'contender', 'pbHunter', 'trackGrinder', 'podiumRegular', 'betaRacer']),
   badge: new Set(['auto', 'member', 'none', 'betaTester'])
 });
@@ -79,12 +79,12 @@ export function profileCosmeticsUnlocked(cosmetics, entry = {}, betaTester = fal
     stage: new Set(['garage', 'slate', 'aqua']),
     stageTint: new Set(['natural', 'blue', 'teal']),
     stripe: new Set(['standard', 'cyan', 'apex']),
-    emblem: new Set(['none', 'bolt', 'star']),
+    emblem: new Set(['none', 'bolt', 'star', 'diamond']),
     title: new Set(['auto', 'none']),
     badge: new Set(['auto', 'member', 'none'])
   };
   if (tracks >= 3) { allowed.theme.add('sunset'); allowed.theme.add('neon'); allowed.accent.add('coral'); allowed.accent.add('pink'); allowed.finish.add('gloss'); allowed.plate.add('notch'); allowed.edge.add('double'); allowed.stage.add('grid'); allowed.stage.add('horizon'); allowed.stage.add('dunes'); allowed.stageTint.add('gold'); allowed.stageTint.add('red'); allowed.stripe.add('sunset'); allowed.stripe.add('chevron'); allowed.stripe.add('split'); allowed.emblem.add('flag'); allowed.title.add('contender'); allowed.title.add('pbHunter'); }
-  if (tracks >= 8) { allowed.theme.add('forest'); allowed.theme.add('ember'); allowed.theme.add('crimson'); allowed.accent.add('violet'); allowed.accent.add('ice'); allowed.finish.add('carbon'); allowed.plate.add('bar'); allowed.edge.add('dashed'); allowed.stage.add('night'); allowed.stage.add('storm'); allowed.stageTint.add('pink'); allowed.stageTint.add('mono'); allowed.stripe.add('grid'); allowed.stripe.add('circuit'); allowed.stripe.add('scan'); allowed.stripe.add('blocks'); allowed.emblem.add('flame'); allowed.title.add('trackGrinder'); }
+  if (tracks >= 8) { allowed.theme.add('forest'); allowed.theme.add('ember'); allowed.theme.add('crimson'); allowed.accent.add('violet'); allowed.accent.add('ice'); allowed.finish.add('carbon'); allowed.plate.add('bar'); allowed.edge.add('dashed'); allowed.stage.add('night'); allowed.stage.add('storm'); allowed.stageTint.add('pink'); allowed.stageTint.add('mono'); allowed.stripe.add('grid'); allowed.stripe.add('circuit'); allowed.stripe.add('scan'); allowed.stripe.add('blocks'); allowed.emblem.add('flame'); allowed.emblem.add('twinStars'); allowed.title.add('trackGrinder'); }
   if (podium) { allowed.theme.add('podium'); allowed.finish.add('horizon'); allowed.stage.add('podium'); allowed.stripe.add('gold'); allowed.emblem.add('crown'); allowed.title.add('podiumRegular'); }
   if (betaTester) { allowed.theme.add('beta'); allowed.stripe.add('beta'); allowed.badge.add('betaTester'); allowed.title.add('betaRacer'); }
   return allowed.theme.has(value.theme) && allowed.accent.has(value.accent) && allowed.finish.has(value.finish) && allowed.plate.has(value.plate) && allowed.edge.has(value.edge) && allowed.stage.has(value.stage) && allowed.stageTint.has(value.stageTint) && allowed.stripe.has(value.stripe) && allowed.emblem.has(value.emblem) && allowed.title.has(value.title) && allowed.badge.has(value.badge);
@@ -759,7 +759,7 @@ export async function rebuildOverall(env, force = false) {
   const metaDoc = await readDocument(env, COLLECTIONS.meta, 'current');
   const meta = metaDoc?.data || {};
   const now = Date.now();
-  const metricsOutdated = Number(meta.cosmeticEntitlementVersion||0)<1 || Number(meta.averagePlacementVersion || 0) < AVERAGE_PLACEMENT_VERSION || Number(meta.derivedMetricsVersion || 0) < DERIVED_METRICS_VERSION;
+  const metricsOutdated = Number(meta.cosmeticEntitlementVersion||0)<2 || Number(meta.averagePlacementVersion || 0) < AVERAGE_PLACEMENT_VERSION || Number(meta.derivedMetricsVersion || 0) < DERIVED_METRICS_VERSION;
   if (!force && !metricsOutdated && (!meta.dirty || now - Number(meta.lastOverallBuildAt || 0) < REBUILD_COOLDOWN_MS)) return { rebuilt: false, reason: meta.dirty ? 'cooldown' : 'clean', revision: Number(meta.builtRevision || 0) };
   const boards = (await runQuery(env, COLLECTIONS.track, null, 100)).map((document) => document.data);
   const priorDoc = await readDocument(env, COLLECTIONS.overall, 'main');
@@ -791,10 +791,10 @@ export async function rebuildOverall(env, force = false) {
   for(const row of entries){
     const allowance=cosmeticEntitlement(row,betaTesterIds.has(row.userId));
     const old=priorById.get(row.userId);
-    if(Number(meta.cosmeticEntitlementVersion||0)<1||!old||JSON.stringify(allowance)!==JSON.stringify(cosmeticEntitlement(old,old.badges?.betaTester===true)))entitlementWrites.push({collection:'0.6.2_s1_cosmetic_entitlements',id:row.userId,data:allowance,unconditional:true});
+    if(Number(meta.cosmeticEntitlementVersion||0)<2||!old||JSON.stringify(allowance)!==JSON.stringify(cosmeticEntitlement(old,old.badges?.betaTester===true)))entitlementWrites.push({collection:'0.6.2_s1_cosmetic_entitlements',id:row.userId,data:allowance,unconditional:true});
   }
   const revision = Number(meta.revision || 0);
-  await commitDocuments(env,[...entitlementWrites,{collection:COLLECTIONS.overall,id:'main',prior:priorDoc,data: { entries, trackSummaries, updatedAt: now, builtAt: now, seededBy: 'polytrack-ranked-worker', revision, builtRevision: revision, sourceRevision: revision, algorithmVersion: ALGORITHM_VERSION, schemaVersion: TRACK_SCHEMA_VERSION, averagePlacementVersion: AVERAGE_PLACEMENT_VERSION, derivedMetricsVersion: DERIVED_METRICS_VERSION, entryLimit: OVERALL_LIMIT, trackLimit: TRACK_LIMIT }},{collection:COLLECTIONS.meta,id:'current',prior:metaDoc,data: { ...meta, cosmeticEntitlementVersion:1, dirty: false, revision, builtRevision: revision, lastOverallBuildAt: now, updatedAt: now, algorithmVersion: ALGORITHM_VERSION, schemaVersion: TRACK_SCHEMA_VERSION, averagePlacementVersion: AVERAGE_PLACEMENT_VERSION, derivedMetricsVersion: DERIVED_METRICS_VERSION, rankedWritesEnabled: String(env.RANKED_WRITES_ENABLED) !== 'false', multiplayerEnabled: String(env.MULTIPLAYER_ENABLED) !== 'false' }}]);
+  await commitDocuments(env,[...entitlementWrites,{collection:COLLECTIONS.overall,id:'main',prior:priorDoc,data: { entries, trackSummaries, updatedAt: now, builtAt: now, seededBy: 'polytrack-ranked-worker', revision, builtRevision: revision, sourceRevision: revision, algorithmVersion: ALGORITHM_VERSION, schemaVersion: TRACK_SCHEMA_VERSION, averagePlacementVersion: AVERAGE_PLACEMENT_VERSION, derivedMetricsVersion: DERIVED_METRICS_VERSION, entryLimit: OVERALL_LIMIT, trackLimit: TRACK_LIMIT }},{collection:COLLECTIONS.meta,id:'current',prior:metaDoc,data: { ...meta, cosmeticEntitlementVersion:2, dirty: false, revision, builtRevision: revision, lastOverallBuildAt: now, updatedAt: now, algorithmVersion: ALGORITHM_VERSION, schemaVersion: TRACK_SCHEMA_VERSION, averagePlacementVersion: AVERAGE_PLACEMENT_VERSION, derivedMetricsVersion: DERIVED_METRICS_VERSION, rankedWritesEnabled: String(env.RANKED_WRITES_ENABLED) !== 'false', multiplayerEnabled: String(env.MULTIPLAYER_ENABLED) !== 'false' }}]);
   return { rebuilt: true, revision, racers: entries.length, tracks: trackSummaries.length };
 }
 
