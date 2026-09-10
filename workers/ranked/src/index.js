@@ -1,3 +1,4 @@
+import { VERIFICATION_COLLECTION, verificationSchedule, verificationKey, verifiedVerdict, pendingSlot } from './verification.js';
 const FIREBASE_JWKS_URL = 'https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com';
 const FIREBASE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
 const PROJECT_ID = 'polytrack-052';
@@ -97,6 +98,7 @@ const OFFICIAL_IDS = new Set([
   '5803f9e963625804e3de3246d043dc7dde847aa32e991f7f7326b0453f1fa038','7eac4fee1111152cfba4d3737410264ca0f22c7f5a2211e79f0099589b8b48c0','148826aa16ffaa23dbc453b32cff05e025ddbce1773fc7733cc13d218926515a','93c7363dfea7fb09ca1d23b72cad5df43a30841d41c8ff25fb544c85bb03c7ae','7603aaeffa1989a649dfaa8e1804bed4481b49df233e377687d0669899566e52','c117823cf6788e3247b9ee63a0c091c07352bbe352c650a7790dc6718148c2fa','e4bcaca3a583bb0eb62a700a69d14e89c852f0c5bf740fca76e0519ebdfc9ab1','7239b17057127936907a805b0caa5d8c6f6c97eca9bdabf1a5312dce479629b7','99864b635d1891d22e17eb9267527a07a92c49c0f02893729fa2ded90e3ca0f9','a5341fe706097cff2a3812a3fc0d87399254557328351ae8e5c882700fc1a196','7d134c939df80c676a258266201beedd3b93572d5603f3ff4339ff8679803715','2fe4bd46b0075cc25fc770ce50adbb68447cf493c999635bb272d231811dd264','c20b4ee3cd517ca6cae7e43f047548757287fbd08ba81b97892a3ef520159a34','88647ea04145fbbbb19b55f1590e038fb0378acb2571110f02cb545cc46b0d57','2806030c503abb41a1a26fa9a570888be14296172bb273798ef0ad87a108a2ec','4697ea67b18c3f49b30a3d8884602115536650bc5435c88e3732e64d21a72d33','e5d084e06db4ab71196fea44efeceb23c8561266a78669c324a38f92581fe2db'
 ]);
 const COMMUNITY_IDS = new Set([
+  'fb769ac2ea77e8f19a21a9dd3071742f2342bd49c41e4748d7e8c7903d4f0778',
   '5159a8dac6a1f397407a7b5233ad570613531f6609f7dc897490c28c9f2c7a4e',
   '1783b7b6c30e7fddf7ffb7c8a4a8a3b65c1ef6ec317d908d6eb05e6c905a57f6',
   'ddfe00045807e2786552d1e31e1363384c365487180f65d4eff1aa41e334a8e8',
@@ -468,7 +470,7 @@ function betaCutoff(env) {
   return Math.max(0, Number(env.BETA_CUTOFF_MS || 0));
 }
 
-export function computeTrackEntries(rows, trackId, env = {}) {
+export function computeTrackEntries(rows, trackId, env = {}, verdicts = {}) {
   const best = new Map();
   for (const row of rows) {
     const accountId = safeText(row.accountId || row.userId, 128);
@@ -498,9 +500,9 @@ export function computeTrackEntries(rows, trackId, env = {}) {
       pbAt: Math.max(0, Number(row.pbAt || row.createdAt || 0)),
       createdAt: Math.max(0, Number(row.pbAt || row.createdAt || 0)),
       accountCreatedAt: Math.max(0, Number(row.accountCreatedAt || row.createdAt || 0)),
-      verified: false,
-      runVerified: false,
-      verifiedState: 0,
+      verified: verifiedVerdict(row, verdicts[accountId]),
+      runVerified: verifiedVerdict(row, verdicts[accountId]),
+      verifiedState: verifiedVerdict(row, verdicts[accountId]) ? 1 : 0,
       integrityVerified: row.integrityVerified === true,
       validationState: row.integrityVerified === true ? 'integrity' : 'pending',
       betaTester: betaCutoff(env) > 0 && Number(row.createdAt || 0) > 0 && Number(row.createdAt) <= betaCutoff(env)
@@ -532,6 +534,7 @@ async function persistTrackSnapshot(env, trackId, entries, prior = null) {
     entry.uploadId || '',
     entry.replayHash || '',
     entry.integrityVerified === true ? 1 : 0,
+    entry.runVerified === true ? 1 : 0,
     entry.name || '',
     entry.countryCode || '',
     entry.carId || '',
@@ -630,7 +633,7 @@ export function computeOverall(trackDocuments, priorEntries = [], betaTesterIds 
     return {
       userId: user.userId, name: safeText(user.name, 24), countryCode: safeText(user.countryCode, 8).toUpperCase(), carId: user.carId, carColors: user.carColors, carStyle: user.carStyle, profileCosmetics: sanitizeProfileCosmetics(user.profileCosmetics),
       accountCreatedAt: user.accountCreatedAt, latestPbAt: user.latestPbAt, totalPlaytimeMs: user.totalPlaytimeMs, score, raceCount: played, eligibleTrackCount: played,
-      provisional: played < MIN_RANKED_TRACKS, totalTracks: 78, officialCount: user.officialCount, communityCount: user.communityCount, customCount: user.customCount,
+      provisional: played < MIN_RANKED_TRACKS, totalTracks: OFFICIAL_IDS.size + COMMUNITY_IDS.size, officialCount: user.officialCount, communityCount: user.communityCount, customCount: user.customCount,
       weightedTracks: Number(allWeight.toFixed(3)), skillCost: Number(skillCost.toFixed(3)), coverageCost: Number(coverageCost.toFixed(3)), consistencyCost: Number(consistencyCost.toFixed(3)),
       averageFinish: Number((user.finishes.reduce((sum, finish) => sum + finish.rank, 0) / Math.max(1, played)).toFixed(2)), averageFinishVersion: 2,
       averagePlacement: Number((user.finishes.reduce((sum, finish) => sum + finish.rank, 0) / Math.max(1, played)).toFixed(2)), averagePlacementVersion: AVERAGE_PLACEMENT_VERSION,
@@ -654,7 +657,22 @@ export function computeOverall(trackDocuments, priorEntries = [], betaTesterIds 
   });
 }
 
-async function rebuildTrack(env, trackId, identityOverride = null) {
+async function prepareVerification(env, trackId, rows, complete = false) {
+  // One queue document per track avoids a verification read per racer on every PB.
+  const prior=await readDocument(env,VERIFICATION_COLLECTION,trackId);
+  const slots=Object.assign(Object.create(null),prior?.data?.slots||{});let changed=false;
+  if(complete){const present=new Set(rows.map(row=>safeText(row.accountId||row.userId,128)));for(const id of Object.keys(slots))if(!present.has(id)){delete slots[id];changed=true;}}
+  for(const row of rows){
+    if(!structurallyValidResult(row,trackId))continue;
+    const id=safeText(row.accountId||row.userId,128);
+    if(slots[id]?.key!==verificationKey(row)||slots[id]?.reason==='canonical_missing'){slots[id]=pendingSlot(row);changed=true;}
+  }
+  if(Object.keys(slots).length>TRACK_LIMIT)throw new Error('VERIFICATION_TRACK_CAP');
+  if(changed)await commitDocuments(env,[{collection:VERIFICATION_COLLECTION,id:trackId,prior,data:{trackId,slots,...verificationSchedule(slots),updatedAt:Date.now()}}]);
+  return slots;
+}
+
+export async function rebuildTrack(env, trackId, identityOverride = null) {
   const prior = await readDocument(env, COLLECTIONS.track, trackId);
   const candidates = (await runQuery(env, COLLECTIONS.raceResults, { field: 'trackId', value: trackId }, TRACK_LIMIT + 1)).map((document) => document.data);
   if(candidates.length > TRACK_LIMIT) throw new Error('TRACK_CAP_REQUIRES_PAGINATION');
@@ -672,20 +690,23 @@ async function rebuildTrack(env, trackId, identityOverride = null) {
       row.profileCosmetics = identityOverride.profileCosmetics;
     }
   }
-  const entries = computeTrackEntries(rows, trackId, env);
+  const verdicts=await prepareVerification(env,trackId,rows,true);
+  const entries = computeTrackEntries(rows, trackId, env, verdicts);
   return persistTrackSnapshot(env, trackId, entries, prior);
 }
 
 export async function mergeCanonicalResultIntoTrack(env, trackId, canonicalResult, integrityVerified = false) {
   const prior = await readDocument(env, COLLECTIONS.track, trackId);
   if (!prior || prior.data?.algorithmVersion !== ALGORITHM_VERSION || !Array.isArray(prior.data?.entries)) return rebuildTrack(env, trackId);
-  const normalized = computeTrackEntries([{ ...canonicalResult, integrityVerified, validationState: integrityVerified ? 'integrity' : 'pending' }], trackId, env)[0];
+  let normalized = computeTrackEntries([{ ...canonicalResult, integrityVerified, validationState: integrityVerified ? 'integrity' : 'pending' }], trackId, env)[0];
   if (!normalized) throw new Error('Canonical PB failed structural validation');
   const existing=prior.data.entries.find(row=>safeText(row.accountId||row.userId,128)===normalized.accountId);
   // Equal PB repair must use current canonical data, not a delayed notification payload.
   if(existing && Number(existing.timeMs)===normalized.timeMs && Number(existing.uploadId||0)===Number(normalized.uploadId||0) &&
     (existing.replayHash!==normalized.replayHash || (existing.integrityVerified===true)!==(normalized.integrityVerified===true)))return rebuildTrack(env,trackId);
   if(existing && (Number(existing.timeMs)<normalized.timeMs || (Number(existing.timeMs)===normalized.timeMs && Number(existing.uploadId||0)>=Number(normalized.uploadId||0))))return {changed:false,entries:prior.data.entries,revision:Number(prior.data.revision||0)};
+  const verdicts=await prepareVerification(env,trackId,[canonicalResult]);
+  normalized=computeTrackEntries([{...canonicalResult,integrityVerified}],trackId,env,verdicts)[0];
   const entries = rankTrustedTrackEntries([
     ...prior.data.entries.filter((entry) => safeText(entry.accountId || entry.userId, 128) !== normalized.accountId),
     normalized
@@ -711,13 +732,13 @@ export async function reconcileCanonicalChanges(env) {
     catch(error){queued.delete(id);queued.add(id);console.error('Canonical track reconciliation failed',id,String(error?.message||error));}
   }
   if(document&&!changed.length&&!legacy.length&&!queued.size&&!rebuilt&&job.backfillComplete)return {scanned:0,rebuilt:0,pending:0,unchanged:true};
-  await writeDocument(env,COLLECTIONS.jobs,jobId,{
+  await commitDocuments(env,[{collection:COLLECTIONS.jobs,id:jobId,prior:document,data:{
     cursorIngestedAt:changed.length?changed.at(-1).ingestedAt:timestamp,
     cursorDocumentId:changed.length?changed.at(-1).id:safeText(job.cursorDocumentId,256),
     backfillDocumentId:legacy.length?legacy.at(-1).id:safeText(job.backfillDocumentId,256),
     backfillComplete:Boolean(job.backfillComplete||(budget&&legacy.length<budget)),
     pendingTrackIds:[...queued],lastScanAt:Date.now(),schemaVersion:2
-  },document?.updateTime||'');
+  }}]);
   return {scanned:changed.length+legacy.length,rebuilt,pending:queued.size};
 }
 

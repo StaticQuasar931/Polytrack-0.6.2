@@ -127,3 +127,27 @@ test('native status resets when result identity cannot be established',()=>{
  assert.ok(body.indexOf('dataset.sqRunStatus=runStatus(racer)')<body.indexOf('if(!racer)'));
  assert.doesNotMatch(body,/rows\[rank-1\]/);
 });
+
+
+test('verified filtering preserves full-field weight and sorts waiting self by time',()=>{
+ const choose=run('visibleTrackEntries',{canonicalRaceTimeMs:x=>x.timeMs});
+ const rows=[{accountId:'b',timeMs:2000,runVerified:true,weight:3,fieldSize:20},{accountId:'me',timeMs:1000,runVerified:false,weight:3,fieldSize:20},{accountId:'a',timeMs:2000,runVerified:true,weight:3,fieldSize:20},{accountId:'other',timeMs:500,runVerified:false,weight:3,fieldSize:20}];
+ const selected=choose(rows,true,'me');assert.deepEqual(Array.from(selected,x=>x.accountId),['me','a','b']);assert.deepEqual(Array.from(selected,x=>x.position),[1,2,3]);assert.ok(selected.every(x=>x.fieldSize===20&&x.weight===3));
+});
+test('no verified results shows all waiting racers in deterministic order',()=>{
+ const choose=run('visibleTrackEntries',{canonicalRaceTimeMs:x=>x.timeMs});
+ assert.deepEqual(Array.from(choose([{accountId:'z',timeMs:1000},{accountId:'a',timeMs:1000}],true,'me'),x=>x.accountId),['a','z']);
+});
+test('PB normalization retains exact run verification and deterministic ties',()=>{
+ const ctx={safePositiveInt:(v,f)=>Number(v)>0?Number(v):f,canonicalRaceTimeMs:x=>x.timeMs,safeDisplayName:x=>x,getLastKnownName:()=>'',__pt062NormalizeStyle:x=>x,__pt062GetRememberedStyle:()=>'',safeRecordingId:x=>x,extractCarId:()=>'',normalizeCarColorId:x=>x,pbTimestamp:x=>x.pbAt||0,buildRecordingId:()=>1};
+ const normalize=run('computeTrackTopEntries',ctx);const rows=normalize([{trackId:'t',accountId:'b',timeMs:1000,runVerified:true},{trackId:'t',accountId:'a',timeMs:1000,verified:true}], 't',500);
+ assert.equal(rows[0].accountId,'a');assert.equal(rows[0].runVerified,false);assert.equal(rows[1].runVerified,true);
+});
+
+test('PB completion cannot reopen Ranked over gameplay',()=>{const body=extract('mirrorRaceResult');assert.doesNotMatch(body,/openPanel\(/);assert.match(body,/OVERALL_PB_DIRTY_KEY/);});
+
+test('canonical recovery retains only an exact published physics approval',()=>{
+ const fn=run('exactPublishedVerification');const row={accountId:'a',trackId:'t',timeMs:10,frames:10,uploadId:1,replayHash:'abc'};
+ assert.equal(fn(row,{...row,runVerified:true}),true);
+ for(const changed of [{accountId:'b'},{trackId:'x'},{timeMs:9},{frames:9},{uploadId:2},{replayHash:'def'},{runVerified:false}])assert.equal(fn(row,{...row,runVerified:true,...changed}),false);
+});

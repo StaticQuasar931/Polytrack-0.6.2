@@ -1,3 +1,4 @@
+import { verificationKey, verifiedVerdict, VERIFIER_VERSION, VERIFIER_ENGINE_DIGEST } from '../src/verification.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { rebuildOverall, mergeCanonicalResultIntoTrack, computeOverall, computeTrackEntries, handleRequest, profileCosmeticsUnlocked, reconcileCanonicalChanges, sanitizeProfileCosmetics, trackSnapshotIsCurrent, trackWeightParts } from '../src/index.js';
@@ -334,7 +335,7 @@ test('scheduled reconciliation discovers canonical PBs without a client Worker n
   const env={
     ALGORITHM_VERSION:'participation-v8-s1',
     __TEST_FIRESTORE:async(path,init={})=>{
-      if(path===':commit'){const writes=JSON.parse(init.body).writes;assert.equal(writes.length,2);assert.ok(writes.every(w=>w.currentDocument));wroteTrack=writes.some(w=>w.update.name.includes('s1_leaderboards_track'));return {};}
+      if(path===':commit'){const writes=JSON.parse(init.body).writes;if(writes[0]?.update?.name.includes('/0.6.2_s1_worker_jobs/')){assert.equal(writes[0].currentDocument.exists,false);return {};}if(writes[0]?.update?.name.includes('/0.6.2_s1_verification/')){assert.equal(writes.length,1);assert.equal(writes[0].currentDocument.exists,false);return {};}assert.equal(writes.length,2);assert.ok(writes.every(w=>w.currentDocument));wroteTrack=writes.some(w=>w.update.name.includes('s1_leaderboards_track'));return {};}
       if(init.method==='PATCH'){
         if(path.includes('s1_leaderboards_track'))wroteTrack=true;
         return {};
@@ -399,7 +400,7 @@ test('snapshot and dirty metadata are one guarded commit; conflict keeps track q
  let commit,job;
  const result=await reconcileCanonicalChanges({__TEST_FIRESTORE:async(path,init={})=>{
  if(path===':runQuery')return [{document:{name:'projects/test/databases/(default)/documents/results/racer',fields:Object.fromEntries(Object.entries(canonical).map(([k,v])=>[k,typeof v==='number'?{integerValue:String(v)}:typeof v==='boolean'?{booleanValue:v}:{stringValue:v}]))}}];
- if(path===':commit'){commit=JSON.parse(init.body);throw Error('FIRESTORE_409');}
+ if(path===':commit'){const next=JSON.parse(init.body);if(next.writes[0]?.update?.name.includes('/0.6.2_s1_worker_jobs/')){job=next.writes[0].update;assert.equal(next.writes[0].currentDocument.exists,false);return {};}if(next.writes[0]?.update?.name.includes('/0.6.2_s1_verification/'))return {};commit=next;throw Error('FIRESTORE_409');}
  if(init.method==='PATCH'){job=JSON.parse(init.body);return {};}
  if(path.includes('s1_leaderboards_track'))return {fields:{revision:{integerValue:'4'}},updateTime:'2026-09-01T00:00:00Z'};
  if(path.includes('s1_release_meta'))return {fields:{revision:{integerValue:'6'}},updateTime:'2026-09-01T00:00:01Z'};
@@ -492,6 +493,22 @@ test('equal PB replay repair rebuilds from canonical data without granting verif
   return null;
  }};
  const result=await mergeCanonicalResultIntoTrack(env,TRACK,canonical,true);
- assert.equal(result.changed,true);assert.equal(queries,1);assert.equal(commits,1);
+ assert.equal(result.changed,true);assert.equal(queries,1);assert.equal(commits,2);
  assert.equal(result.entries[0].timeMs,20000);assert.equal(result.entries[0].integrityVerified,true);assert.equal(result.entries[0].runVerified,false);
 });
+
+
+test('server verification binds exact replay, account, track, time, frames and upload',()=>{
+ const row=validRun({accountId:'racer',trackId:TRACK,timeMs:20000});const verdict={key:verificationKey(row),status:'verified',verifierVersion:VERIFIER_VERSION,engineDigest:VERIFIER_ENGINE_DIGEST};
+ assert.equal(verifiedVerdict(row,verdict),true);
+ for(const change of [{accountId:'other'},{trackId:COMMUNITY_TRACK},{timeMs:19999},{raceTimeFrames:19999},{uploadId:124},{replayHash:'b'.repeat(64)},{integrityVerified:false}])assert.equal(verifiedVerdict({...row,...change},verdict),false);
+ assert.equal(verifiedVerdict(row,{...verdict,status:'mismatch'}),false);assert.equal(verifiedVerdict(row,{...verdict,engineDigest:''}),false);
+});
+test('a caller boolean alone cannot promote a run but a bound server verdict can',()=>{
+ const row=validRun({accountId:'racer',trackId:TRACK,timeMs:20000,runVerified:true});
+ assert.equal(computeTrackEntries([row],TRACK)[0].runVerified,false);
+ const verdict={key:verificationKey(row),status:'verified',verifierVersion:VERIFIER_VERSION,engineDigest:VERIFIER_ENGINE_DIGEST};
+ assert.equal(computeTrackEntries([row],TRACK,{}, {racer:verdict})[0].runVerified,true);
+});
+
+test('first reconciliation creation cannot overwrite a concurrent verifier wake-up',async()=>{let guarded=false;await assert.rejects(reconcileCanonicalChanges({__TEST_FIRESTORE:async(path,init={})=>{if(path===':runQuery')return [];if(path===':commit'){const w=JSON.parse(init.body).writes[0];guarded=w.currentDocument.exists===false;throw Error('FIRESTORE_409');}return null;}}),/409/);assert.equal(guarded,true);});

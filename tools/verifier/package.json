@@ -1,0 +1,12 @@
+{
+  "name": "polytrack-replay-verifier",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test test-synthetic.cjs test-cleanup.cjs queue.test.mjs",
+    "verify": "node run.mjs"
+  },
+  "dependencies": {
+    "playwright": "1.62.1"
+  }
+}

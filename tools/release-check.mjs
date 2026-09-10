@@ -21,7 +21,7 @@ if (!/integrityVerified:\s*entry\?\.integrityVerified\s*===\s*true/.test(enrichC
 if (!/uploadId:\s*safeRecordingId/.test(enrichContract)) failures.push('Leaderboard normalization drops canonical replay upload IDs.');
 if (/newPosition:\s*0\b/.test(patchSource)) failures.push('Leaderboard POST can return an invalid zero position.');
 const derivedFallbackIndex = patchSource.indexOf("d.collection(COLLECTIONS.leaderboardsTrack).doc(safeTrackId)");
-const canonicalFallbackIndex = patchSource.indexOf('fetchCanonicalTrackEntries(safeTrackId,500)', derivedFallbackIndex);
+const canonicalFallbackIndex = patchSource.indexOf('fetchCanonicalTrackEntries(safeTrackId,500,', derivedFallbackIndex);
 if (derivedFallbackIndex < 0 || canonicalFallbackIndex < derivedFallbackIndex) failures.push('Blocked edge fallback reads canonical PB documents before the one-read derived snapshot.');
 
 const html = readFileSync(join(root, 'index.html'), 'utf8');
