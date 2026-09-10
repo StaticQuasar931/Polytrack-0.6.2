@@ -682,6 +682,9 @@ export async function mergeCanonicalResultIntoTrack(env, trackId, canonicalResul
   const normalized = computeTrackEntries([{ ...canonicalResult, integrityVerified, validationState: integrityVerified ? 'integrity' : 'pending' }], trackId, env)[0];
   if (!normalized) throw new Error('Canonical PB failed structural validation');
   const existing=prior.data.entries.find(row=>safeText(row.accountId||row.userId,128)===normalized.accountId);
+  // Equal PB repair must use current canonical data, not a delayed notification payload.
+  if(existing && Number(existing.timeMs)===normalized.timeMs && Number(existing.uploadId||0)===Number(normalized.uploadId||0) &&
+    (existing.replayHash!==normalized.replayHash || (existing.integrityVerified===true)!==(normalized.integrityVerified===true)))return rebuildTrack(env,trackId);
   if(existing && (Number(existing.timeMs)<normalized.timeMs || (Number(existing.timeMs)===normalized.timeMs && Number(existing.uploadId||0)>=Number(normalized.uploadId||0))))return {changed:false,entries:prior.data.entries,revision:Number(prior.data.revision||0)};
   const entries = rankTrustedTrackEntries([
     ...prior.data.entries.filter((entry) => safeText(entry.accountId || entry.userId, 128) !== normalized.accountId),

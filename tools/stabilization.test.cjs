@@ -90,3 +90,40 @@ test('authoritative public design is not masked by a legacy aggregate clock',()=
  const value=run('resolveCosmeticsForEntry',ctx)({userId:'racer',cosmeticsUpdatedAt:9007199254740991,profileCosmetics:{theme:'classic'}});
  assert.equal(value.theme,'cyan');
 });
+// Source guards complement the isolated browser interaction matrix in the UI handoff.
+test('dialog focus enumeration includes summaries and excludes inactive tabs',()=>{
+ let selector='';const result=run('visibleDialogFocusables',{isElementVisible:x=>x.visible})({querySelectorAll:s=>{selector=s;return[{visible:true},{visible:false}]}});
+ assert.equal(result.length,1);assert.ok(selector.includes('summary'));assert.ok(selector.includes('button:not([disabled]):not([tabindex="-1"])'));
+});
+test('Studio markup retains drafts and offers explicit discard',()=>{
+ const body=extract('profileCustomizerMarkup');assert.ok(body.includes('profileCosmeticDrafts.get(accountId)||cosmeticsForEntry(entry)'));assert.ok(body.includes('data-discard-profile-cosmetics'));
+});
+test('favorite search resets its active option and preserves explicit option identities',()=>{
+ const body=extract('setupRacerStudio');assert.ok(body.includes("input.dataset.selectedTrackId=id"));assert.ok(body.includes("input.removeAttribute('aria-activedescendant')"));assert.ok(body.includes("selected<0?(e.key==='ArrowDown'?0:buttons.length-1)"));
+});
+test('Needs work cards exclude first-place finishes',()=>{
+ const body=extract('openRankedProfile');assert.ok(body.includes('const needsWorkCard=takeUnique(rankedDetails.filter((finish)=>Number(finish.rank)>1&&'));
+});
+
+
+test('replay checksum and legacy flags never imply run verification',()=>{
+ const status=run('runStatus');
+ for(const row of [null,{}, {verified:true,verifiedState:1}, {runVerified:'true'}])assert.equal(status(row),'unchecked');
+ assert.equal(status({integrityVerified:true,verified:true}),'replay');
+ assert.equal(status({runVerified:true}),'verified');
+});
+test('native result status requires unique name AND exact PB time',()=>{
+ const ctx={safeDisplayName:x=>x,canonicalRaceTimeMs:x=>x.timeMs,formatRaceTime:x=>String(x)};
+ const match=run('matchNativeResult',ctx);
+ const a={name:'Guest',timeMs:1000,runVerified:true}, b={name:'Guest',timeMs:2000};
+ assert.equal(match([a,b],'Guest','2000'),b);
+ assert.equal(match([a,b],'Guest','3000'),null);
+ assert.equal(match([a,{...a}],'Guest','1000'),null);
+ assert.equal(match([a],'Guest',''),null);
+ assert.equal(match([a],'Different','1000'),null);
+});
+test('native status resets when result identity cannot be established',()=>{
+ const body=extract('decorateNativeLeaderboardCosmetics');
+ assert.ok(body.indexOf('dataset.sqRunStatus=runStatus(racer)')<body.indexOf('if(!racer)'));
+ assert.doesNotMatch(body,/rows\[rank-1\]/);
+});

@@ -479,3 +479,19 @@ test('finishing the final queued track persists an empty queue instead of repeat
  }});
  assert.equal(result.rebuilt,1);assert.equal(result.pending,0);assert.equal(queueSaved,true);
 });
+
+
+test('equal PB replay repair rebuilds from canonical data without granting verification',async()=>{
+ const replay='repaired-replay';const hash=Buffer.from(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(replay))).toString('hex');
+ const canonical=validRun({accountId:'racer',trackId:TRACK,timeMs:20000,replay,replayHash:hash});
+ let queries=0,commits=0;
+ const env={__TEST_FIRESTORE:async(path,init={})=>{
+  if(path===':runQuery'){queries++;return [{document:{name:'projects/test/databases/(default)/documents/results/racer',fields:wire(canonical).mapValue.fields}}];}
+  if(path===':commit'){commits++;return {};}
+  if(path.includes('s1_leaderboards_track'))return {fields:wire({algorithmVersion:'participation-v8-s1',revision:2,entries:[{...canonical,replayHash:'a'.repeat(64),integrityVerified:false}]}).mapValue.fields,updateTime:'2026-09-09T00:00:00Z'};
+  return null;
+ }};
+ const result=await mergeCanonicalResultIntoTrack(env,TRACK,canonical,true);
+ assert.equal(result.changed,true);assert.equal(queries,1);assert.equal(commits,1);
+ assert.equal(result.entries[0].timeMs,20000);assert.equal(result.entries[0].integrityVerified,true);assert.equal(result.entries[0].runVerified,false);
+});
