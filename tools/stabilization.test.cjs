@@ -151,3 +151,60 @@ test('canonical recovery retains only an exact published physics approval',()=>{
  assert.equal(fn(row,{...row,runVerified:true}),true);
  for(const changed of [{accountId:'b'},{trackId:'x'},{timeMs:9},{frames:9},{uploadId:2},{replayHash:'def'},{runVerified:false}])assert.equal(fn(row,{...row,runVerified:true,...changed}),false);
 });
+
+
+test('cosmetic synchronization budgets 10 legacy plus 20 changed profiles',()=>{
+ const body=extract('syncCosmeticDirectory');assert.match(body,/seedQuery.limit\(10\)/);assert.match(body,/query.limit\(20\)/);
+ assert.match(body,/seeded=seed.size<10/);assert.match(body,/startAfter\(stamp,directory.cursorId\)/);
+});
+test('all waiting results use one pending style, never the former blue integrity style',()=>{
+ assert.doesNotMatch(source,/data-sq-run-status="replay"\]\{background/);
+ assert.match(source,/verified-state.pending\{background:#473419/);
+});
+test('equal confirmed PB matching the board does not request a repair',()=>{
+ const body=extract('mirrorRaceResult');assert.match(body,/leaderboardRepairNeeded=sourceBestMs>0&&cachedSourceMs!==sourceBestMs/);
+ assert.ok(body.indexOf('rememberConfirmedLocalPb(accountId,savedRow)')>body.indexOf('await d.runTransaction'));
+});
+test('PB reconciliation never treats an offline cached response as cloud confirmation',()=>{
+ const body=extract('reconcileLocalPersonalBestsToCloud');assert.match(body,/source:'server'/);assert.match(body,/doc.metadata\?\.fromCache/);
+});
+function receiptContext(rows,cloud){
+ let store={};let reads=0;const ctx={Date,JSON,Map,cleanUserId:x=>x,canonicalRaceTimeMs:x=>Number(x?.timeMs)||0,
+ LOCAL_PB_RECONCILE_STATE_KEY:'receipts',localPbReconcilePromise:null,localBestRowsForAccount:()=>rows,
+ readJsonStorage:()=>store,writeJsonStorage:(_key,value)=>{store=value},COLLECTIONS:{raceResults:'pb'},log:()=>{},
+ db:async()=>({collection:()=>({doc:id=>({get:async()=>{reads++;return {exists:Boolean(cloud[id]),data:()=>cloud[id]}}})})}),
+ addLocalRaceRow:row=>{const index=rows.findIndex(x=>x.trackId===row.trackId);rows[index]=row},
+ readRecordingStore:()=>[],safeRecordingId:x=>x,normalizeReplayPayloadString:x=>x,
+ safePositiveInt:x=>x,getDefaultCarStyle:()=>'',getLastKnownName:()=>'',overallLoadState:{},OVERALL_PB_DIRTY_KEY:'dirty'};
+ vm.createContext(ctx);for(const name of ['localPbSyncSignature','rememberConfirmedLocalPb','reconcileLocalPersonalBestsToCloud'])vm.runInContext(extract(name),ctx);
+ return {ctx,reads:()=>reads,store:()=>store};
+}
+test('confirmed PB receipts avoid all startup document reads',async()=>{
+ const row={trackId:'one',timeMs:1000,replayHash:'hash'};const {ctx,reads}=receiptContext([row],{});
+ ctx.rememberConfirmedLocalPb('a',row);const result=await ctx.reconcileLocalPersonalBestsToCloud('a');assert.equal(result.cached,true);assert.equal(reads(),0);
+});
+test('only unconfirmed tracks are checked and confirmed equality is remembered',async()=>{
+ const a={trackId:'one',timeMs:1000,replayHash:'h'},b={trackId:'two',timeMs:2000,replayHash:'j'};
+ const {ctx,reads}=receiptContext([a,b],{'a_two':b});ctx.rememberConfirmedLocalPb('a',a);
+ await ctx.reconcileLocalPersonalBestsToCloud('a');assert.equal(reads(),1);
+ await ctx.reconcileLocalPersonalBestsToCloud('a');assert.equal(reads(),1);
+});
+test('faster unsaved local PB is not suppressed by an older confirmation',async()=>{
+ const old={trackId:'one',timeMs:2000,replayHash:'old'},row={trackId:'one',timeMs:1000,replayHash:'new',replay:'replay'};
+ const {ctx,reads}=receiptContext([row],{'a_one':old});ctx.rememberConfirmedLocalPb('a',old);let attempts=0;
+ ctx.mirrorRaceResult=async()=>{attempts++;return {saved:false}};
+ await ctx.reconcileLocalPersonalBestsToCloud('a');await ctx.reconcileLocalPersonalBestsToCloud('a');assert.equal(attempts,2);assert.equal(reads(),2);
+});
+
+
+test('failed SDK script can be retried; simultaneous callers share the same load',async()=>{
+ const scripts=[];const ctx={Map,Promise,Error,setTimeout,clearTimeout,sdkScriptLoads:new Map(),document:{querySelector:()=>null,createElement:()=>({dataset:{},remove(){this.removed=true}}),head:{appendChild:s=>scripts.push(s)}}};
+ const load=run('loadScript',ctx);const first=load('sdk');assert.equal(load('sdk'),first);assert.equal(scripts.length,1);
+ const rejected=assert.rejects(first,/unavailable/);scripts[0].onerror();await rejected;assert.equal(scripts[0].removed,true);
+ const next=load('sdk');assert.equal(scripts.length,2);scripts[1].onload();await next;
+});
+test('Firebase failed initialization clears its memoized promise with retry backoff',async()=>{
+ const ctx={Date,firestorePromise:null,firebaseRetryAt:0,loadScript:async()=>{throw Error('blocked')}};
+ const get=run('db',ctx);await assert.rejects(get(),/blocked/);assert.equal(ctx.firestorePromise,null);assert.ok(ctx.firebaseRetryAt>Date.now());
+ await assert.rejects(get(),/cooling down/);
+});
