@@ -225,3 +225,38 @@ test('rival routes and personal routes do not share unlike percentage denominato
 test('No badge is first and has a separate control style',()=>{
  assert.match(source,/badge:\[\['none','No badge'/);assert.match(extract('profileCustomizerMarkup'),/badge-off-control/);
 });
+
+
+test('RP precision defaults to three and supports only two, three or four decimals',()=>{
+ const ctx={localStorage:{getItem:()=>null}};const get=run('rpDecimals',ctx);assert.equal(get(),3);
+ for(const value of ['2','3','4']){ctx.localStorage.getItem=()=>value;assert.equal(get(),Number(value));}
+ for(const value of ['1','8','oops']){ctx.localStorage.getItem=()=>value;assert.equal(get(),3);}
+});
+test('RP formatting preserves missing values and does not affect score data',()=>{
+ const format=run('formatRp',{rpDecimals:()=>4});assert.equal(format(12.345),'12.3450');assert.equal(format(null),'N/A');assert.equal(format(Infinity),'N/A');
+});
+test('planner objectives use their actual metric rather than relabeling Overall RP',()=>{
+ const ctx={plannerMetric:'average',knownFinishWeight:()=>2,rankedTrackWeight:()=>2,rankedPlacementCost:r=>r*10,medianNumber:()=>30};
+ const score=run('projectedOverallScore',ctx),rows=[{trackId:'a',rank:2,fieldSize:10},{trackId:'b',rank:4,fieldSize:10}];
+ assert.equal(score(rows),3);ctx.plannerMetric='skill';assert.equal(score(rows),30);ctx.plannerMetric='overall';assert.ok(Math.abs(score(rows)-(24+20*Math.exp(-.2)))<1e-9);
+});
+test('multiplayer empty errors do not leave a phantom gap and help starts compact',()=>{
+ assert.match(source,/error-box:empty\{display:none/);assert.match(extract('syncMultiplayerRelayPanel'),/route-collapsed'\)!=='0'/);
+});
+
+test('empty planner does not invent repeated action steps or a carrying result',()=>{
+ const guide=extract('profileGuideMarkup');assert.match(guide,/if\(!action\)return ''/);assert.match(guide,/\$\{goals\?/);assert.match(guide,/\$\{strongest\?`<span/);
+});
+
+test('incomplete personal results cannot produce a minimum helpful placement',()=>{
+ const action=run('recommendationAction',{projectedOverallScore:()=>10});assert.equal(action({trackId:'new',rank:0,fieldSize:8},'start',{raceCount:10},[{trackId:'loaded',rank:10,fieldSize:12}]),null);
+});
+test('neutral personal gain can still produce a positive rival route',()=>{
+ const ctx={projectedOverallScore:rows=>rows.reduce((n,r)=>n+r.rank,0)/rows.length,simulateRecommendation:()=>1,projectedFinish:(f,rank,fieldSize)=>({...f,rank,fieldSize}),safeDisplayName:n=>n,recommendationAction:()=>({targetRank:1,minimumHelpfulRank:3,simulationComplete:true})};
+ const rival=run('rivalRecommendationAction',ctx);const result=rival(null,{trackId:'rival',rank:1,fieldSize:2},{raceCount:1},{raceCount:1,name:'Rival'},[{trackId:'own',rank:1,fieldSize:3}],[{trackId:'rival',rank:1,fieldSize:2}]);
+ assert.ok(result);assert.equal(result.estimatedGain,0);assert.equal(result.value,1);assert.equal(result.minimumHelpfulRank,1);
+});
+test('rival base allows neutral results, but ordinary improvement does not',()=>{
+ const ctx={projectedOverallScore:()=>1,simulateRecommendation:()=>1,knownFinishWeight:()=>2,projectedFinish:f=>f,rankedTrackWeight:()=>2};const action=run('recommendationAction',ctx),finish={trackId:'new',rank:0,fieldSize:2},entry={raceCount:1},rows=[{trackId:'own',rank:1,fieldSize:2}];
+ assert.ok(action(finish,'rival',entry,rows));assert.equal(action(finish,'start',entry,rows),null);
+});
