@@ -67,4 +67,7 @@ for (const result of results) {
     catch (error) {if (attempt === 2 || !String(error.message).includes('409')) throw error;}
   }
 }
-console.log(JSON.stringify({processed: jobs.length, ...totals, firestoreRequests: db.requests()}));
+const reasons={};for(const result of results)reasons[result.reason]=(reasons[result.reason]||0)+1;
+console.log(JSON.stringify({processed: jobs.length, ...totals, reasons, firestoreRequests: db.requests()}));
+if(process.env.GITHUB_STEP_SUMMARY)fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,`## Replay verification\nProcessed: ${jobs.length}. Verified: ${totals.verified}. Waiting: ${totals.unavailable}.\n\n${Object.entries(reasons).map(([reason,count])=>'- '+reason+': '+count).join('\n')}\n`);
+if(results.some(r=>r.reason==='engine_unavailable')){console.error('Verifier startup failed. Runs remain waiting; inspect the startup diagnostic.');process.exitCode=1;}

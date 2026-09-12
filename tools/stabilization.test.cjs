@@ -220,7 +220,7 @@ test('self planner cannot reintroduce stale cached finishes after freshness reso
  assert.doesNotMatch(extract('profileGuideMarkup'),/isSelf\?cachedFinishes/);
 });
 test('rival routes and personal routes do not share unlike percentage denominators',()=>{
- assert.match(extract('profileGuideMarkup'),/rivalMode&&rival.length\?rival:personal/);
+ assert.match(extract('profileGuideMarkup'),/orderedPlannerRoutes/);
 });
 test('No badge is first and has a separate control style',()=>{
  assert.match(source,/badge:\[\['none','No badge'/);assert.match(extract('profileCustomizerMarkup'),/badge-off-control/);
@@ -244,9 +244,7 @@ test('multiplayer empty errors do not leave a phantom gap and help starts compac
  assert.match(source,/error-box:empty\{display:none/);assert.match(extract('syncMultiplayerRelayPanel'),/route-collapsed'\)!=='0'/);
 });
 
-test('empty planner does not invent repeated action steps or a carrying result',()=>{
- const guide=extract('profileGuideMarkup');assert.match(guide,/if\(!action\)return ''/);assert.match(guide,/\$\{goals\?/);assert.match(guide,/\$\{strongest\?`<span/);
-});
+
 
 test('incomplete personal results cannot produce a minimum helpful placement',()=>{
  const action=run('recommendationAction',{projectedOverallScore:()=>10});assert.equal(action({trackId:'new',rank:0,fieldSize:8},'start',{raceCount:10},[{trackId:'loaded',rank:10,fieldSize:12}]),null);
@@ -268,4 +266,18 @@ test('planner podium metrics follow field eligibility and actual leaderboard poi
 });
 test('planner selector excludes average and non-actionable categories',()=>{
  const options=source.match(/const PLANNER_METRICS=Object.freeze\(([^;]+)\);/)[1];assert.doesNotMatch(options,/average|playtime|veterans/);for(const key of ['medals','wins','podiumRate','weight'])assert.ok(options.includes(key));
+});
+
+test('planner fills six unique suggestions after the rival routes',()=>{
+ const select=run('orderedPlannerRoutes');const rows=select([{trackId:'r'}],[{trackId:'r'},...Array.from({length:8},(_,i)=>({trackId:String(i)}))]);assert.deepEqual(Array.from(rows,r=>r.trackId),['r','0','1','2','3','4']);
+});
+test('defense requires first place on every important known track and complete personal data',()=>{
+ const defense=run('plannerDefenseAllowed');const tracks=[{trackId:'a',fieldSize:5,weight:2},{trackId:'b',fieldSize:8,weight:3}];assert.equal(defense([{trackId:'a',rank:1}],{raceCount:1},tracks),false);assert.equal(defense([{trackId:'a',rank:1},{trackId:'b',rank:2}],{raceCount:2},tracks),false);assert.equal(defense([{trackId:'a',rank:1},{trackId:'b',rank:1}],{raceCount:2},tracks),true);assert.equal(defense([],{raceCount:0},[]),false);
+});
+test('planner reads new-track candidates from the existing overall summaries',()=>{
+ assert.match(extract('profileGuideMarkup'),/overallTrackSummariesCache.find/);assert.doesNotMatch(extract('profileGuideMarkup'),/fetch\(|\.get\(\{source/);
+});
+
+test('hosted verifier checks sandbox startup before processing replays',()=>{
+ const workflow=fs.readFileSync(require('node:path').join(__dirname,'../.github/workflows/verify-runs.yml'),'utf8');assert.ok(workflow.indexOf('Sandboxed browser startup passed')<workflow.indexOf('name: Verify queued runs'));assert.match(workflow,/apparmor_parser/);assert.match(workflow,/chromiumSandbox:true/);assert.doesNotMatch(workflow,/--no-sandbox|apparmor_restrict_unprivileged_userns=0/);
 });

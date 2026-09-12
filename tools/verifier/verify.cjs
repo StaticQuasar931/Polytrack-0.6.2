@@ -267,6 +267,7 @@ async function verifyBatch(root, jobs) {
     const server = await chromium.launchServer({
       headless: true, timeout: wallMs, host: '127.0.0.1', env: browserEnvironment(),
       chromiumSandbox: process.platform === 'linux',
+      executablePath: chromium.executablePath(),
       ...(process.env.VERIFIER_CHROMIUM_PATH ? { executablePath: process.env.VERIFIER_CHROMIUM_PATH } : {}),
     });
     session = { server, dead: false };
@@ -302,6 +303,7 @@ async function verifyBatch(root, jobs) {
     }
   } catch (error) {
     trace(`failure: ${error.message}`);
+    console.error('[verifier startup]', String(error.message||error).replace(/https?:\/\/[^\s]+/g,'[url]').slice(0,1600));
     const reason = ['engine_pin_mismatch', 'track_pin_mismatch', 'module_5220_hook_missing_or_ambiguous', 'invalid_deadline_configuration'].includes(error.message) ? error.message : error.reason || 'engine_unavailable';
     for (let i = 0; i < jobs.length; i++) if (!output[i]) output[i] = verdict(jobs[i], 'unavailable', reason, engine);
   } finally {
