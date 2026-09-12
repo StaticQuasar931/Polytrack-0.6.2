@@ -1,7 +1,7 @@
 const fs=require('node:fs');const vm=require('node:vm');const test=require('node:test');const assert=require('node:assert/strict');
 const source=fs.readFileSync(require('node:path').join(__dirname,'..','polytrack_062_patch.js'),'utf8');
 function extract(name){const start=source.search(new RegExp('^  (?:async )?function '+name+'\\(','m'));assert.ok(start>=0,name);const tail=source.slice(start);const end=tail.indexOf('\n  }');assert.ok(end>0,name);return tail.slice(0,end+4);}
-function run(name,context={}){vm.createContext(context);if(['recommendationAction','rivalRecommendationAction','simulateRecommendation'].includes(name)&&!context.projectedFinish){context.trackInfo||=()=>({type:'official'});vm.runInContext(extract('rankedTrackWeightParts')+'\n'+extract('projectedFinish'),context);}vm.runInContext(extract(name),context);return context[name];}
+function run(name,context={}){context.plannerMetric??='overall';context.trackInfo||=()=>({type:'official'});vm.createContext(context);if(['recommendationAction','rivalRecommendationAction','simulateRecommendation'].includes(name)&&!context.projectedFinish){context.trackInfo||=()=>({type:'official'});vm.runInContext(extract('rankedTrackWeightParts')+'\n'+extract('projectedFinish'),context);}vm.runInContext(extract(name),context);return context[name];}
 for(const direction of [1,-1])test(`profile unknown results sort last in direction ${direction}`,()=>{
  const ctx={profileSort:'time',profileSortDirection:direction,knownFinishWeight:x=>x.weight,trackInfo:()=>({name:'track'})};
  const result=run('sortProfileFinishes',ctx)([{timeMs:null},{timeMs:2000},{timeMs:1000},{timeMs:undefined}]);
@@ -236,9 +236,9 @@ test('RP formatting preserves missing values and does not affect score data',()=
  const format=run('formatRp',{rpDecimals:()=>4});assert.equal(format(12.345),'12.3450');assert.equal(format(null),'N/A');assert.equal(format(Infinity),'N/A');
 });
 test('planner objectives use their actual metric rather than relabeling Overall RP',()=>{
- const ctx={plannerMetric:'average',knownFinishWeight:()=>2,rankedTrackWeight:()=>2,rankedPlacementCost:r=>r*10,medianNumber:()=>30};
+ const ctx={plannerMetric:'medals',knownFinishWeight:()=>2,rankedTrackWeight:()=>2,rankedPlacementCost:r=>r*10,medianNumber:()=>30};
  const score=run('projectedOverallScore',ctx),rows=[{trackId:'a',rank:2,fieldSize:10},{trackId:'b',rank:4,fieldSize:10}];
- assert.equal(score(rows),3);ctx.plannerMetric='skill';assert.equal(score(rows),30);ctx.plannerMetric='overall';assert.ok(Math.abs(score(rows)-(24+20*Math.exp(-.2)))<1e-9);
+ assert.equal(score(rows),-3);ctx.plannerMetric='skill';assert.equal(score(rows),30);ctx.plannerMetric='overall';assert.ok(Math.abs(score(rows)-(24+20*Math.exp(-.2)))<1e-9);
 });
 test('multiplayer empty errors do not leave a phantom gap and help starts compact',()=>{
  assert.match(source,/error-box:empty\{display:none/);assert.match(extract('syncMultiplayerRelayPanel'),/route-collapsed'\)!=='0'/);
@@ -259,4 +259,13 @@ test('neutral personal gain can still produce a positive rival route',()=>{
 test('rival base allows neutral results, but ordinary improvement does not',()=>{
  const ctx={projectedOverallScore:()=>1,simulateRecommendation:()=>1,knownFinishWeight:()=>2,projectedFinish:f=>f,rankedTrackWeight:()=>2};const action=run('recommendationAction',ctx),finish={trackId:'new',rank:0,fieldSize:2},entry={raceCount:1},rows=[{trackId:'own',rank:1,fieldSize:2}];
  assert.ok(action(finish,'rival',entry,rows));assert.equal(action(finish,'start',entry,rows),null);
+});
+
+test('planner podium metrics follow field eligibility and actual leaderboard points',()=>{
+ const ctx={plannerMetric:'medals',trackInfo:id=>({type:id==='private'?'custom':'official'}),knownFinishWeight:()=>2,rankedTrackWeight:()=>2,rankedPlacementCost:r=>r*10};const score=run('projectedOverallScore',ctx);
+ const rows=[{trackId:'gold',rank:1,fieldSize:5},{trackId:'silver',rank:2,fieldSize:9},{trackId:'bronze',rank:3,fieldSize:8},{trackId:'small',rank:1,fieldSize:4},{trackId:'private',rank:1,fieldSize:9}];
+ assert.equal(score(rows),-13);ctx.plannerMetric='wins';assert.equal(score(rows),-1);ctx.plannerMetric='podiumRate';assert.equal(score(rows),-100);assert.equal(score(rows.slice(0,2)),0);ctx.plannerMetric='weight';assert.equal(score(rows),-10);
+});
+test('planner selector excludes average and non-actionable categories',()=>{
+ const options=source.match(/const PLANNER_METRICS=Object.freeze\(([^;]+)\);/)[1];assert.doesNotMatch(options,/average|playtime|veterans/);for(const key of ['medals','wins','podiumRate','weight'])assert.ok(options.includes(key));
 });

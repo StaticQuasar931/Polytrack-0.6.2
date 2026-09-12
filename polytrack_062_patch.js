@@ -1722,8 +1722,10 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     rankedPolish.textContent += '\n.leaderboard-ui .verified-state.pending{background:#473419!important;border:1px solid #ffc978!important;color:#ffe4b5!important}.leaderboard-ui .verified-state .sq-integrity-label{font-family:Arial,sans-serif;font-weight:700;letter-spacing:.04em}';
     rankedPolish.textContent+='\n#polytrackTrackFreshness{position:fixed!important;left:max(10px,env(safe-area-inset-left))!important;right:auto!important;bottom:max(8px,env(safe-area-inset-bottom))!important;max-width:calc(100vw - 28px)!important;box-sizing:border-box!important;transform:none!important;clip-path:none!important;overflow-wrap:anywhere;pointer-events:none}#polytrackTrackFreshness strong,#polytrackTrackFreshness span{white-space:normal!important}';
     rankedPolish.textContent += '\n.multiplayer-ui:has(>.join:not(.hidden),>.host:not(.hidden)){overflow-x:hidden!important}.multiplayer-ui .invite-code-container{position:relative!important;min-width:0!important}.multiplayer-ui .connecting-text{position:absolute!important;margin:0!important;transform:none!important;left:0!important;right:0!important;width:100%!important;max-width:100%!important;box-sizing:border-box!important;font-size:20px!important;white-space:normal!important;padding:8px!important}.multiplayer-ui .connecting-text .loading-spinner-ui{width:24px!important;height:24px!important;flex-shrink:0}.multiplayer-ui>.join>.error-box{width:100%!important;max-width:100%!important;box-sizing:border-box;overflow-wrap:anywhere}.multiplayer-ui>.join>.error-box p{white-space:normal!important;font-size:16px!important}.sq-multiplayer-intro{margin:8px 0!important}.sq-multiplayer-relay-head strong{font-size:21px!important}@media(max-width:1100px){.sq-multiplayer-backup-drawer{grid-template-columns:minmax(0,1fr)!important}.sq-multiplayer-code{grid-template-columns:minmax(0,1fr) auto auto!important}.sq-multiplayer-discord{grid-column:1/-1!important}}@media(max-width:450px){.sq-multiplayer-code{grid-template-columns:minmax(0,1fr) auto!important}.sq-multiplayer-code input{grid-column:1/-1!important;min-width:0!important}.sq-multiplayer-save{min-width:0!important}}';
+    rankedPolish.textContent += ".sq-settings-grid>.sq-setting-row{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(110px,42%)!important;gap:10px!important;box-sizing:border-box!important;min-width:0!important;height:auto!important}.sq-settings-grid>.sq-setting-row>p,.sq-settings-grid>.sq-setting-row>label{margin:0!important;min-width:0!important;white-space:normal!important;font-size:17px!important;line-height:1.3!important;overflow-wrap:anywhere}.sq-settings-grid>.sq-setting-row .button-wrapper{min-width:0!important;width:100%!important;margin:0!important}.sq-settings-grid>.sq-setting-row .button{width:100%!important;min-width:0!important;height:auto!important;min-height:44px!important;font-size:17px!important;white-space:normal!important;padding:8px 14px!important;box-sizing:border-box!important}.sq-rp-precision{width:100%!important;min-width:0!important;box-sizing:border-box!important;font:16px/1.3 ForcedSquare,sans-serif!important;padding:8px 6px!important}.sq-settings-grid>.sq-setting-secret{grid-template-columns:minmax(0,1fr)!important}.sq-setting-range .sq-range-controls{min-width:0!important}.profile-guide-body header small{font:14px/1.4 sans-serif!important}.profile-guide>summary>span{min-width:0}.profile-guide>summary small{font:14px/1.35 sans-serif!important}.profile-guide>summary strong{font-size:20px!important}.profile-guide-metric{font-size:18px!important;flex-wrap:wrap}.profile-guide-metric select{font-size:18px!important;max-width:100%!important}.profile-guide-track .guide-placement{font:15px/1.45 sans-serif!important}.profile-guide-grid:has(>.profile-guide-empty){grid-template-columns:1fr!important}.profile-guide-empty{margin:0!important}.multiplayer-ui>.join:not(.hidden),.multiplayer-ui>.host:not(.hidden),.multiplayer-ui>.sq-multiplayer-relay{width:min(620px,100%)!important}@media(max-width:600px){.sq-settings-grid>.sq-setting-row{grid-template-columns:minmax(0,1fr) minmax(100px,42%)!important}.sq-settings-grid>.sq-setting-secret{grid-template-columns:minmax(0,1fr)!important}.profile-guide-body{padding:12px!important}.profile-guide-metric select{width:100%}.profile-guide-body header h4{font-size:24px!important}}";
     rankedPolish.textContent += '\n.sq-rp-precision,.profile-guide-metric select{font:inherit;color:#fff;background:#14254d;border:1px solid #8aaddb;padding:8px;min-height:44px;max-width:100%}.profile-guide-metric{display:flex;align-items:center;gap:10px;margin:8px 0;font-size:16px}.profile-guide-metric select:focus-visible,.sq-rp-precision:focus-visible{outline:2px solid #7ee7ff;outline-offset:2px}';
     rankedPolish.textContent += '\n.multiplayer-ui:has(>.join:not(.hidden),>.host:not(.hidden)){justify-content:safe center!important;background:#28346a!important}.multiplayer-ui .error-box:empty{display:none!important}.multiplayer-ui>.sq-multiplayer-relay{border-left-width:2px!important;background:#202d5b!important}.sq-multiplayer-relay-head .sq-multiplayer-kicker{display:none}.sq-multiplayer-relay-head strong{font-size:18px!important}.multiplayer-ui .invite-code-container input{max-width:100%!important;width:100%!important;box-sizing:border-box!important;min-width:0!important;margin-left:0!important;margin-right:0!important}.profile-guide.without-carry>summary{grid-template-columns:repeat(2,minmax(0,1fr)) auto!important}@media(max-width:600px){.profile-guide.without-carry>summary{grid-template-columns:minmax(0,1fr)!important}}';
+    rankedPolish.textContent += ".multiplayer-ui>.sq-multiplayer-relay,.multiplayer-ui>.sq-multiplayer-relay.is-collapsed{width:min(620px,100%)!important}.profile-track-name{min-width:0!important}.profile-track-name b,.profile-track-name small{white-space:normal!important;overflow-wrap:anywhere}.sq-settings-grid>.sq-setting-secret{display:block!important}.sq-setting-secret .sq-secret-controls{margin-top:8px!important}@media(max-width:600px){.profile-track-row{display:grid!important;grid-template-columns:72px minmax(0,1fr) minmax(0,1fr)!important;grid-template-areas:\"image name name\" \"weight result time\"!important;gap:10px!important;height:auto!important;min-height:0!important;padding:12px!important;align-items:start!important}.profile-track-visual{grid-area:image!important;width:72px!important;height:64px!important}.profile-track-name{grid-area:name!important}.profile-track-weight{grid-area:weight!important;display:block!important}.profile-track-result{grid-area:result!important;display:flex!important;flex-wrap:wrap!important;min-width:0!important;gap:4px!important}.profile-track-row>time{grid-area:time!important;min-width:0!important;white-space:normal!important}.profile-track-row>time small{font:11px/1.4 sans-serif!important;white-space:normal!important}.profile-track-result img{width:18px!important;height:18px!important}.profile-track-weight small,.profile-track-result small{font:11px/1.4 sans-serif!important;white-space:normal!important}.profile-track-result b{white-space:normal!important;font-size:15px!important}.sq-setting-secret input{font-size:16px!important;min-width:0!important}.sq-settings-grid>.sq-setting-row{clip-path:none!important}}";
     document.head.appendChild(rankedPolish);
   }
 
@@ -1939,10 +1941,10 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
   }
   function settingsRpPrecision(){
     const row=document.createElement('div');row.className='setting sq-setting-row';
-    const label=document.createElement('label');label.htmlFor='sqRpDecimals';label.textContent='RP decimal places';
+    const label=document.createElement('label');label.htmlFor='sqRpDecimals';label.textContent='RP precision';
     const select=document.createElement('select');select.id='sqRpDecimals';select.className='sq-rp-precision';
     select.title='Display precision only. Does not change scores or ordering.';
-    for(const value of [2,3,4]){const option=document.createElement('option');option.value=String(value);option.textContent=value+' decimals'+(value===3?' (default)':'');select.appendChild(option);}
+    for(const value of [2,3,4]){const option=document.createElement('option');option.value=String(value);option.textContent=value+' decimals';select.appendChild(option);}
     select.value=String(rpDecimals());select.addEventListener('change',()=>{localStorage.setItem('polytrack-0.6.2-rp-decimals',select.value);renderEntries();});
     row.append(label,select);return row;
   }
@@ -1976,7 +1978,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     input.autocomplete='off';
     input.spellcheck=false;
     input.maxLength=192;
-    input.placeholder='Optional Discord code';
+    input.placeholder='Discord code';
     input.value=localStorage.getItem(storageKey)||'';
     input.setAttribute('aria-label',label);
     const save=document.createElement('button');
@@ -3605,7 +3607,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     }
     return candidates.sort((a,b)=>defending?Number(b.routeScore||0)-Number(a.routeScore||0)||b.weight-a.weight:Number(b.routeGap||0)-Number(a.routeGap||0)||b.weight-a.weight).slice(0,2);
   }
-  const PLANNER_METRICS=Object.freeze({overall:'Overall RP',skill:'Best-ten skill',average:'Average place'});
+  const PLANNER_METRICS=Object.freeze({overall:'Overall RP',skill:'Best-ten skill',medals:'Podium points',wins:'Track wins',podiumRate:'Podium rate',weight:'Total track weight'});
   let plannerMetric='overall';
   try{const stored=localStorage.getItem('polytrack-0.6.2-planner-metric');if(Object.hasOwn(PLANNER_METRICS,stored))plannerMetric=stored;}catch{}
   function projectedOverallScore(finishes){
@@ -3621,7 +3623,12 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     const bestWeight=bestTen.reduce((sum,finish)=>sum+finish.weight,0);
     const skillCost=bestTen.reduce((sum,finish)=>sum+finish.placementCost*finish.weight,0)/Math.max(.0001,bestWeight);
     if(plannerMetric==='skill')return skillCost;
-    if(plannerMetric==='average')return eligible.reduce((sum,finish)=>sum+finish.rank,0)/eligible.length;
+    // Negate higher-is-better metrics so all route comparisons use the same cost convention.
+    const podiums=eligible.filter(f=>f.fieldSize>=5&&trackInfo(f.trackId).type!=='custom');
+    if(plannerMetric==='medals')return -podiums.reduce((sum,f)=>sum+(f.rank===1?9:f.rank===2?3:f.rank===3?1:0),0);
+    if(plannerMetric==='wins')return -podiums.filter(f=>f.rank===1).length;
+    if(plannerMetric==='podiumRate')return podiums.length>=3?-100*podiums.filter(f=>f.rank<=3).length/podiums.length:0;
+    if(plannerMetric==='weight')return -eligible.reduce((sum,f)=>sum+f.weight,0);
     const allWeight=eligible.reduce((sum,finish)=>sum+finish.weight,0);
     const consistencyCeiling=Math.min(82,medianNumber(eligible.map((finish)=>finish.placementCost),50)+24);
     const depthCost=eligible.reduce((sum,finish)=>sum+Math.min(consistencyCeiling,Math.max(5,finish.placementCost))*finish.weight,0)/Math.max(.0001,allWeight);
@@ -3689,7 +3696,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     if(current===1)helpfulMinimum=1;
     if(!helpfulMinimum&&baselineScore!==null)return null;
     if(!helpfulMinimum)helpfulMinimum=1;
-    const target=current===1?1:Math.max(1,Math.min(helpfulMinimum,Math.ceil(helpfulMinimum*.5)));
+    const target=current===1?1:['wins','podiumRate','weight'].includes(plannerMetric)?helpfulMinimum:Math.max(1,Math.min(helpfulMinimum,Math.ceil(helpfulMinimum*.5)));
     const weight=knownFinishWeight(projectedFinish(finish,target,field))||rankedTrackWeight(finish.trackId,field);
     const targetScore=simulateRecommendation(baseline,finish,target);
     const simulatedGain=baselineScore===null||targetScore===null?0:Math.max(0,baselineScore-targetScore);
@@ -3704,8 +3711,8 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     if(action?.kind==='rival')return `Top ${minimum} is projected to improve this matchup`;
     if(current>1)return `Improve from #${current} toward #${action.targetRank}`;
     const field=Math.max(minimum,Number(action?.fieldSize||minimum)||minimum);
-    if(minimum>=field)return 'Any finish is projected to help';
-    return `Aim #${action.targetRank}; top ${minimum} is projected to help`;
+    if(minimum>=field)return 'Any finish helps in these standings';
+    return minimum===1?'Reach #1':`Top ${minimum} helps in these standings`;
   }
   function guideTrackCard(action,maxValue,verb='Try'){
     if(!action?.trackId)return '';
@@ -3714,7 +3721,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     const metricLabel=action.kind==='carry'?'TRACK STRENGTH':'ROUTE FIT';
     const current=action.currentRank?`Current #${action.currentRank} of ${action.currentFieldSize||action.fieldSize}`:'New track · no result';
     const rivalTarget=Number(action.rivalRank||0)>0?`Pass ${action.rivalName||'rival'} at #${action.rivalRank} · `:'';
-    const target=action.currentRank===1?'Defend #1':`${rivalTarget}Aim #${action.targetRank} · ${helpfulThresholdText(action)}`;
+    const target=action.currentRank===1?'Keep #1':`${rivalTarget}${helpfulThresholdText(action)}`;
     const freshness=action.cachedAt?ageLabel(action.cachedAt):'snapshot estimate';
     const weightTitle=rankedWeightTitle(action.trackId,action.fieldSize,false,action);
     const metricTitle=action.kind==='carry'?'Strength compared with the highest-weight loaded track.':action.kind==='rival'?`${action.simulationComplete?'Full':'Partial'} loaded-profile simulation combining your projected ${PLANNER_METRICS[plannerMetric]} improvement with the rival's projected loss.`:`${action.simulationComplete?'Full':'Partial'} loaded-profile simulation. Relative route value for ${PLANNER_METRICS[plannerMetric]}, not a guaranteed result.`;
@@ -3762,7 +3769,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     const carrying=allCarrying.filter((action)=>!priorityIds.has(action.trackId)).slice(0,3);
     const strongest=allCarrying[0]||null;
     const racerName=escapeHtml(safeDisplayName(entry.name,entry.userId));
-    const context=isSelf?`Improve your ${PLANNER_METRICS[plannerMetric]}`:`Your ${PLANNER_METRICS[plannerMetric]} routes against <strong>${racerName}</strong>`;
+    const context=isSelf||!rival.length?`Your next moves`:`Your plan against <strong>${racerName}</strong>`;
     const goalAction=(label,action)=>{if(!action)return '';if(action.kind==='carry')return `<li><b>${label}:</b> protect ${profileTrackLink(action)} at #${action.currentRank}.</li>`;const rivalText=Number(action.rivalRank||0)>0?` to pass ${escapeHtml(action.rivalName||'this rival')}'s #${action.rivalRank}`:'';const targetText=action.currentRank?`improve ${profileTrackLink(action)} from #${action.currentRank} toward #${action.targetRank}${rivalText}`:`enter ${profileTrackLink(action)} near #${action.targetRank}${rivalText}; ${helpfulThresholdText(action)}`;return `<li><b>${label}:</b> ${targetText}.</li>`;};
     const thirdGoal=priority[2]||carrying[0]||null;
     const goals=`${goalAction('Best next step',priority[0])}${goalAction('Then',priority[1])}${goalAction('Longer term',thirdGoal)}`;
@@ -3772,8 +3779,8 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     const longRoute=priority[2]||priority[1];
     const dedicatedSummary=longRoute?`<strong>${escapeHtml(trackInfo(longRoute.trackId).name)}</strong><small>${priority.length} unique route${priority.length===1?'':'s'} available</small>`:'<strong>No separate long route yet</strong>';
     const carrySummary=strongest?`<strong>${escapeHtml(trackInfo(strongest.trackId).name)}</strong><small>#${strongest.currentRank} of ${strongest.fieldSize} · ${strongest.weight.toFixed(2)}x</small>`:'<strong>No carrying track loaded</strong>';
-    const coverageNote=simulationFinishes.length>=Math.max(0,Number(plannerEntry?.raceCount||0)||0)&&(!rivalMode||snapshotFinishes.length>=Math.max(0,Number(entry?.raceCount||0)||0))?'All personal results loaded':'Some personal results missing';
-    return `<details class="profile-guide ${strongest?'':'without-carry'}"><summary aria-label="Open detailed route planner"><span data-summary-track-id="${escapeHtml(priority[0]?.trackId||'')}"><b>Best next move</b>${quickSummary}</span><span data-summary-track-id="${escapeHtml(longRoute?.trackId||'')}"><b>Longer route</b>${dedicatedSummary}</span>${strongest?`<span data-summary-track-id="${escapeHtml(strongest.trackId)}"><b>Strongest result</b>${carrySummary}</span>`:''}<em class="route-open-label" aria-hidden="true">Full plan</em></summary><div class="profile-guide-body"><header><div><span class="profile-kicker">YOUR ROUTE PLANNER</span><label class="profile-guide-metric">Improve <select data-planner-metric aria-label="Leaderboard to improve">${Object.entries(PLANNER_METRICS).map(([key,label])=>`<option value="${key}" ${plannerMetric===key?'selected':''}>${label}</option>`).join('')}</select></label><h4>${context}</h4></div><small>${coverageNote} · ${escapeHtml(overallLoadState.serverUpdatedAt?`snapshot changed ${ageLabel(overallLoadState.serverUpdatedAt)}`:'saved profile data')}</small></header><section class="profile-route-priorities"><h5>Recommended routes for you</h5><p>Estimated routes, not guaranteed gains. Track time spread is held constant. Rival routes compare your ${escapeHtml(PLANNER_METRICS[plannerMetric])} gap; otherwise routes compare your own ${escapeHtml(PLANNER_METRICS[plannerMetric])}.</p><div class="profile-guide-grid">${cards(priority)}</div></section>${carrying.length?`<section class="profile-route-strengths"><h5>Your other strong contributions</h5><p>Track Strength compares each contribution with your highest-weight loaded track.</p><div class="profile-guide-grid compact">${cards(carrying)}</div></section>`:''}${goals?`<section class="profile-goal-ladder"><h5>Your action plan</h5><ol>${goals}</ol></section>`:''}</div></details>`;
+    const coverageNote=simulationFinishes.length>=Math.max(0,Number(plannerEntry?.raceCount||0)||0)&&(!rivalMode||snapshotFinishes.length>=Math.max(0,Number(entry?.raceCount||0)||0))?'Results loaded':'More results needed';
+    return `<details class="profile-guide ${strongest?'':'without-carry'}"><summary aria-label="Open detailed route planner"><span data-summary-track-id="${escapeHtml(priority[0]?.trackId||'')}"><b>Best next move</b>${quickSummary}</span>${longRoute?`<span data-summary-track-id="${escapeHtml(longRoute.trackId)}"><b>Another option</b>${dedicatedSummary}</span>`:''}${strongest?`<span data-summary-track-id="${escapeHtml(strongest.trackId)}"><b>Strongest result</b>${carrySummary}</span>`:''}<em class="route-open-label" aria-hidden="true">Full plan</em></summary><div class="profile-guide-body"><header><div><span class="profile-kicker">YOUR PLAN</span><label class="profile-guide-metric">Improve <select data-planner-metric aria-label="Leaderboard to improve">${Object.entries(PLANNER_METRICS).map(([key,label])=>`<option value="${key}" ${plannerMetric===key?'selected':''}>${label}</option>`).join('')}</select></label><h4>${context}</h4></div><small>${coverageNote} · ${escapeHtml(overallLoadState.serverUpdatedAt?`snapshot changed ${ageLabel(overallLoadState.serverUpdatedAt)}`:'saved profile data')}</small></header><section class="profile-route-priorities"><h5>Tracks to try</h5><p>${plannerMetric==='weight'?'Complete new tracks to add weight. Better places alone do not add weight.':'Targets use the available standings. Results can change as others race.'}</p><div class="profile-guide-grid">${cards(priority)}</div></section>${carrying.length?`<section class="profile-route-strengths"><h5>Your other strong contributions</h5><p>Track Strength compares each contribution with your highest-weight loaded track.</p><div class="profile-guide-grid compact">${cards(carrying)}</div></section>`:''}${goals?`<section class="profile-goal-ladder"><h5>Your action plan</h5><ol>${goals}</ol></section>`:''}</div></details>`;
   }
   function openRankedProfile(userId){
     const profileContent=document.querySelector('#overallProfileContent');if(profileContent)profileContent.dataset.accountId=cleanUserId(userId);
