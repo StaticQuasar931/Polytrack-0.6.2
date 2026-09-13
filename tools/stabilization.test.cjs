@@ -1,7 +1,7 @@
 const fs=require('node:fs');const vm=require('node:vm');const test=require('node:test');const assert=require('node:assert/strict');
 const source=fs.readFileSync(require('node:path').join(__dirname,'..','polytrack_062_patch.js'),'utf8');
 function extract(name){const start=source.search(new RegExp('^  (?:async )?function '+name+'\\(','m'));assert.ok(start>=0,name);const tail=source.slice(start);const end=tail.indexOf('\n  }');assert.ok(end>0,name);return tail.slice(0,end+4);}
-function run(name,context={}){context.plannerMetric??='overall';context.trackInfo||=()=>({type:'official'});vm.createContext(context);if(['recommendationAction','rivalRecommendationAction','simulateRecommendation'].includes(name)&&!context.projectedFinish){context.trackInfo||=()=>({type:'official'});vm.runInContext(extract('rankedTrackWeightParts')+'\n'+extract('projectedFinish'),context);}vm.runInContext(extract(name),context);return context[name];}
+function run(name,context={}){context.safeRecordingId||=(x=>Number(x)||0);context.buildRecordingId||=(()=>999);context.plannerMetric??='overall';context.trackInfo||=()=>({type:'official'});vm.createContext(context);if(['recommendationAction','rivalRecommendationAction','simulateRecommendation'].includes(name)&&!context.projectedFinish){context.trackInfo||=()=>({type:'official'});vm.runInContext(extract('rankedTrackWeightParts')+'\n'+extract('projectedFinish'),context);}vm.runInContext(extract(name),context);return context[name];}
 for(const direction of [1,-1])test(`profile unknown results sort last in direction ${direction}`,()=>{
  const ctx={profileSort:'time',profileSortDirection:direction,knownFinishWeight:x=>x.weight,trackInfo:()=>({name:'track'})};
  const result=run('sortProfileFinishes',ctx)([{timeMs:null},{timeMs:2000},{timeMs:1000},{timeMs:undefined}]);
@@ -36,7 +36,7 @@ function overallContext({firestoreData=null,workerData=null,offline=false,failFi
  const ctx={Date,console,readOverallSnapshotCache:()=>saved,TOTAL_TRACKS:78,OVERALL_REFRESH_CHECK_MS:120000,overallTrackSummariesCache:[],overallLoadState:{},
  fetchRankedSnapshot:async()=>{if(workerData)return workerData;throw Error('blocked')},
  db:async()=>{if(failFirestore)throw Error('quota');return {collection:()=>({doc:()=>({get:async()=>({data:()=>firestoreData,metadata:{fromCache:offline}})})})}},
- normalizeEntries:x=>x,annotateOverallMovement:x=>x,writeOverallSnapshotCache:(rows,meta)=>{ctx.written={rows,meta}},log:()=>{},isLocalApiCapableHost:()=>false,
+ expandRankedResults:async data=>run('decodeRankedResults')(data),normalizeEntries:x=>x,annotateOverallMovement:x=>x,writeOverallSnapshotCache:(rows,meta)=>{ctx.written={rows,meta}},log:()=>{},isLocalApiCapableHost:()=>false,
  COLLECTIONS:{leaderboardsOverall:'overall'},AVERAGE_PLACEMENT_VERSION:1,AVERAGE_FINISH_VERSION:1,RANK_MODEL:'test',TRACK_CACHE_SCHEMA:1};return ctx;
 }
 test('blocked Worker falls back to a complete Firestore snapshot',async()=>{
@@ -280,4 +280,59 @@ test('planner reads new-track candidates from the existing overall summaries',()
 
 test('hosted verifier checks sandbox startup before processing replays',()=>{
  const workflow=fs.readFileSync(require('node:path').join(__dirname,'../.github/workflows/verify-runs.yml'),'utf8');assert.ok(workflow.indexOf('Sandboxed browser startup passed')<workflow.indexOf('name: Verify queued runs'));assert.match(workflow,/apparmor_parser/);assert.match(workflow,/chromiumSandbox:true/);assert.doesNotMatch(workflow,/--no-sandbox|apparmor_restrict_unprivileged_userns=0/);
+});
+
+test('compact result snapshot decodes all scored tracks without cloud reads',()=>{
+ const result=run('decodeRankedResults')({resultTracks:['summer','winter'],entries:[{raceCount:2,resultData:JSON.stringify([[0,3,10,2.1,1,19000,123],[1,1,5,1.4,1,20000,456]])}]});
+ assert.equal(result[0].resultSamples.length,2);assert.equal(result[0].resultSamples[1].trackId,'winter');assert.equal(result[0].resultSamples[0].rank,3);
+});
+test('invalid compact data never supplies a partial scoring baseline',()=>{
+ const result=run('decodeRankedResults')({resultTracks:['summer'],entries:[{resultData:'[[0,1,2,1,1,1000,0],[9,1,2,1,1,1000,0]]'}]});assert.equal(result[0].resultSamples,undefined);
+});
+test('faster local PB is projected only for its owner and cannot inherit approval',()=>{
+ const cloud=[{accountId:'me',timeMs:20000,runVerified:true},{accountId:'other',timeMs:18000,runVerified:true}];
+ const ctx={canonicalRaceTimeMs:r=>r?.timeMs||0,readLocalRaceRows:()=>[{accountId:'me',trackId:'a',timeMs:17000},{accountId:'other',trackId:'a',timeMs:1000}]};
+ const result=run('localTrackDisplayEntries',ctx)('a',cloud,'me');const mine=result.find(r=>r.accountId==='me');
+ assert.equal(mine.timeMs,17000);assert.equal(mine.cloudTimeMs,20000);assert.equal(mine.localPending,true);assert.equal(mine.runVerified,false);assert.equal(result.find(r=>r.accountId==='other').timeMs,18000);assert.equal(cloud[0].timeMs,20000);
+});
+test('equal or slower local PB retains the exact cloud verification',()=>{
+ const cloud=[{accountId:'me',timeMs:20000,runVerified:true}];const ctx={canonicalRaceTimeMs:r=>r?.timeMs||0,readLocalRaceRows:()=>[{accountId:'me',trackId:'a',timeMs:20000}]};
+ assert.equal(run('localTrackDisplayEntries',ctx)('a',cloud,'me'),cloud);
+});
+
+test('gzip planner envelope preserves every result and racer binding',async()=>{
+ const zipped=require('node:zlib').gzipSync(JSON.stringify({resultTracks:['a'],entries:[{userId:'me',resultData:'[[0,2,3,1.5,1,19000,123]]'}]})).toString('base64');
+ const ctx={DecompressionStream,Blob,Uint8Array,atob,TextDecoder,decodeRankedResults:run('decodeRankedResults')};
+ const rows=await run('expandRankedResults',ctx)({entries:[{userId:'me'},{userId:'other'}],resultBundle:zipped,resultBundleVersion:1});
+ assert.equal(rows[0].resultSamples[0].rank,2);assert.equal(rows[1].resultSamples,undefined);
+});
+test('damaged compressed results preserve the existing leaderboard',async()=>{
+ const ctx={DecompressionStream,Blob,Uint8Array,atob,TextDecoder,decodeRankedResults:run('decodeRankedResults')};
+ const rows=await run('expandRankedResults',ctx)({entries:[{userId:'me',score:3}],resultBundle:'bad data',resultBundleVersion:1});assert.equal(rows[0].score,3);assert.equal(rows[0].resultSamples,undefined);
+});
+
+test('local PB never inherits a different cloud replay ID',()=>{
+ const ctx={canonicalRaceTimeMs:r=>r?.timeMs||0,readLocalRaceRows:()=>[{accountId:'me',trackId:'a',timeMs:17000,uploadId:222}]};
+ const rows=run('localTrackDisplayEntries',ctx)('a',[{accountId:'me',timeMs:20000,id:111,uploadId:111}],'me');
+ assert.equal(rows[0].id,222);assert.equal(rows[0].uploadId,222);
+});
+test('same snapshot decode failure retains complete cached planner samples',async()=>{
+ const row={userId:'me',score:5,raceCount:2,rankModel:'test',averageFinishVersion:1,averagePlacementVersion:1};
+ const data={entries:[row],trackSummaries:[],algorithmVersion:'test',schemaVersion:1,revision:2,builtRevision:2,sourceRevision:2,updatedAt:2};
+ const ctx=overallContext({firestoreData:data});ctx.readOverallSnapshotCache=()=>({entries:[{...row,resultSamples:[{trackId:'a'},{trackId:'b'}]}],signature:'test:2:2:2',fetchedAt:1});
+ const rows=await run('fetchOverallEntries',ctx)(true);assert.equal(rows[0].resultSamples.length,2);assert.equal(ctx.written.rows[0].resultSamples.length,2);
+});
+test('different revision cannot borrow older planner results',async()=>{
+ const row={userId:'me',score:5,raceCount:2,rankModel:'test',averageFinishVersion:1,averagePlacementVersion:1};
+ const data={entries:[row],trackSummaries:[],algorithmVersion:'test',schemaVersion:1,revision:3,builtRevision:3,sourceRevision:3,updatedAt:3};
+ const ctx=overallContext({firestoreData:data});ctx.readOverallSnapshotCache=()=>({entries:[{...row,resultSamples:[{trackId:'a'},{trackId:'b'}]}],signature:'test:2:2:2',fetchedAt:1});
+ const rows=await run('fetchOverallEntries',ctx)(true);assert.equal(rows[0].resultSamples,undefined);
+});
+
+test('large planner sidecar is used only with exact snapshot binding',async()=>{
+ for(const offset of [0,1]){
+  const data={entries:[{userId:'me',rankModel:'test',averageFinishVersion:1,averagePlacementVersion:1}],trackSummaries:[],algorithmVersion:'test',schemaVersion:1,revision:2,builtRevision:2,sourceRevision:2,updatedAt:2,resultBundleLocation:'main_results'};
+  const ctx=overallContext({workerData:data});let reads=0;ctx.db=async()=>({collection:()=>({doc:id=>({get:async()=>{assert.equal(id,'main_results');reads++;return{data:()=>({algorithmVersion:'test',sourceRevision:2+offset,builtRevision:2,updatedAt:2,resultBundle:'bundle',resultBundleVersion:1})}}})})});
+  let seen;ctx.expandRankedResults=async d=>{seen=d;return d.entries};await run('fetchOverallEntries',ctx)(true);assert.equal(reads,1);assert.equal(seen.resultBundle,offset?undefined:'bundle');
+ }
 });

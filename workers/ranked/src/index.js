@@ -1,4 +1,6 @@
-import { VERIFICATION_COLLECTION, verificationSchedule, verificationKey, verifiedVerdict, pendingSlot } from './verification.js';
+import {packPlannerResults, plannerDocumentBytes, PLANNER_BUNDLE_VERSION, PLANNER_PUBLICATION_VERSION} from './planner-results.js';
+export {packPlannerResults} from './planner-results.js';
+import { VERIFICATION_BOOTSTRAP_ID, VERIFICATION_BOOTSTRAP_BATCH, bootstrapSlots, VERIFICATION_COLLECTION, verificationSchedule, verificationKey, verifiedVerdict, pendingSlot } from './verification.js';
 const FIREBASE_JWKS_URL = 'https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com';
 const FIREBASE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
 const PROJECT_ID = 'polytrack-052';
@@ -578,7 +580,7 @@ function finishSummary(finish) {
   };
 }
 
-export function computeOverall(trackDocuments, priorEntries = [], betaTesterIds = new Set()) {
+export function computeOverall(trackDocuments, priorEntries = [], betaTesterIds = new Set(), {includePlannerResults = false} = {}) {
   const users = new Map();
   for (const board of trackDocuments) {
     const trackId = safeText(board.trackId, 80);
@@ -643,6 +645,7 @@ export function computeOverall(trackDocuments, priorEntries = [], betaTesterIds 
       bestTracks: byPlace.slice(0, 2).map(finishSummary), strongestTrack: finishSummary(byContribution[0] || primaryBest), worstTrack: finishSummary([...user.finishes].sort((a, b) => b.rank / b.fieldSize - a.rank / a.fieldSize)[0] || primaryBest),
       improvementTrack: finishSummary(byImprovement[0] || primaryBest), weightedResults: byContribution.slice(0, 2).map(finishSummary), opportunityTracks: byImprovement.slice(0, 3).map(finishSummary),
       medals, bestTrackId: primaryBest.trackId || null, bestTrackRank: primaryBest.rank || 0, bestTrackField: primaryBest.fieldSize || 0, rankTier: rankTitle(score, played), rankModel: ALGORITHM_VERSION,
+      ...(includePlannerResults ? {resultSamples: user.finishes} : {}),
       timingVersion: 2, badges: user.betaTester ? { betaTester: true } : null
     };
   }).sort((a, b) => Number(a.provisional) - Number(b.provisional) || a.score - b.score || b.raceCount - a.raceCount || a.userId.localeCompare(b.userId)).slice(0, OVERALL_LIMIT);
@@ -704,7 +707,12 @@ export async function mergeCanonicalResultIntoTrack(env, trackId, canonicalResul
   // Equal PB repair must use current canonical data, not a delayed notification payload.
   if(existing && Number(existing.timeMs)===normalized.timeMs && Number(existing.uploadId||0)===Number(normalized.uploadId||0) &&
     (existing.replayHash!==normalized.replayHash || (existing.integrityVerified===true)!==(normalized.integrityVerified===true)))return rebuildTrack(env,trackId);
-  if(existing && (Number(existing.timeMs)<normalized.timeMs || (Number(existing.timeMs)===normalized.timeMs && Number(existing.uploadId||0)>=Number(normalized.uploadId||0))))return {changed:false,entries:prior.data.entries,revision:Number(prior.data.revision||0)};
+  if(existing && (Number(existing.timeMs)<normalized.timeMs || (Number(existing.timeMs)===normalized.timeMs && Number(existing.uploadId||0)>=Number(normalized.uploadId||0)))) {
+    if (Number(existing.timeMs) === normalized.timeMs && Number(existing.uploadId || 0) === Number(normalized.uploadId || 0)) {
+      await prepareVerification(env, trackId, [canonicalResult]);
+    }
+    return {changed:false,entries:prior.data.entries,revision:Number(prior.data.revision||0)};
+  }
   const verdicts=await prepareVerification(env,trackId,[canonicalResult]);
   normalized=computeTrackEntries([{...canonicalResult,integrityVerified}],trackId,env,verdicts)[0];
   const entries = rankTrustedTrackEntries([
@@ -712,6 +720,41 @@ export async function mergeCanonicalResultIntoTrack(env, trackId, canonicalResul
     normalized
   ], trackId);
   return persistTrackSnapshot(env, trackId, entries, prior);
+}
+
+export async function bootstrapSnapshotVerification(env) {
+  const prior = await readDocument(env, COLLECTIONS.jobs, VERIFICATION_BOOTSTRAP_ID);
+  const job = prior?.data || {};
+  if (job.complete === true) return { scanned: 0, complete: true };
+  const structuredQuery = {
+    from: [{ collectionId: COLLECTIONS.track }],
+    orderBy: [{ field: { fieldPath: '__name__' }, direction: 'ASCENDING' }],
+    limit: VERIFICATION_BOOTSTRAP_BATCH,
+    ...(job.cursor ? { startAt: { before: false, values: [{ referenceValue: job.cursor }] } } : {})
+  };
+  const response = await firestoreRequest(env, ':runQuery', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ structuredQuery })
+  });
+  const boards = (response || []).filter(item => item.document).map(item => item.document);
+  const writes = [];
+  for (const board of boards) {
+    const trackId = decodeURIComponent(board.name.split('/').pop());
+    if (!/^[A-Za-z0-9_-]{8,80}$/.test(trackId)) throw Error('INVALID_BOOTSTRAP_TRACK');
+    const data = decodeFields(board.fields || {});
+    if (!Array.isArray(data.entries) || data.entries.length > TRACK_LIMIT) throw Error('INVALID_BOOTSTRAP_BOARD');
+    const queue = await readDocument(env, VERIFICATION_COLLECTION, trackId);
+    const slots = bootstrapSlots(trackId, data.entries, queue?.data?.slots);
+    writes.push({ collection: VERIFICATION_COLLECTION, id: trackId, prior: queue,
+      data: { ...queue?.data, trackId, slots, ...verificationSchedule(slots), updatedAt: Date.now() } });
+  }
+  const complete = boards.length < VERIFICATION_BOOTSTRAP_BATCH;
+  writes.push({ collection: COLLECTIONS.jobs, id: VERIFICATION_BOOTSTRAP_ID, prior,
+    data: { ...job, cursor: boards.at(-1)?.name || job.cursor || '', complete,
+      processed: Number(job.processed || 0) + boards.length, updatedAt: Date.now() } });
+  // Queue merges and cursor advancement succeed together, or the same page retries.
+  await commitDocuments(env, writes);
+  return { scanned: boards.length, complete };
 }
 
 export async function reconcileCanonicalChanges(env) {
@@ -759,14 +802,15 @@ export async function rebuildOverall(env, force = false) {
   const metaDoc = await readDocument(env, COLLECTIONS.meta, 'current');
   const meta = metaDoc?.data || {};
   const now = Date.now();
-  const metricsOutdated = Number(meta.cosmeticEntitlementVersion||0)<2 || Number(meta.averagePlacementVersion || 0) < AVERAGE_PLACEMENT_VERSION || Number(meta.derivedMetricsVersion || 0) < DERIVED_METRICS_VERSION;
+  const metricsOutdated = Number(meta.plannerPublicationVersion || 0) < PLANNER_PUBLICATION_VERSION || Number(meta.plannerBundleVersion || 0) < PLANNER_BUNDLE_VERSION || Number(meta.cosmeticEntitlementVersion||0)<2 || Number(meta.averagePlacementVersion || 0) < AVERAGE_PLACEMENT_VERSION || Number(meta.derivedMetricsVersion || 0) < DERIVED_METRICS_VERSION;
   if (!force && !metricsOutdated && (!meta.dirty || now - Number(meta.lastOverallBuildAt || 0) < REBUILD_COOLDOWN_MS)) return { rebuilt: false, reason: meta.dirty ? 'cooldown' : 'clean', revision: Number(meta.builtRevision || 0) };
   const boards = (await runQuery(env, COLLECTIONS.track, null, 100)).map((document) => document.data);
   const priorDoc = await readDocument(env, COLLECTIONS.overall, 'main');
   const prior = priorDoc?.data || {};
   const migration = (await readDocument(env, COLLECTIONS.jobs, 'release_migration'))?.data || {};
   const betaTesterIds = new Set([...(migration.awardedBadgeIds || []),...(migration.pendingBadges || [])].map((value) => safeText(value, 128)).filter(Boolean));
-  const entries = computeOverall(boards, prior.entries || [], betaTesterIds);
+  const computedEntries = computeOverall(boards, prior.entries || [], betaTesterIds, {includePlannerResults: true});
+  const entries = computedEntries.map(({resultSamples, ...entry}) => entry);
   const trackSummaries = boards.map((board) => ({...board,entries:rankTrustedTrackEntries((Array.isArray(board.entries)?board.entries:[]).filter((entry)=>entry.integrityVerified===true),safeText(board.trackId,80))})).filter((board) => board.entries.length >= 2).map((board) => {
     const leader = board.entries[0] || {};
     return {
@@ -794,7 +838,21 @@ export async function rebuildOverall(env, force = false) {
     if(Number(meta.cosmeticEntitlementVersion||0)<2||!old||JSON.stringify(allowance)!==JSON.stringify(cosmeticEntitlement(old,old.badges?.betaTester===true)))entitlementWrites.push({collection:'0.6.2_s1_cosmetic_entitlements',id:row.userId,data:allowance,unconditional:true});
   }
   const revision = Number(meta.revision || 0);
-  await commitDocuments(env,[...entitlementWrites,{collection:COLLECTIONS.overall,id:'main',prior:priorDoc,data: { entries, trackSummaries, updatedAt: now, builtAt: now, seededBy: 'polytrack-ranked-worker', revision, builtRevision: revision, sourceRevision: revision, algorithmVersion: ALGORITHM_VERSION, schemaVersion: TRACK_SCHEMA_VERSION, averagePlacementVersion: AVERAGE_PLACEMENT_VERSION, derivedMetricsVersion: DERIVED_METRICS_VERSION, entryLimit: OVERALL_LIMIT, trackLimit: TRACK_LIMIT }},{collection:COLLECTIONS.meta,id:'current',prior:metaDoc,data: { ...meta, cosmeticEntitlementVersion:2, dirty: false, revision, builtRevision: revision, lastOverallBuildAt: now, updatedAt: now, algorithmVersion: ALGORITHM_VERSION, schemaVersion: TRACK_SCHEMA_VERSION, averagePlacementVersion: AVERAGE_PLACEMENT_VERSION, derivedMetricsVersion: DERIVED_METRICS_VERSION, rankedWritesEnabled: String(env.RANKED_WRITES_ENABLED) !== 'false', multiplayerEnabled: String(env.MULTIPLAYER_ENABLED) !== 'false' }}]);
+  const snapshot = { entries, trackSummaries, updatedAt: now, builtAt: now, seededBy: 'polytrack-ranked-worker', revision, builtRevision: revision, sourceRevision: revision, algorithmVersion: ALGORITHM_VERSION, schemaVersion: TRACK_SCHEMA_VERSION, averagePlacementVersion: AVERAGE_PLACEMENT_VERSION, derivedMetricsVersion: DERIVED_METRICS_VERSION, entryLimit: OVERALL_LIMIT, trackLimit: TRACK_LIMIT };
+  const packed = await packPlannerResults(computedEntries, snapshot, {boardCount: boards.length, boardLimit: 100});
+  const resultWrites = [];
+  if (packed.resultBundleStatus === 'sidecar') {
+    const {resultBundle, ...metadata} = packed;
+    Object.assign(snapshot, metadata, {resultBundleLocation: 'main_results'});
+    const sidecar = {...packed, resultBundleStatus: 'complete', sourceRevision: snapshot.sourceRevision,
+      builtRevision: snapshot.builtRevision, updatedAt: snapshot.updatedAt, algorithmVersion: snapshot.algorithmVersion};
+    // The guarded main/meta writes protect this sidecar in the same atomic commit, without another read.
+    resultWrites.push({collection: COLLECTIONS.overall, id: 'main_results', data: sidecar, unconditional: true});
+  } else {
+    Object.assign(snapshot, packed);
+  }
+  if (plannerDocumentBytes(snapshot) >= 1048576) throw Error('OVERALL_DOCUMENT_CAP');
+  await commitDocuments(env,[...entitlementWrites,...resultWrites,{collection:COLLECTIONS.overall,id:'main',prior:priorDoc,data: snapshot},{collection:COLLECTIONS.meta,id:'current',prior:metaDoc,data: { ...meta, plannerPublicationVersion:PLANNER_PUBLICATION_VERSION, plannerBundleVersion:PLANNER_BUNDLE_VERSION, cosmeticEntitlementVersion:2, dirty: false, revision, builtRevision: revision, lastOverallBuildAt: now, updatedAt: now, algorithmVersion: ALGORITHM_VERSION, schemaVersion: TRACK_SCHEMA_VERSION, averagePlacementVersion: AVERAGE_PLACEMENT_VERSION, derivedMetricsVersion: DERIVED_METRICS_VERSION, rankedWritesEnabled: String(env.RANKED_WRITES_ENABLED) !== 'false', multiplayerEnabled: String(env.MULTIPLAYER_ENABLED) !== 'false' }}]);
   return { rebuilt: true, revision, racers: entries.length, tracks: trackSummaries.length };
 }
 
@@ -1044,9 +1102,10 @@ export async function handleRequest(request, env, context = {}) {
   }
   if (path === '/v1/admin/reconcile') {
     if (!env.ADMIN_REBUILD_TOKEN || request.headers.get('X-Admin-Token') !== env.ADMIN_REBUILD_TOKEN) return json(origin, env, 403, { error: 'admin_required' });
+    const bootstrap = await bootstrapSnapshotVerification(env);
     const reconciliation = await reconcileCanonicalChanges(env);
     const overall = await rebuildOverall(env, false);
-    return json(origin, env, 200, { reconciliation, overall });
+    return json(origin, env, 200, { bootstrap, reconciliation, overall });
   }
   if (path !== '/v1/pb/notify' && path !== '/v1/profile/notify' && path !== '/v1/profile/cosmetics') return json(origin, env, 404, { error: 'not_found' });
   if (String(env.RANKED_WRITES_ENABLED) === 'false') return json(origin, env, 503, { error: 'ranked_writes_disabled' });
@@ -1079,9 +1138,10 @@ export default {
   },
   scheduled(_event, env, context) {
     context.waitUntil((async()=>{
-      // Separate cron invocations keep PB recovery and optional maintenance within Free-plan subrequests.
+      // Recovery worst case: bootstrap 7 + reconciliation 28 + overall 5 + cold auth 1 = 41 subrequests.
+      // Optional maintenance stays in a separate cron invocation.
       const maintenance=_event.cron==='2-59/5 * * * *';
-      const tasks=maintenance?[[processCosmeticJobs,processProfileJobs,resumeOrCreateMigration][Math.floor(Number(_event.scheduledTime||Date.now())/300000)%3]]:[reconcileCanonicalChanges];
+      const tasks=maintenance?[[processCosmeticJobs,processProfileJobs,resumeOrCreateMigration][Math.floor(Number(_event.scheduledTime||Date.now())/300000)%3]]:[bootstrapSnapshotVerification,reconcileCanonicalChanges];
       for (const task of tasks) {
         try { await task(env); }
         catch (error) { console.error('Scheduled task failed', task.name, String(error?.message || error)); }

@@ -1,10 +1,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import crypto from 'node:crypto';
 import {fileURLToPath} from 'node:url';
 import {connect, decode} from './firestore.mjs';
-import {queueState, reconciledSlot, completedSlot} from './queue.mjs';
-import {VERIFICATION_COLLECTION, VERIFIER_ENGINE_DIGEST, verificationKey} from '../../workers/ranked/src/verification.js';
+import {selectJobs, publishResults} from './runner.mjs';
+import {VERIFICATION_COLLECTION, VERIFIER_ENGINE_DIGEST} from '../../workers/ranked/src/verification.js';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const {snapshot} = await import('./assets.cjs');
 const manifest=JSON.parse(fs.readFileSync(new URL('./engine-manifest.json',import.meta.url),'utf8'));
@@ -22,52 +21,13 @@ if (process.argv.includes('--check')) {
   console.log(due ? 'Verification work is due.' : 'No verification work due.');
   process.exit(0);
 }
-const jobs = [];
-for (const doc of docs) {
-  const slots = {...doc.data.slots};
-  let changed = false;
-  let allocated = 0;
-  for (const slot of Object.values(slots)) {
-    if (jobs.length >= 16 || allocated >= 8) break;
-    if (!['waiting', 'unavailable'].includes(slot.status) || Number(slot.retryAt || 0) > Date.now()) continue;
-    const canonical = await db.get('0.6.2_race_results', slot.resultId);
-    const updated = reconciledSlot(slot, canonical?.data);
-    if (updated !== slot) {slots[slot.accountId] = updated; changed = true;}
-    if (!canonical || updated.reason === 'canonical_missing') continue;
-    allocated++;
-    jobs.push({...canonical.data, resultId: slot.resultId, queueKey: updated.key});
-  }
-  if (changed || allocated === 0) {
-    // A concurrent PB wins the CAS; the next scheduled run reads its new queue.
-    await db.call(':commit', {writes: [db.write(VERIFICATION_COLLECTION, doc.data.trackId, {...doc.data, ...queueState(slots)}, doc)]});
-  }
-}
-if (!jobs.length) {console.log('No runnable verification jobs.'); process.exit(0);}
+const {jobs, canonicalAttempts, selectionConflicts} = await selectJobs(db, docs);
+if (!jobs.length) {console.log(JSON.stringify({processed: 0, canonicalAttempts, selectionConflicts, message: 'No runnable verification jobs.'})); process.exit(0);}
 const {verifyBatch} = await import('./verify.cjs');
 const results = await verifyBatch(root, jobs);
 if (results.length !== jobs.length || new Set(results.map(r => r.resultId)).size !== jobs.length) throw Error('Incomplete verifier result set');
-const totals = {verified: 0, mismatch: 0, unavailable: 0, superseded: 0};
-for (const result of results) {
-  const job = jobs.find(j => j.resultId === result.resultId);
-  if (!job) throw Error('Verifier returned unknown job');
-  for (let attempt = 0; attempt < 3; attempt++) {
-    const queue = await db.get(VERIFICATION_COLLECTION, job.trackId);
-    const current = await db.get('0.6.2_race_results', job.resultId);
-    if (!queue || !current || verificationKey(current.data) !== job.queueKey || queue.data.slots?.[job.accountId]?.key !== job.queueKey) {totals.superseded++; break;}
-    const state = await db.get('0.6.2_s1_worker_jobs', 'canonical_reconcile_v2');
-    const slots = {...queue.data.slots, [job.accountId]: completedSlot(queue.data.slots[job.accountId], result)};
-    const auditId = crypto.createHash('sha256').update(job.queueKey).digest('hex');
-    const audit = await db.get('0.6.2_s1_verification_audit', auditId);
-    const writes = [
-      db.write(VERIFICATION_COLLECTION, job.trackId, {...queue.data, ...queueState(slots)}, queue),
-      db.write('0.6.2_s1_worker_jobs', 'canonical_reconcile_v2', {...(state?.data || {}), pendingTrackIds: [...new Set([...(state?.data?.pendingTrackIds || []), job.trackId])]}, state),
-      db.write('0.6.2_s1_verification_audit', auditId, {resultId: job.resultId, accountId: job.accountId, trackId: job.trackId, key: job.queueKey, ...slots[job.accountId]}, audit),
-    ];
-    try {await db.call(':commit', {writes}); totals[result.status]++; break;}
-    catch (error) {if (attempt === 2 || !String(error.message).includes('409')) throw error;}
-  }
-}
-const reasons={};for(const result of results)reasons[result.reason]=(reasons[result.reason]||0)+1;
-console.log(JSON.stringify({processed: jobs.length, ...totals, reasons, firestoreRequests: db.requests()}));
-if(process.env.GITHUB_STEP_SUMMARY)fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,`## Replay verification\nProcessed: ${jobs.length}. Verified: ${totals.verified}. Waiting: ${totals.unavailable}.\n\n${Object.entries(reasons).map(([reason,count])=>'- '+reason+': '+count).join('\n')}\n`);
+const totals = await publishResults(db, jobs, results);
+const reasons = totals.reasons;
+console.log(JSON.stringify({processed: jobs.length, canonicalAttempts, selectionConflicts, ...totals, reasons, firestoreRequests: db.requests()}));
+if(process.env.GITHUB_STEP_SUMMARY)fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,`## Replay verification\nProcessed: ${jobs.length}. Verified: ${totals.verified}. Corrected legacy times: ${totals.corrected}. Waiting: ${totals.unavailable}. Deferred conflicts: ${totals.deferred}.\n\n${Object.entries(reasons).map(([reason,count])=>'- '+reason+': '+count).join('\n')}\n`);
 if(results.some(r=>r.reason==='engine_unavailable')){console.error('Verifier startup failed. Runs remain waiting; inspect the startup diagnostic.');process.exitCode=1;}

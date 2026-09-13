@@ -520,3 +520,393 @@ test('diamond is free and twin stars require eight Ranked tracks',()=>{
  assert.equal(profileCosmeticsUnlocked({version:4,emblem:'twinStars'},{raceCount:8}),true);
  assert.equal(sanitizeProfileCosmetics({version:4,emblem:'twinStars'}).emblem,'twinStars');
 });
+
+
+import {bootstrapSnapshotVerification} from '../src/index.js';
+import {bootstrapSlots, pendingSlot, VERIFICATION_BOOTSTRAP_ID} from '../src/verification.js';
+
+test('bootstrap preserves current bindings, retries and unrelated slots without trusting snapshot approval', () => {
+  const row = validRun({accountId: 'racer', trackId: TRACK, timeMs: 20000});
+  const waiting = {...pendingSlot(row), status: 'unavailable', retryAt: 999999, attempts: 2};
+  const newer = pendingSlot({...row, timeMs: 19000});
+  const terminal = {...pendingSlot(row), status: 'verified', engineDigest: VERIFIER_ENGINE_DIGEST};
+  for (const existing of [waiting, terminal]) {
+    const slots = bootstrapSlots(TRACK, [row], {racer: existing, other: pendingSlot({...row, accountId: 'other'})});
+    assert.equal(slots.racer, existing);
+    assert.ok(slots.other);
+  }
+  const stale = bootstrapSlots(TRACK, [row], {racer: {...newer, status: 'verified'}}).racer;
+  assert.equal(stale.key, verificationKey(row));
+  assert.equal(stale.status, 'waiting');
+  const snapshot = {...row, replay: undefined, runVerified: true};
+  assert.equal(bootstrapSlots(TRACK, [snapshot]).racer.status, 'waiting');
+  const obsolete = {...terminal, key: JSON.stringify(['old-engine'])};
+  assert.equal(bootstrapSlots(TRACK, [snapshot], {racer: obsolete}).racer.status, 'waiting');
+  assert.equal(bootstrapSlots(TRACK, [snapshot], {racer: {...waiting, reason: 'canonical_missing'}}).racer.status, 'waiting');
+});
+
+test('bootstrap rejects malformed bindings and never prunes partial snapshots to satisfy the cap', () => {
+  const row = validRun({accountId: 'racer', trackId: TRACK, timeMs: 20000});
+  assert.equal(Object.keys(bootstrapSlots(TRACK, [{...row, trackId: COMMUNITY_TRACK}, {...row, accountId: '../bad'}, {...row, timeMs: 0}])).length, 0);
+  const existing = Object.fromEntries(Array.from({length: 500}, (_, i) => ['r'+i, pendingSlot({...row, accountId: 'r'+i})]));
+  assert.throws(() => bootstrapSlots(TRACK, [row], existing), /VERIFICATION_TRACK_CAP/);
+  assert.equal(Object.keys(existing).length, 500);
+});
+
+function bootstrapFixture(count, conflict = false) {
+  const base = 'projects/test/databases/(default)/documents/';
+  const boards = Array.from({length: count}, (_, i) => {
+    const trackId = String(i).padStart(64, '0');
+    return {name: base+'0.6.2_s1_leaderboards_track/'+trackId, fields: wire({trackId,
+      entries: [{accountId: 'racer', trackId, timeMs: 20000, raceTimeFrames: 20000}]}).mapValue.fields};
+  });
+  const docs = new Map();
+  const calls = [];
+  let fail = conflict, sequence = 0;
+  const env = {__TEST_FIRESTORE: async (p, init = {}) => {
+    calls.push(p);
+    if (p === ':runQuery') {
+      const q = JSON.parse(init.body).structuredQuery;
+      assert.equal(q.limit, 4);
+      assert.equal(q.from[0].collectionId, '0.6.2_s1_leaderboards_track');
+      assert.equal(q.orderBy[0].field.fieldPath, '__name__');
+      if (q.startAt) assert.equal(q.startAt.before, false);
+      return boards.filter(b => !q.startAt || b.name > q.startAt.values[0].referenceValue).slice(0, q.limit).map(document => ({document}));
+    }
+    if (p === ':commit') {
+      const writes = JSON.parse(init.body).writes;
+      assert.ok(writes.at(-1).update.name.endsWith('/'+VERIFICATION_BOOTSTRAP_ID));
+      for (const w of writes) {
+        const old = docs.get('/'+w.update.name.split('/documents/')[1]);
+        assert.deepEqual(w.currentDocument, old ? {updateTime: old.updateTime} : {exists: false});
+      }
+      if (fail) {fail = false; throw Error('FIRESTORE_409');}
+      for (const w of writes) docs.set('/'+w.update.name.split('/documents/')[1], {...w.update, updateTime: 'revision-'+(++sequence)});
+      return {};
+    }
+    assert.ok(!p.includes('0.6.2_race_results'));
+    return docs.get(p) || null;
+  }};
+  return {env, docs, calls};
+}
+
+test('snapshot bootstrap pages four boards, atomically checkpoints and is idle after completion', async () => {
+  const f = bootstrapFixture(5);
+  assert.deepEqual(await bootstrapSnapshotVerification(f.env), {scanned: 4, complete: false});
+  assert.equal(f.calls.length, 7);
+  assert.equal(f.docs.size, 5);
+  assert.deepEqual(await bootstrapSnapshotVerification(f.env), {scanned: 1, complete: true});
+  const before = f.calls.length;
+  assert.deepEqual(await bootstrapSnapshotVerification(f.env), {scanned: 0, complete: true});
+  assert.equal(f.calls.length-before, 1);
+  assert.equal(f.docs.size, 6);
+});
+
+test('bootstrap conflict cannot advance cursor or partially seed queues', async () => {
+  const f = bootstrapFixture(4, true);
+  await assert.rejects(bootstrapSnapshotVerification(f.env), /409/);
+  assert.equal(f.docs.size, 0);
+  assert.deepEqual(await bootstrapSnapshotVerification(f.env), {scanned: 4, complete: false});
+  assert.deepEqual(await bootstrapSnapshotVerification(f.env), {scanned: 0, complete: true});
+});
+
+test('empty bootstrap completes without scanning canonical results', async () => {
+  const f = bootstrapFixture(0);
+  assert.deepEqual(await bootstrapSnapshotVerification(f.env), {scanned: 0, complete: true});
+  assert.equal(f.calls.length, 3);
+});
+
+
+test('200-racer 78-track indexed planner envelope exceeds one Firestore document without removing existing summaries', t => {
+  const boards = Array.from({length: 78}, (_, i) => ({trackId: i.toString(16).padStart(64, '0'),
+    entries: Array.from({length: 200}, (_, r) => ({accountId: 'racer-'+r, name: 'Racer '+r,
+      timeMs: 20000+r, pbAt: 1780000000000, integrityVerified: true}))}));
+  const entries = computeOverall(boards);
+  const resultTracks = boards.map(b => b.trackId).sort();
+  const envelope = {resultTracks, entries: entries.map(entry => {
+    const sample = entry.weightedResults[0];
+    return {...entry, resultData: JSON.stringify(resultTracks.map((_, i) =>
+      [i, sample.rank, sample.fieldSize, sample.weight, sample.competition, sample.timeMs, sample.pbAt]))};
+  })};
+  // Firestore value storage: strings include a terminator; numbers use eight bytes.
+  // Omits document name and trackSummaries, so this is a lower bound for main.
+  function storageBytes(value) {
+    if (value === null || typeof value === 'boolean') return 1;
+    if (typeof value === 'number') return 8;
+    if (typeof value === 'string') return Buffer.byteLength(value)+1;
+    if (Array.isArray(value)) return value.reduce((sum, item) => sum+storageBytes(item), 0);
+    return 32+Object.entries(value).reduce((sum, [key, item]) => sum+Buffer.byteLength(key)+1+storageBytes(item), 0);
+  }
+  const bytes = storageBytes(envelope);
+  assert.equal(envelope.entries.length, 200);
+  assert.ok(envelope.entries.every(e => JSON.parse(e.resultData).length === 78));
+  assert.ok(bytes > 1048576);
+  t.diagnostic('Indexed planner envelope lower-bound storage bytes: '+bytes);
+});
+
+
+import {packPlannerResults, plannerDocumentBytes, PLANNER_DOCUMENT_BUDGET} from '../src/planner-results.js';
+import worker from '../src/index.js';
+
+async function unpackPlanner(bundle) {
+  const bytes = Uint8Array.from(atob(bundle.resultBundle), c => c.charCodeAt(0));
+  const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
+  return JSON.parse(await new Response(stream).text());
+}
+
+test('unchanged canonical PB repairs its missing verification slot with no board query or snapshot write', async () => {
+  const row = validRun({accountId: 'racer', trackId: TRACK, timeMs: 20000});
+  let reads = 0, writes = 0;
+  const env = {__TEST_FIRESTORE: async (p, init = {}) => {
+    if (p === ':commit') {
+      const w = JSON.parse(init.body).writes;
+      assert.equal(w.length, 1);
+      assert.ok(w[0].update.name.includes('/0.6.2_s1_verification/'));
+      assert.equal(w[0].currentDocument.exists, false);
+      writes++; return {};
+    }
+    assert.notEqual(p, ':runQuery');
+    reads++;
+    if (p.includes('s1_leaderboards_track')) return {fields: wire({algorithmVersion: 'participation-v8-s1', revision: 2,
+      entries: [row]}).mapValue.fields, updateTime: 'v1'};
+    return null;
+  }};
+  const result = await mergeCanonicalResultIntoTrack(env, TRACK, row, true);
+  assert.equal(result.changed, false);
+  assert.equal(reads, 2);
+  assert.equal(writes, 1);
+});
+
+function overallFixture(boards) {
+  let failCommit = false;
+  const commits = [];
+  const documents = new Map();
+  const calls = [];
+  let snapshot;
+  const env = {__TEST_FIRESTORE: async (p, init = {}) => {
+    calls.push(p);
+    if (p === ':runQuery') {
+      const q = JSON.parse(init.body).structuredQuery;
+      assert.equal(q.from[0].collectionId, '0.6.2_s1_leaderboards_track');
+      assert.equal(q.limit, 100);
+      return boards.slice(0,100).map(board => ({document: {name: 'projects/test/databases/(default)/documents/0.6.2_s1_leaderboards_track/'+board.trackId,
+        fields: wire(board).mapValue.fields}}));
+    }
+    if (p === ':commit') {
+      commits.push(JSON.parse(init.body).writes);
+      if (failCommit) throw Error('FIRESTORE_409');
+      for (const w of JSON.parse(init.body).writes) {
+        if (w.update.name.endsWith('/0.6.2_s1_leaderboards_overall/main')) snapshot = w.update.fields;
+        documents.set('/'+w.update.name.split('/documents/')[1], {...w.update, updateTime: 'v1'});
+      }
+      return {};
+    }
+    return documents.get(p) || null;
+  }};
+  return {env, calls, commits, setFailCommit: value => {failCommit = value;}, snapshot: () => snapshot,
+    sidecar: () => documents.get('/0.6.2_s1_leaderboards_overall/main_results')?.fields};
+}
+
+test('planner packs all finishes losslessly without changing rankings or persisting full arrays', async () => {
+  const boards = [TRACK, COMMUNITY_TRACK, CUSTOM_TRACK].map((trackId, i) => ({trackId, entries:
+    ['racer', 'other'].map((accountId, r) => ({accountId, name: accountId, timeMs: 20000+r+i, pbAt: 1780000000000+i, integrityVerified: true}))}));
+  const old = computeOverall(boards);
+  const full = computeOverall(boards, old, new Set(), {includePlannerResults: true});
+  const stripped = full.map(({resultSamples, ...entry}) => entry);
+  assert.deepEqual(stripped, computeOverall(boards, old));
+  const input = JSON.stringify(full);
+  const packed = await packPlannerResults(full, {entries: stripped}, {boardCount: 3});
+  assert.equal(packed.resultBundleVersion, 1);
+  assert.equal(packed.resultBundleStatus, 'complete');
+  assert.equal(packed.resultBundleComplete, true);
+  const decoded = await unpackPlanner(packed);
+  assert.deepEqual(decoded.resultTracks, [TRACK, COMMUNITY_TRACK, CUSTOM_TRACK].sort());
+  for (const row of decoded.entries) {
+    const expected = full.find(e => e.userId === row.userId).resultSamples;
+    const tuples = JSON.parse(row.resultData);
+    assert.equal(tuples.length, 3);
+    for (const [index, rank, fieldSize, weight, competition, timeMs, pbAt] of tuples) {
+      const sample = expected.find(s => s.trackId === decoded.resultTracks[index]);
+      assert.deepEqual([rank,fieldSize,weight,competition,timeMs,pbAt],
+        [sample.rank,sample.fieldSize,sample.weight,sample.competition,sample.timeMs,sample.pbAt]);
+    }
+  }
+  assert.equal(JSON.stringify(full), input);
+  const f = overallFixture(boards);
+  await rebuildOverall(f.env, true);
+  const stored = f.snapshot();
+  assert.equal(stored.resultBundleVersion.integerValue, '1');
+  assert.ok(stored.entries.arrayValue.values.every(e => !e.mapValue.fields.resultSamples && !e.mapValue.fields.resultData));
+  assert.deepEqual(await unpackPlanner({resultBundle: stored.resultBundle.stringValue}), decoded);
+});
+
+test('overflow returns a complete sidecar bundle and invalid or unavailable data is explicit', async () => {
+  const entry = {userId: 'racer', resultSamples: [{trackId: TRACK, rank: 1, fieldSize: 2,
+    weight: 1.1, competition: 1, timeMs: 20000, pbAt: 1780000000000}]};
+  const large = await packPlannerResults([entry], {padding: 'x'.repeat(900000)}, {boardCount: 100});
+  assert.equal(large.resultBundleStatus, 'sidecar');
+  assert.equal(large.resultBundleComplete, true);
+  assert.equal(large.resultBoardLimitReached, true);
+  assert.equal(large.resultCoverage, 'snapshot_boards');
+  assert.equal(JSON.parse((await unpackPlanner(large)).entries[0].resultData).length, 1);
+  const invalid = await packPlannerResults([{...entry, resultSamples: [...entry.resultSamples, ...entry.resultSamples]}], {});
+  assert.equal(invalid.resultBundleStatus, 'invalid_results');
+  assert.ok(!invalid.resultBundle);
+  const empty = await packPlannerResults([], {});
+  assert.deepEqual(await unpackPlanner(empty), {resultTracks: [], entries: []});
+  const original = globalThis.CompressionStream;
+  try {
+    globalThis.CompressionStream = class {constructor() {throw Error('unavailable');}};
+    const unavailable = await packPlannerResults([entry], {});
+    assert.equal(unavailable.resultBundleStatus, 'compression_unavailable');
+    assert.equal(unavailable.resultBundleComplete, false);
+  } finally {globalThis.CompressionStream = original;}
+});
+
+function entropyBoards(seed) {
+  let state = seed;
+  const random = () => {state ^= state << 13; state ^= state >>> 17; state ^= state << 5; return (state >>> 0)/4294967296;};
+  const token = length => Array.from({length}, () => '0123456789abcdef'[Math.floor(random()*16)]).join('');
+  const users = Array.from({length: 200}, () => ({accountId: token(28), name: token(24)}));
+  return Array.from({length: 78}, () => ({trackId: token(64), updatedAt: 1780000000000,
+    entries: users.map(user => ({...user, countryCode: 'US', carStyle: 'standard',
+      timeMs: 10000+Math.floor(random()*290000), pbAt: 1700000000000+Math.floor(random()*100000000000),
+      totalPlaytimeMs: Math.floor(random()*1000000000), accountCreatedAt: 1600000000000,
+      integrityVerified: true}))}));
+}
+
+test('high-entropy 200 by 78 planner compression benchmark publishes every result inline or in one bounded sidecar', async t => {
+  const measurements = [];
+  for (const seed of [12345, 67890, 987654321]) {
+    const boards = entropyBoards(seed);
+    const full = computeOverall(boards, [], new Set(), {includePlannerResults: true});
+    const f = overallFixture(boards);
+    await rebuildOverall(f.env, true);
+    // Decode the wire representation without using production credentials or network calls.
+    function decode(v) {
+      if (v.mapValue) return Object.fromEntries(Object.entries(v.mapValue.fields).map(([k,x]) => [k,decode(x)]));
+      if (v.arrayValue) return v.arrayValue.values.map(decode);
+      if ('integerValue' in v) return Number(v.integerValue);
+      if ('doubleValue' in v) return v.doubleValue;
+      if ('booleanValue' in v) return v.booleanValue;
+      if ('nullValue' in v) return null;
+      return v.stringValue;
+    }
+    const saved = decode({mapValue: {fields: f.snapshot()}});
+    const base = Object.fromEntries(Object.entries(saved).filter(([key]) => !key.startsWith('result')));
+    const packedAlone = await packPlannerResults(full, {}, {boardCount: 78});
+    const inflated = await unpackPlanner(packedAlone);
+    assert.equal(inflated.entries.length, 200);
+    assert.ok(inflated.entries.every(row => JSON.parse(row.resultData).length === 78));
+    const prospective = {...base, ...packedAlone};
+    const bytes = plannerDocumentBytes(prospective);
+    assert.equal(saved.resultBundleStatus, bytes < PLANNER_DOCUMENT_BUDGET ? 'complete' : 'sidecar');
+    assert.equal(saved.resultBundleComplete, true);
+    if (saved.resultBundle) assert.ok(plannerDocumentBytes(saved) < PLANNER_DOCUMENT_BUDGET);
+    else {
+      assert.equal(saved.resultBundleLocation, 'main_results');
+      const sidecar = decode({mapValue: {fields: f.sidecar()}});
+      assert.ok(plannerDocumentBytes(sidecar) < PLANNER_DOCUMENT_BUDGET);
+      assert.ok(plannerDocumentBytes(saved) < 1048576);
+      for (const key of ['sourceRevision','builtRevision','updatedAt','algorithmVersion','resultBundleVersion']) assert.equal(sidecar[key], saved[key]);
+      assert.deepEqual(await unpackPlanner(sidecar), inflated);
+    }
+    measurements.push({seed, baseFirestoreBytes: plannerDocumentBytes(base), baseJsonBytes: Buffer.byteLength(JSON.stringify(base)),
+      gzipBytes: atob(packedAlone.resultBundle).length, base64Bytes: packedAlone.resultBundle.length,
+      combinedFirestoreBytes: bytes, mainFirestoreBytes: plannerDocumentBytes(saved),
+      sidecarFirestoreBytes: f.sidecar() ? plannerDocumentBytes(decode({mapValue: {fields: f.sidecar()}})) : 0,
+      location: saved.resultBundleLocation || 'inline'});
+  }
+  t.diagnostic(JSON.stringify(measurements));
+});
+
+test('cold recovery cron fits the fifty-subrequest budget with four bootstrap and four rebuild tracks plus overall', async () => {
+  const base = 'projects/polytrack-052/databases/(default)/documents/';
+  const tracks = Array.from({length:4}, (_, i) => String(i).padStart(64,'0'));
+  const documents = new Map(tracks.map(trackId => ['/0.6.2_s1_leaderboards_track/'+trackId,
+    {name: base+'0.6.2_s1_leaderboards_track/'+trackId, updateTime: 'v0', fields: wire({trackId,
+      entries:[{accountId:'racer',trackId,timeMs:30000,raceTimeFrames:30000}]}).mapValue.fields}]));
+  const results = tracks.map(trackId => ({name:base+'0.6.2_race_results/racer_'+trackId,
+    fields: wire(validRun({accountId:'racer',trackId,timeMs:20000})).mapValue.fields}));
+  let calls=0, sequence=0;
+  const env = {__TEST_FIRESTORE: async (p, init={}) => {
+    calls++;
+    if (p === ':runQuery') {
+      const q=JSON.parse(init.body).structuredQuery;
+      if (q.from[0].collectionId === '0.6.2_s1_leaderboards_track') return tracks.map(id => ({document:documents.get('/0.6.2_s1_leaderboards_track/'+id)}));
+      if (q.where?.fieldFilter?.field?.fieldPath === 'trackId') return results.filter(r => r.fields.trackId.stringValue===q.where.fieldFilter.value.stringValue).map(document => ({document}));
+      return results.map(document => ({document}));
+    }
+    if (p === ':commit') {
+      for (const w of JSON.parse(init.body).writes) documents.set('/'+w.update.name.split('/documents/')[1], {...w.update,updateTime:'v'+(++sequence)});
+      return {};
+    }
+    return documents.get(p) || null;
+  }};
+  let completion;
+  worker.scheduled({cron:'0-59/5 * * * *'}, env, {waitUntil: promise => {completion=promise;}});
+  await completion;
+  // One extra token request is needed with a cold service-token cache.
+  assert.equal(calls+1, 41);
+  assert.ok(calls+1 < 50);
+});
+
+
+test('overall bundle explicitly reports the existing 100-board query boundary without trimming its fetched baseline',async()=>{
+  const boards=Array.from({length:101},(_,i)=>({trackId:String(i).padStart(64,'0'),entries:
+    ['racer','other'].map((accountId,r)=>({accountId,name:accountId,timeMs:20000+r,pbAt:1780000000000,integrityVerified:true}))}));
+  const f=overallFixture(boards);
+  await rebuildOverall(f.env,true);
+  const saved=f.snapshot();
+  assert.equal(saved.resultBoardCount.integerValue,'100');
+  assert.equal(saved.resultBoardLimit.integerValue,'100');
+  assert.equal(saved.resultBoardLimitReached.booleanValue,true);
+  assert.equal(saved.resultCoverage.stringValue,'snapshot_boards');
+  const decoded=await unpackPlanner({resultBundle:saved.resultBundle.stringValue});
+  assert.equal(decoded.resultTracks.length,100);
+  assert.ok(decoded.entries.every(row=>JSON.parse(row.resultData).length===100));
+});
+
+
+test('overflow sidecar, main and metadata commit atomically; conflict cannot publish a mismatched pair',async()=>{
+  const f=overallFixture(entropyBoards(12345));
+  await rebuildOverall(f.env,true);
+  assert.equal(f.commits.length,1);
+  const commit=f.commits[0];
+  const sidecar=commit.find(w=>w.update.name.endsWith('/0.6.2_s1_leaderboards_overall/main_results'));
+  const main=commit.find(w=>w.update.name.endsWith('/0.6.2_s1_leaderboards_overall/main'));
+  const meta=commit.find(w=>w.update.name.endsWith('/0.6.2_s1_release_meta/current'));
+  assert.ok(sidecar && main && meta);
+  assert.equal(main.currentDocument.exists,false);
+  assert.equal(meta.currentDocument.exists,false);
+  assert.ok(!('currentDocument' in sidecar));
+  assert.ok(!main.update.fields.resultBundle);
+  assert.equal(main.update.fields.resultBundleLocation.stringValue,'main_results');
+  const savedMain=JSON.stringify(f.snapshot()),savedSidecar=JSON.stringify(f.sidecar());
+  f.setFailCommit(true);
+  await assert.rejects(rebuildOverall(f.env,true),/409/);
+  assert.equal(JSON.stringify(f.snapshot()),savedMain);
+  assert.equal(JSON.stringify(f.sidecar()),savedSidecar);
+  const failed=f.commits[1];
+  assert.equal(failed.find(w=>w.update.name.endsWith('/0.6.2_s1_leaderboards_overall/main')).currentDocument.updateTime,'v1');
+  assert.equal(failed.find(w=>w.update.name.endsWith('/0.6.2_s1_release_meta/current')).currentDocument.updateTime,'v1');
+  assert.equal(f.calls.filter(p=>p.endsWith('/main_results')).length,0);
+});
+
+test('thirty racers stay inline without sidecar reads or writes, and shrinking a board removes the old location',async()=>{
+  const boards=entropyBoards(2468);
+  const f=overallFixture(boards);
+  await rebuildOverall(f.env,true);
+  assert.ok(f.snapshot().resultBundleLocation);
+  const oldSidecar=JSON.stringify(f.sidecar());
+  for(const board of boards)board.entries=board.entries.slice(0,30);
+  await rebuildOverall(f.env,true);
+  assert.ok(f.snapshot().resultBundle);
+  assert.ok(!f.snapshot().resultBundleLocation);
+  const decoded=await unpackPlanner({resultBundle:f.snapshot().resultBundle.stringValue});
+  assert.equal(decoded.entries.length,30);
+  assert.ok(decoded.entries.every(row=>JSON.parse(row.resultData).length===78));
+  assert.ok(!f.commits[1].some(w=>w.update.name.endsWith('/main_results')));
+  assert.equal(JSON.stringify(f.sidecar()),oldSidecar);
+  assert.equal(f.calls.filter(p=>p.endsWith('/main_results')).length,0);
+});
