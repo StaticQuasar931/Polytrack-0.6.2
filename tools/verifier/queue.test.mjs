@@ -274,3 +274,85 @@ test('structured precondition failures retry without exposing backend messages o
   assert.equal((await publishResults(f.db,jobs,[correctionVerdict(jobs[0])])).corrected,1);
   assert.equal(attempts,2);
 });
+
+
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import {checkForWork, runVerifier} from './run.mjs';
+
+test('idle preflight is one projected existence query and emits a no-work summary without physics or writes', async () => {
+  const directory=fs.mkdtempSync(path.join(os.tmpdir(),'polytrack-idle-test-'));
+  const env={FIREBASE_VERIFIER_SERVICE_ACCOUNT:'synthetic-test-only',
+    GITHUB_OUTPUT:path.join(directory,'output'),GITHUB_STEP_SUMMARY:path.join(directory,'summary')};
+  const calls=[],logs=[];
+  let connections=0;
+  try {
+    const result=await runVerifier({check:true,env,log:message=>logs.push(message),
+      validateEngine:async()=>{throw Error('Idle preflight must not load engine assets');},
+      connectDatabase:async raw=>{connections++;assert.equal(raw,'synthetic-test-only');return {
+        call:async(p,body)=>{calls.push({p,body});return [{readTime:'2026-09-12T00:00:00Z'}];},
+        get:async()=>{throw Error('No canonical reads');},write:()=>{throw Error('No writes');}
+      };}});
+    assert.equal(connections,1);assert.equal(calls.length,1);
+    assert.equal(calls[0].p,':runQuery');
+    const query=calls[0].body.structuredQuery;
+    assert.equal(query.limit,1);
+    assert.deepEqual(query.select,{fields:[{fieldPath:'notBefore'}]});
+    assert.equal(query.where.fieldFilter.field.fieldPath,'notBefore');
+    assert.equal(query.where.fieldFilter.op,'LESS_THAN_OR_EQUAL');
+    assert.equal(query.orderBy[0].field.fieldPath,'notBefore');
+    assert.equal(result.hasWork,false);
+    assert.equal(fs.readFileSync(env.GITHUB_OUTPUT,'utf8'),'has_work=false\n');
+    const summary=fs.readFileSync(env.GITHUB_STEP_SUMMARY,'utf8');
+    assert.match(summary,/No verification work is due/);
+    assert.match(summary,/Future-dated retries/);
+    assert.ok(!summary.includes('synthetic-test-only'));
+    assert.ok(!JSON.stringify(logs).includes('synthetic-test-only'));
+    assert.ok(!('FIREBASE_VERIFIER_SERVICE_ACCOUNT' in env));
+  } finally {
+    assert.equal(path.dirname(path.resolve(directory)),path.resolve(os.tmpdir()));
+    fs.rmSync(directory,{recursive:true,force:true});
+  }
+});
+
+test('preflight detects due work without counting racers and passes a deterministic query cutoff',async()=>{
+  let queries=0;
+  const result=await checkForWork({call:async(_,body)=>{
+    queries++;assert.equal(body.structuredQuery.where.fieldFilter.value.integerValue,'1234');
+    return [{document:{name:'queue/track',fields:{notBefore:{integerValue:'1234'}}}}];
+  }},{now:1234,env:{},log:()=>{}});
+  assert.deepEqual(result,{hasWork:true,queueQueries:1,returnedDocuments:1});
+  assert.equal(queries,1);
+});
+
+test('preflight errors fail closed rather than producing a false empty-queue success',async()=>{
+  await assert.rejects(checkForWork({call:async()=>{throw Error('Firestore request failed: 403');}},
+    {env:{},log:()=>{throw Error('Must not report no work');}}),/403/);
+  await assert.rejects(checkForWork({call:async()=>null},{env:{},log:()=>{}}),/Unexpected verification queue response/);
+});
+
+test('processing mode still validates engine before authentication or queue access',async()=>{
+  let connected=false;
+  await assert.rejects(runVerifier({env:{FIREBASE_VERIFIER_SERVICE_ACCOUNT:'synthetic'},
+    validateEngine:async()=>{throw Error('pin mismatch');},
+    connectDatabase:async()=>{connected=true;}}),/pin mismatch/);
+  assert.equal(connected,false);
+});
+
+test('workflow keeps all expensive steps due-gated and credentials restricted to preflight and processing',()=>{
+  const workflow=fs.readFileSync(new URL('../../.github/workflows/verify-runs.yml',import.meta.url),'utf8');
+  assert.match(workflow,/cron: '7,22,37,52 \* \* \* \*'/);
+  assert.match(workflow,/contents: read/);
+  assert.match(workflow,/persist-credentials: false/);
+  assert.match(workflow,/cancel-in-progress: false/);
+  assert.match(workflow,/default_branch/);
+  for(const name of ['Install pinned verifier dependencies','Test verifier safeguards','Install Chromium',
+    'Allow the pinned browser sandbox on Ubuntu','Verify queued runs']) {
+    const step=workflow.split('- name: '+name)[1]?.split('      - name:')[0];
+    assert.ok(step,name);
+    assert.match(step,/if: steps.queue.outputs.has_work == 'true'/,name);
+  }
+  assert.equal((workflow.match(/FIREBASE_VERIFIER_SERVICE_ACCOUNT:/g)||[]).length,2);
+  assert.ok(!workflow.includes('repository_dispatch'));
+});

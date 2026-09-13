@@ -349,3 +349,120 @@ test('fresh successful checks may refresh planner observations without changing 
  const ctx={trackOverlayCache:null,trackSnapshotStore:()=>({a:{entries:[{accountId:'me',rank:1}],serverUpdatedAt:100,checkedAt:500}}),applyCanonicalTrackWeight:(_id,e)=>e,cleanUserId:x=>x,entryTimeMs:()=>1000,knownFinishWeight:()=>2};
  const result=run('cachedTrackFinishOverlays',ctx)();assert.equal(result.get('me')[0].cachedAt,500);
 });
+
+test('route benefit is relative gain, not ordinal or probability',()=>{
+ const percent=run('routeBenefitPercent');assert.equal(percent(2,4),50);assert.equal(percent(4,4),100);assert.equal(percent(0,4),0);assert.equal(percent(NaN,4),0);
+});
+test('thin new tracks do not displace meaningful starter recommendations',()=>{
+ const eligible=run('worthwhileStart');assert.equal(eligible({weight:.16},3.2),false);assert.equal(eligible({weight:1.2},3.2),true);assert.equal(eligible({weight:null},3.2),false);
+});
+test('planner preview uses three routes with track thumbnails',()=>{
+ const markup=extract('profileGuideMarkup');assert.match(markup,/slice\(0,3\)/);assert.match(markup,/route-preview-image/);assert.match(markup,/trackThumbnailMarkup\(action.trackId\)/);assert.doesNotMatch(extract('guideTrackCard'),/YOUR PROGRESS/);
+});
+test('identity hides automatic choice and resolves earned default',()=>{
+ const markup=extract('profileCustomizerMarkup');assert.match(markup,/current.title==='auto'/);assert.match(markup,/current.badge==='auto'/);assert.match(markup,/id==='auto'/);assert.match(markup,/\['badge','title'\].includes\(kind\)/);
+});
+
+function independentPlannerContext(metric){
+ const ctx={plannerMetric:metric,trackInfo:()=>({type:'community'})};
+ vm.createContext(ctx);
+ for(const name of ['rankedPlacementCost','medianNumber','rankedTrackWeightParts','rankedTrackWeight','knownFinishWeight','projectedOverallScore','projectedFinish','simulateRecommendation','recommendationSimulator','recommendationAction','matchupPersonalAction','helpfulThresholdText'])vm.runInContext(extract(name),ctx);
+ return ctx;
+}
+
+test('independent regression: non-monotonic best-ten changes cannot advertise a harmful target',()=>{
+ const ctx=independentPlannerContext('overall');
+ // This field mix makes last place helpful, but the former halved target harmful.
+ const placements=[[48,52],[15,22],[5,72],[4,15],[9,87],[98,99],[16,77],[8,8],[1,18],[1,44],[16,61],[2,11],[89,99],[13,15]];
+ const baseline=placements.map(([rank,fieldSize],i)=>({trackId:'t'+i,rank,fieldSize,competition:1,weight:ctx.rankedTrackWeight('t'+i,fieldSize)}));
+ const finish={trackId:'new',rank:0,fieldSize:92,competition:1,weight:ctx.rankedTrackWeight('new',92)};
+ const before=ctx.projectedOverallScore(baseline);
+ const gains=Array.from({length:93},(_,i)=>before-ctx.simulateRecommendation(baseline,finish,i+1));
+ assert.ok(gains[46]<0,'the former #47 target must remain a genuine regression fixture');
+ assert.ok(gains[92]>0,'last place helps despite the harmful better placement');
+ const action=ctx.recommendationAction(finish,'start',{raceCount:baseline.length},baseline);
+ assert.ok(action);
+ assert.ok(action.targetScore<before);
+ assert.ok(Math.abs(action.estimatedGain-(before-action.targetScore))<1e-10);
+ assert.ok(Math.abs(action.estimatedGain-Math.max(...gains))<1e-10);
+ let prefix=0;while(prefix<gains.length&&gains[prefix]>.0005)prefix++;
+ assert.equal(action.topGuaranteed,prefix>0);
+ assert.equal(action.minimumHelpfulRank,prefix||action.targetRank);
+ assert.doesNotMatch(ctx.helpfulThresholdText(action),/Any finish helps/);
+});
+
+test('independent regression: podium eligibility fallback uses the actual rival margin',()=>{
+ const ctx=independentPlannerContext('podiumRate');
+ const finish=(trackId,rank,fieldSize)=>({trackId,rank,fieldSize,competition:1,weight:ctx.rankedTrackWeight(trackId,fieldSize)});
+ const mine=[finish('a',1,5),finish('b',1,5)];
+ const theirs=[finish('c',1,5),finish('d',1,5),finish('new',1,4)];
+ const start=finish('new',0,4);
+ const action=ctx.recommendationAction(start,'start',{raceCount:2},mine);
+ assert.ok(action);
+ assert.equal(action.estimatedGain,100);
+ assert.equal(ctx.matchupPersonalAction(action,theirs),null,'equal gains do not improve the matchup');
+ const lastPlace={...action,targetRank:5,estimatedGain:200/3};
+ assert.equal(ctx.matchupPersonalAction(lastPlace,theirs),null,'personal gain must not hide the rival gaining 100 points');
+ const nonPodiumRival=[...theirs.slice(0,2),finish('new',4,4)];
+ const helpful=ctx.matchupPersonalAction(action,nonPodiumRival);
+ assert.ok(helpful,'a genuinely positive margin must survive');
+ assert.ok(Math.abs(helpful.rivalEstimatedLoss+200/3)<1e-10);
+ assert.ok(Math.abs(helpful.value-100/3)<1e-10);
+ assert.deepEqual(theirs.map(row=>[row.rank,row.fieldSize]),[[1,5],[1,5],[1,4]]);
+ assert.match(extract('profileGuideMarkup'),/personal\.map\(action=>matchupPersonalAction\(action,snapshotFinishes\)\)/);
+});
+
+for(const metric of ['overall','skill','medals','wins','podiumRate','weight'])test(`cached simulator differential: ${metric}`,t=>{
+ const ctx=independentPlannerContext(metric);
+ ctx.trackInfo=id=>({type:String(id).split(':')[0]});
+ let seed=62931,comparisons=0,maxDifference=0;
+ const random=()=>((seed=(Math.imul(seed,1664525)+1013904223)>>>0)/4294967296);
+ const types=['official','community','custom'];
+ const fields=[2,3,4,5,7,20,50,500];
+ for(const count of [0,1,2,3,9,10,11,14,78]){
+  const baseline=Array.from({length:count},(_,i)=>{
+   const trackId=types[i%3]+':'+i,fieldSize=fields[i%fields.length];
+   const row={trackId,fieldSize,rank:1+Math.floor(random()*fieldSize),competition:[.85,1,1.15][i%3]};
+   row.weight=ctx.rankedTrackWeightParts(trackId,fieldSize,row.competition).finalWeight;
+   if(i%4===0)delete row.weight;
+   if(i%7===0){row.depthBoost=1.2;row.weight=(row.weight||1)*1.2;}
+   if(i%5===0)delete row.competition;
+   return row;
+  });
+  const cases=[...new Set([0,Math.floor(count/2),count-1])].filter(i=>i>=0&&i<count).map(i=>baseline[i]);
+  for(const [i,fieldSize] of [1,2,4,5,17,499].entries())cases.push({trackId:types[i%3]+':new'+i,rank:0,fieldSize,weight:ctx.rankedTrackWeight(types[i%3]+':new'+i,fieldSize)});
+  const input=[...baseline,null,{trackId:'community:solo',rank:1,fieldSize:1},{trackId:'community:unplayed',rank:0,fieldSize:20}];
+  const original=JSON.stringify(input);
+  for(const finish of cases){
+   const scoreAt=ctx.recommendationSimulator(input,finish);
+   const field=finish.fieldSize+(baseline.some(row=>row.trackId===finish.trackId)?0:1);
+   const ranks=[0,...Array.from({length:field},(_,i)=>i+1),field+1,1,field];
+   for(const rank of ranks){
+    const expected=ctx.simulateRecommendation(input,finish,rank),actual=scoreAt(rank);
+    const difference=Math.abs(actual-expected);
+    assert.ok(Number.isFinite(actual)&&difference<=1e-10,JSON.stringify({metric,count,trackId:finish.trackId,rank,expected,actual}));
+    comparisons++;maxDifference=Math.max(maxDifference,difference);
+   }
+  }
+  assert.equal(JSON.stringify(input),original,'cached evaluation must not mutate baseline rows');
+ }
+ t.diagnostic(JSON.stringify({comparisons,maxDifference}));
+});
+
+test('production recommendation action invokes the cached simulator without the slow fallback',()=>{
+ const ctx=independentPlannerContext('overall');
+ const baseline=Array.from({length:12},(_,i)=>({trackId:'track'+i,rank:20-i,fieldSize:30,competition:1,weight:ctx.rankedTrackWeight('track'+i,30)}));
+ const original=ctx.recommendationSimulator;let factories=0,evaluations=0;
+ ctx.recommendationSimulator=(...args)=>{factories++;const scoreAt=original(...args);return rank=>{evaluations++;return scoreAt(rank);};};
+ ctx.simulateRecommendation=()=>{throw Error('slow fallback called in production path');};
+ const action=ctx.recommendationAction(baseline[0],'improve',{raceCount:12},baseline);
+ assert.ok(action&&action.estimatedGain>0);
+ assert.equal(factories,1);
+ assert.equal(evaluations,20);
+});
+
+test('cancelled asynchronous planner does not calculate or render stale routes',async()=>{
+ let calls=0;const ctx={recommendationAction:()=>{calls++;throw Error('stale work');}};
+ const result=await run('profileGuideMarkup',ctx)({raceCount:1},null,true,[],[{trackId:'a',rank:2,fieldSize:5}],[],()=>false);
+ assert.equal(result,'');assert.equal(calls,0);
+});

@@ -1,5 +1,6 @@
 name: Verify PolyTrack runs
 on:
+  # GitHub must wake a runner to query Firestore; expensive steps run only when due work exists.
   schedule:
     - cron: '7,22,37,52 * * * *'
   workflow_dispatch:
@@ -20,8 +21,9 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: '24'
-      - name: Check for queued work
+      - name: Check for due verification work
         id: queue
+        timeout-minutes: 2
         env:
           FIREBASE_VERIFIER_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_VERIFIER_SERVICE_ACCOUNT }}
         run: node tools/verifier/run.mjs --check
