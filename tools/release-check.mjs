@@ -4,10 +4,10 @@ import { spawnSync } from 'node:child_process';
 
 const root = resolve(import.meta.dirname, '..');
 const failures = [];
-const required = ['index.html', 'manifest.json', 'robots.txt', 'sitemap.xml', 'main.bundle.js', 'polytrack_062_patch.js', 'polytrack_physics.wasm', 'simulation_worker.bundle.js'];
+const required = ['index.html', 'manifest.json', 'robots.txt', 'sitemap.xml', 'main.bundle.js', 'polytrack_062_patch.js', 'polytrack_physics.wasm', 'simulation_worker.bundle.js', 'events/client.mjs', 'events/session.mjs', 'events/native-binding.mjs', 'events/native-finish.mjs', 'events/events.css'];
 for (const file of required) if (!existsSync(join(root, file))) failures.push(`Missing required file: ${file}`);
 
-for (const file of ['polytrack_062_patch.js', 'main.bundle.js', 'simulation_worker.bundle.js']) {
+for (const file of ['polytrack_062_patch.js', 'main.bundle.js', 'simulation_worker.bundle.js', 'events/client.mjs', 'events/session.mjs', 'events/native-binding.mjs', 'events/native-finish.mjs']) {
   if (!existsSync(join(root, file))) continue;
   const check = spawnSync(process.execPath, ['--check', join(root, file)], { encoding: 'utf8' });
   if (check.status !== 0) failures.push(`JavaScript syntax failed for ${file}: ${check.stderr.trim()}`);
@@ -37,7 +37,7 @@ for (const reference of relativeReferences) {
   if (!existsSync(join(root, reference))) failures.push(`Missing index asset: ${reference}`);
 }
 
-const textExtensions = new Set(['.js', '.html', '.json', '.md', '.txt', '.xml', '.css']);
+const textExtensions = new Set(['.mjs', '.js', '.html', '.json', '.md', '.txt', '.xml', '.css']);
 const secretPatterns = [
   [/-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----\s+[A-Za-z0-9+/=\r\n]{64,}\s+-----END (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/, 'private key'],
   [/apiKey=[a-f0-9]{32,}/i, 'credential URL'],

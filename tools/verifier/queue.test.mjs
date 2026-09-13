@@ -288,7 +288,7 @@ test('idle preflight is one projected existence query and emits a no-work summar
   const calls=[],logs=[];
   let connections=0;
   try {
-    const result=await runVerifier({check:true,env,log:message=>logs.push(message),
+    const result=await runVerifier({check:true,env,eventCheck:async()=>({hasWork:false}),log:message=>logs.push(message),
       validateEngine:async()=>{throw Error('Idle preflight must not load engine assets');},
       connectDatabase:async raw=>{connections++;assert.equal(raw,'synthetic-test-only');return {
         call:async(p,body)=>{calls.push({p,body});return [{readTime:'2026-09-12T00:00:00Z'}];},
@@ -321,8 +321,8 @@ test('preflight detects due work without counting racers and passes a determinis
   const result=await checkForWork({call:async(_,body)=>{
     queries++;assert.equal(body.structuredQuery.where.fieldFilter.value.integerValue,'1234');
     return [{document:{name:'queue/track',fields:{notBefore:{integerValue:'1234'}}}}];
-  }},{now:1234,env:{},log:()=>{}});
-  assert.deepEqual(result,{hasWork:true,queueQueries:1,returnedDocuments:1});
+  }},{now:1234,env:{},eventCheck:async()=>({hasWork:false}),log:()=>{}});
+  assert.deepEqual(result,{hasWork:true,normalHasWork:true,eventHasWork:false,queueQueries:1,returnedDocuments:1});
   assert.equal(queries,1);
 });
 
@@ -355,4 +355,114 @@ test('workflow keeps all expensive steps due-gated and credentials restricted to
   }
   assert.equal((workflow.match(/FIREBASE_VERIFIER_SERVICE_ACCOUNT:/g)||[]).length,2);
   assert.ok(!workflow.includes('repository_dispatch'));
+});
+
+test('event-only work wakes preflight and both sources are checked when normal work exists', async () => {
+  for (const normal of [false, true]) {
+    let checks=0;
+    const result=await checkForWork({call:async()=>normal?[{document:{}}]:[]},
+      {env:{},now:1234,log:()=>{},eventCheck:async(_,options)=>{
+        checks++;assert.equal(options.now,1234);return {hasWork:true};
+      }});
+    assert.equal(checks,1);assert.equal(result.hasWork,true);
+    assert.equal(result.normalHasWork,normal);assert.equal(result.eventHasWork,true);
+  }
+});
+
+test('event preflight failures never masquerade as no work', async () => {
+  for (const eventCheck of [async()=>null,async()=>({}),async()=>{throw Error('event query failed');}]) {
+    await assert.rejects(checkForWork({call:async()=>[]},{env:{},log:()=>{},eventCheck}));
+  }
+});
+
+test('event work processes with normal queue empty without invoking normal physics', async () => {
+  const calls=[];
+  await runVerifier({env:{FIREBASE_VERIFIER_SERVICE_ACCOUNT:'synthetic'},log:()=>{},
+    validateEngine:async()=>{calls.push('pin');},
+    connectDatabase:async()=>({call:async()=>{calls.push('normal-query');return [];}}),
+    eventRun:async(_,root,options)=>{
+      assert.equal(options.limit,16);assert.equal(options.intakeLimit,16);assert.ok(root.endsWith('Polytrack 0.6.2'));
+      calls.push('event');return {checked:1,consumed:1,rejected:false,archived:null,results:[]};
+    },
+    verifyNormal:async()=>{throw Error('No normal simulation expected');}});
+  assert.deepEqual(calls,['pin','normal-query','event']);
+});
+
+test('mixed backlog reserves twelve normal simulations and four event jobs', async () => {
+  const selected=Array.from({length:16},(_,n)=>({resultId:'job-'+n}));
+  const events=[];
+  await runVerifier({env:{FIREBASE_VERIFIER_SERVICE_ACCOUNT:'synthetic'},log:()=>{},
+    validateEngine:async()=>{},connectDatabase:async()=>({call:async()=>[],requests:()=>1}),
+    eventRun:async(_,__,options)=>{
+      events.push(options.limit);return {checked:4,consumed:0,rejected:false,archived:null,results:[]};
+    },
+    selectNormal:async()=>({jobs:selected,canonicalAttempts:16,selectionConflicts:0}),
+    verifyNormal:async(_,jobs)=>{assert.equal(jobs.length,12);return jobs.map(j=>({...j,status:'verified'}));},
+    publishNormal:async(_,jobs,results)=>{
+      assert.equal(jobs.length,12);assert.equal(results.length,12);
+      return {verified:12,corrected:0,unavailable:0,deferred:0,reasons:{}};
+    }});
+  assert.deepEqual(events,[4]);assert.equal(selected.length,16);
+});
+
+test('normal engine pin failure prevents any event processing', async () => {
+  await assert.rejects(runVerifier({env:{},validateEngine:async()=>{throw Error('pin mismatch');},
+    eventRun:async()=>{throw Error('must not run events');}}),/pin mismatch/);
+});
+
+test('real event module idle preflight performs five bounded read operations and no writes', async () => {
+  const calls=[];
+  const result=await checkForWork({call:async(p,body)=>{
+    calls.push({p,body});
+    if(p===':runQuery'){assert.equal(body.structuredQuery.limit,1);if(body.structuredQuery.from[0].collectionId!=='0.6.2_event_retries')assert.ok(body.structuredQuery.select);return [];}
+    assert.ok(['/0.6.2_event_catalog/main','/0.6.2_event_cursors/scan'].includes(p),p);return null;
+  }},{env:{},log:()=>{},now:1234});
+  assert.equal(result.hasWork,false);assert.equal(calls.length,5);
+});
+
+test('real event queue due with canonical empty wakes workflow without replay reads', async () => {
+  const result=await checkForWork({call:async(p,body)=>{
+    if(p===':runQuery')return [];
+    if(p==='/0.6.2_event_catalog/main')return {fields:encode({periods:[{id:'period',enabled:true,startsAt:1,endsAt:2000,graceMs:100,archived:false}]}).mapValue.fields};
+    if(p==='/0.6.2_event_queues/period')return {fields:encode({slots:[{notBefore:1,leaseUntil:0,attempts:0}]}).mapValue.fields};
+    assert.equal(p,'/0.6.2_event_cursors/scan');return null;
+  }},{env:{},log:()=>{},now:1234});
+  assert.equal(result.normalHasWork,false);assert.equal(result.eventHasWork,true);assert.equal(result.hasWork,true);
+});
+
+test('real event receipt scan wakes workflow when canonical and period queues are empty', async () => {
+  const result=await checkForWork({call:async(p,body)=>{
+    if(p===':runQuery')return body.structuredQuery.from[0].collectionId==='0.6.2_event_inbox'
+      ? [{document:{name:'inbox/doc',fields:{receivedAt:{timestampValue:'2026-09-13T00:00:00Z'}}}}]:[];
+    return null;
+  }},{env:{},log:()=>{},now:1234});
+  assert.equal(result.normalHasWork,false);assert.equal(result.eventHasWork,true);assert.equal(result.hasWork,true);
+});
+
+test('real default event processor safely handles both queues empty', async () => {
+  let requests=0;
+  await runVerifier({env:{FIREBASE_VERIFIER_SERVICE_ACCOUNT:'synthetic'},log:()=>{},validateEngine:async()=>{},
+    connectDatabase:async()=>({call:async(p)=>{
+      requests++;
+      if(p===':runQuery')return [];
+      assert.ok(['/0.6.2_event_catalog/main','/0.6.2_event_cursors/scan'].includes(p),p);return null;
+    }}),verifyNormal:async()=>{throw Error('No simulation should run');}});
+  assert.equal(requests,8);
+});
+
+test('shared budget gives events unused normal capacity without exceeding sixteen total', async () => {
+  for (const count of [0,1,4,8,12,16]) {
+    const selected=Array.from({length:count},(_,i)=>({resultId:'job-'+i}));
+    let reserved=0, simulated=0;
+    await runVerifier({env:{FIREBASE_VERIFIER_SERVICE_ACCOUNT:'synthetic'},log:()=>{},
+      validateEngine:async()=>{},connectDatabase:async()=>({call:async()=>[],requests:()=>0}),
+      selectNormal:async()=>({jobs:selected,canonicalAttempts:count,selectionConflicts:0}),
+      eventRun:async(_,__,options)=>{
+        reserved=options.limit;assert.equal(options.intakeLimit,16);
+        return {checked:reserved,consumed:16,rejected:false,archived:null,results:[]};
+      },verifyNormal:async(_,jobs)=>{simulated=jobs.length;return jobs;},
+      publishNormal:async()=>({reasons:{}})});
+    assert.equal(simulated,Math.min(12,count));
+    assert.equal(reserved,16-simulated);assert.ok(reserved>=4);assert.equal(reserved+simulated,16);
+  }
 });

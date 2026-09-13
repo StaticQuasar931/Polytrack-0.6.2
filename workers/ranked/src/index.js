@@ -1,3 +1,4 @@
+import { eventWorkerHandler, eventWorkerMaintenance } from './events-worker.js';
 import {packPlannerResults, plannerDocumentBytes, PLANNER_BUNDLE_VERSION, PLANNER_PUBLICATION_VERSION} from './planner-results.js';
 export {packPlannerResults} from './planner-results.js';
 import { VERIFICATION_BOOTSTRAP_ID, VERIFICATION_BOOTSTRAP_BATCH, bootstrapSlots, VERIFICATION_COLLECTION, verificationSchedule, verificationKey, verifiedVerdict, pendingSlot } from './verification.js';
@@ -1078,6 +1079,10 @@ export async function handleRequest(request, env, context = {}) {
   const origin = request.headers.get('Origin') || '';
   if (!allowedOrigins(env).has(origin)) return json(origin, env, 403, { error: 'origin_not_allowed' });
   const path = new URL(request.url).pathname.replace(/\/+$/, '') || '/';
+  if (path.startsWith('/v1/events/')) return eventWorkerHandler(env, {
+    request: (path, init) => firestoreRequest(env, path, init),
+    authenticate: request => verifyFirebaseUser(request, env), origins: allowedOrigins(env)
+  })(request);
   if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: responseHeaders(origin, env) });
   if (request.method === 'GET' && path === '/v1/status') {
     const meta = (await readDocument(env, COLLECTIONS.meta, 'current').catch(() => null))?.data || {};
@@ -1138,6 +1143,21 @@ export default {
   },
   scheduled(_event, env, context) {
     context.waitUntil((async()=>{
+      if (_event.cron === '* * * * *') {
+        const community = [...COMMUNITY_IDS];
+        // Existing TRACK_CATALOG begins with Rolling Hills, then official tracks.
+        return eventWorkerMaintenance(env, {
+          request: (path, init) => firestoreRequest(env, path, init),
+          officialIds: [...OFFICIAL_IDS], allIds: [community[0], ...OFFICIAL_IDS, ...community.slice(1)],
+          at: Number(_event.scheduledTime || Date.now()),
+          targetForTrack: async trackId => {
+            const snapshot = await readDocument(env, COLLECTIONS.track, trackId);
+            const times = (snapshot?.data?.entries || []).filter(row => row.runVerified === true)
+              .map(row => row.timeMs).filter(ms => Number.isSafeInteger(ms) && ms > 0 && ms <= 300000);
+            return times.length ? Math.min(...times) : null;
+          }
+        });
+      }
       // Recovery worst case: bootstrap 7 + reconciliation 28 + overall 5 + cold auth 1 = 41 subrequests.
       // Optional maintenance stays in a separate cron invocation.
       const maintenance=_event.cron==='2-59/5 * * * *';
