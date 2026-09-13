@@ -1,7 +1,7 @@
 const fs=require('node:fs');const vm=require('node:vm');const test=require('node:test');const assert=require('node:assert/strict');
 const source=fs.readFileSync(require('node:path').join(__dirname,'..','polytrack_062_patch.js'),'utf8');
 function extract(name){const start=source.search(new RegExp('^  (?:async )?function '+name+'\\(','m'));assert.ok(start>=0,name);const tail=source.slice(start);const end=tail.indexOf('\n  }');assert.ok(end>0,name);return tail.slice(0,end+4);}
-function run(name,context={}){context.safeRecordingId||=(x=>Number(x)||0);context.buildRecordingId||=(()=>999);context.plannerMetric??='overall';context.trackInfo||=()=>({type:'official'});vm.createContext(context);if(['recommendationAction','rivalRecommendationAction','simulateRecommendation'].includes(name)&&!context.projectedFinish){context.trackInfo||=()=>({type:'official'});vm.runInContext(extract('rankedTrackWeightParts')+'\n'+extract('projectedFinish'),context);}vm.runInContext(extract(name),context);return context[name];}
+function run(name,context={}){context.cloudOwnerConflicts??=new Map();context.window??={firebase:{auth:()=>({currentUser:{uid:"test-owner"}})}};context.assertCloudOwner??=()=>{};context.safeRecordingId||=(x=>Number(x)||0);context.buildRecordingId||=(()=>999);context.plannerMetric??='overall';context.trackInfo||=()=>({type:'official'});vm.createContext(context);if(['recommendationAction','rivalRecommendationAction','simulateRecommendation'].includes(name)&&!context.projectedFinish){context.trackInfo||=()=>({type:'official'});vm.runInContext(extract('rankedTrackWeightParts')+'\n'+extract('projectedFinish'),context);}vm.runInContext(extract(name),context);return context[name];}
 for(const direction of [1,-1])test(`profile unknown results sort last in direction ${direction}`,()=>{
  const ctx={profileSort:'time',profileSortDirection:direction,knownFinishWeight:x=>x.weight,trackInfo:()=>({name:'track'})};
  const result=run('sortProfileFinishes',ctx)([{timeMs:null},{timeMs:2000},{timeMs:1000},{timeMs:undefined}]);
@@ -169,7 +169,7 @@ test('PB reconciliation never treats an offline cached response as cloud confirm
  const body=extract('reconcileLocalPersonalBestsToCloud');assert.match(body,/source:'server'/);assert.match(body,/doc.metadata\?\.fromCache/);
 });
 function receiptContext(rows,cloud){
- let store={};let reads=0;const ctx={Date,JSON,Map,cleanUserId:x=>x,canonicalRaceTimeMs:x=>Number(x?.timeMs)||0,
+ let store={};let reads=0;const ctx={window:{firebase:{auth:()=>({currentUser:{uid:"test-owner"}})}},cloudOwnerConflicts:new Map(),assertCloudOwner:()=>{},Date,JSON,Map,cleanUserId:x=>x,canonicalRaceTimeMs:x=>Number(x?.timeMs)||0,
  LOCAL_PB_RECONCILE_STATE_KEY:'receipts',localPbReconcilePromise:null,localBestRowsForAccount:()=>rows,
  readJsonStorage:()=>store,writeJsonStorage:(_key,value)=>{store=value},COLLECTIONS:{raceResults:'pb'},log:()=>{},
  db:async()=>({collection:()=>({doc:id=>({get:async()=>{reads++;return {exists:Boolean(cloud[id]),data:()=>cloud[id]}}})})}),
@@ -465,4 +465,29 @@ test('cancelled asynchronous planner does not calculate or render stale routes',
  let calls=0;const ctx={recommendationAction:()=>{calls++;throw Error('stale work');}};
  const result=await run('profileGuideMarkup',ctx)({raceCount:1},null,true,[],[{trackId:'a',rank:2,fieldSize:5}],[],()=>false);
  assert.equal(result,'');assert.equal(calls,0);
+});
+
+test('planner mixes rival and personal routes by actual benefit, not source',()=>{
+ const result=run('orderedPlannerRoutes')([{trackId:'rival',value:1,weight:9}],[{trackId:'personal',value:8,weight:2},{trackId:'rival',value:2,weight:9}]);
+ assert.deepEqual(Array.from(result,x=>x.trackId),['personal','rival']);assert.equal(result[1].value,2);
+});
+test('ease sorts relative time gaps and leaves missing evidence last',()=>{
+ const result=run('orderedPlannerRoutes')([],[{trackId:'unknown',value:100},{trackId:'hard',value:20,ease:{relativeGap:.2}},{trackId:'easy',value:1,ease:{relativeGap:.01}}],6,'ease');
+ assert.deepEqual(Array.from(result,x=>x.trackId),['easy','hard','unknown']);
+});
+test('ease uses the local viewer and relative target gap, not raw seconds',()=>{
+ const ease=run('plannerEase');const snapshot={entries:[{accountId:'other',timeMs:9000},{accountId:'me',timeMs:10000}]};
+ const result=ease({currentRank:2,targetRank:1},snapshot,'me');assert.equal(result.relativeGap,.1);assert.equal(result.gapMs,1000);assert.equal(ease({currentRank:0,targetRank:1},snapshot,'me'),null);assert.equal(ease({currentRank:2,targetRank:1},{entries:[]},'me'),null);
+});
+test('ease mode selects a smaller helpful step on a played track',()=>{
+ const ctx={plannerSort:'ease',projectedOverallScore:()=>10,simulateRecommendation:(_rows,_finish,rank)=>rank<=3?rank+3:11,knownFinishWeight:()=>2,rankedTrackWeight:()=>2};
+ const action=run('recommendationAction',ctx)({trackId:'played',fieldSize:8,rank:5},'improve',{},[]);assert.equal(action.targetRank,3);assert.ok(action.estimatedGain>0);
+});
+
+test('ease preserves the easier helpful target when two routes share a track',()=>{
+ const result=run('orderedPlannerRoutes')([{trackId:'same',targetRank:1,value:10,ease:{relativeGap:.2}}],[{trackId:'same',targetRank:2,value:2,ease:{relativeGap:.01}}],6,'ease');assert.equal(result.length,1);assert.equal(result[0].targetRank,2);
+});
+
+test('ease does not use a track snapshot older than the planner result',()=>{
+ const snapshot={serverUpdatedAt:100,entries:[{accountId:'me',timeMs:10000},{accountId:'other',timeMs:9000}]};assert.equal(run('plannerEase')({currentRank:2,targetRank:1,cachedAt:200},snapshot,'me'),null);
 });

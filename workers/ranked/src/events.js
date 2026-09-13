@@ -1,3 +1,4 @@
+import { compatibleEventEngine } from './event-engine-compatibility.js';
 import { canonicalPromotion } from './event-canonical.js';
 import { matchesClockRejection } from './event-clock-recovery.js';
 import { VERIFIER_ENGINE_DIGEST, VERIFIER_VERSION } from './verification.js';
@@ -77,8 +78,8 @@ export function eventPeriod(input) {
   return Object.freeze(p);
 }
 function periodBinding(p) {
-  const normalized = eventPeriod(p);
-  demand(p.scoreVersion === EVENT_VERSION && p.engineDigest === VERIFIER_ENGINE_DIGEST &&
+  const normalized = { ...eventPeriod(p), engineDigest: p.engineDigest };
+  demand(p.scoreVersion === EVENT_VERSION && compatibleEventEngine(p.engineDigest) &&
     p.verifierVersion === VERIFIER_VERSION, 'event_version_unavailable', 503);
   return JSON.stringify(normalized);
 }

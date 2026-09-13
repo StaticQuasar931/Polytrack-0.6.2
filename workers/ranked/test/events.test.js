@@ -541,3 +541,42 @@ test('Firestore conflicts retry boundedly, never fall back to unsafe writes', as
   const timestamp = { __firestoreTimestamp: '2026-01-01T00:00:00.123456789Z' };
   assert.deepEqual(eventDecode(eventEncode(timestamp)), timestamp);
 });
+
+import { PRE_EVENT_LAUNCH_ENGINE } from '../src/event-engine-compatibility.js';
+
+test('launch-only repin preserves old period binding, event Play, pending runs and frozen archive scores', async () => {
+  const f=fixture();await f.start();
+  const oldPeriod={...f.data.get(`${C.periods}/day1`),engineDigest:PRE_EVENT_LAUNCH_ENGINE};
+  f.data.set(`${C.periods}/day1`,oldPeriod);
+  assert.equal((await f.service.snapshot('day1')).period.targetMs,oldPeriod.targetMs);
+  const first=await f.submit();
+  assert.equal(f.run(first.runId).periodBinding,JSON.stringify(oldPeriod));
+  const originalBinding=f.run(first.runId).eventKey;
+  await f.publish();
+  assert.equal(f.run(first.runId).eventKey,originalBinding);
+  assert.equal(f.run(first.runId).proof.engineDigest,engine);
+  assert.deepEqual(f.data.get(`${C.periods}/day1`),oldPeriod);
+  f.time(p.endsAt-1);await f.submit(15000,'late-repin');
+  f.time(p.endsAt+p.graceMs-1);const [job]=await f.service.leaseJobs('day1');
+  f.time(p.endsAt+p.graceMs);await f.service.archivePeriod('day1');
+  const archive=structuredClone(f.data.get(`${C.archives}/day1`));
+  const totals=structuredClone(f.data.get(`${C.public}/totals`));
+  const result=await f.service.completeJob('day1',job,verdict(job));
+  assert.equal(result.eventImproved,false);assert.equal(result.canonicalImproved,true);
+  assert.deepEqual(f.data.get(`${C.archives}/day1`),archive);
+  assert.deepEqual(f.data.get(`${C.public}/totals`),totals);
+  assert.equal((await f.service.snapshot('day1')).archived,true);
+});
+
+test('period compatibility never accepts obsolete proofs, arbitrary engines or rewritten new periods',async()=>{
+  assert.notEqual(engine,PRE_EVENT_LAUNCH_ENGINE,'repin must be applied with compatibility');
+  const f=fixture();await f.start();
+  f.data.get(`${C.periods}/day1`).engineDigest=PRE_EVENT_LAUNCH_ENGINE;
+  await f.submit();const [job]=await f.service.leaseJobs('day1');
+  const proof=verdict(job);proof.engineDigest=PRE_EVENT_LAUNCH_ENGINE;proof.binding.engineDigest=PRE_EVENT_LAUNCH_ENGINE;
+  await assert.rejects(f.service.completeJob('day1',job,proof),/verifier_proof_mismatch/);
+  assert.deepEqual(f.data.get(`${C.live}/day1`).entries,[]);
+  f.data.get(`${C.periods}/day1`).engineDigest='d'.repeat(64);
+  await assert.rejects(f.service.snapshot('day1'),/event_version_unavailable/);
+  assert.equal(eventPeriod({...inputPeriod,engineDigest:PRE_EVENT_LAUNCH_ENGINE}).engineDigest,engine);
+});

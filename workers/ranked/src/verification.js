@@ -1,4 +1,4 @@
-export const VERIFIER_ENGINE_DIGEST = '503903036ae715673284f6d1b2b121034a666410e5effb9521d7d60f1c4e4597';
+export const VERIFIER_ENGINE_DIGEST = '895eeacbdfdd5f68b9db92c502af620709539c5211782809f610c1a76e60785d';
 export const VERIFIER_VERSION = 'polytrack-native-bounded-v1';
 export const VERIFICATION_COLLECTION = '0.6.2_s1_verification';
 export function verificationKey(row) {
@@ -49,4 +49,11 @@ export function bootstrapSlots(trackId, entries, existing = {}) {
   }
   if (Object.keys(slots).length > 500) throw Error('VERIFICATION_TRACK_CAP');
   return slots;
+}
+
+
+export function verifiedTargetMs(entries, verdicts) {
+  const times = entries.filter(row => verifiedVerdict(row, verdicts[row.accountId || row.userId]))
+    .map(row => row.timeMs).filter(ms => Number.isSafeInteger(ms) && ms > 0 && ms <= 300000);
+  return times.length ? Math.min(...times) : null;
 }

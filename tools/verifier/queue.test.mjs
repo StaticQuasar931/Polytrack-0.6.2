@@ -279,6 +279,8 @@ test('structured precondition failures retry without exposing backend messages o
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import {fileURLToPath} from 'node:url';
+import {spawnSync} from 'node:child_process';
 import {checkForWork, runVerifier} from './run.mjs';
 
 test('idle preflight is one projected existence query and emits a no-work summary without physics or writes', async () => {
@@ -381,7 +383,8 @@ test('event work processes with normal queue empty without invoking normal physi
     validateEngine:async()=>{calls.push('pin');},
     connectDatabase:async()=>({call:async()=>{calls.push('normal-query');return [];}}),
     eventRun:async(_,root,options)=>{
-      assert.equal(options.limit,16);assert.equal(options.intakeLimit,16);assert.ok(root.endsWith('Polytrack 0.6.2'));
+      assert.equal(options.limit,16);assert.equal(options.intakeLimit,16);
+      assert.equal(root,path.resolve(fileURLToPath(new URL('../..',import.meta.url))));
       calls.push('event');return {checked:1,consumed:1,rejected:false,archived:null,results:[]};
     },
     verifyNormal:async()=>{throw Error('No normal simulation expected');}});
@@ -464,5 +467,36 @@ test('shared budget gives events unused normal capacity without exceeding sixtee
       publishNormal:async()=>({reasons:{}})});
     assert.equal(simulated,Math.min(12,count));
     assert.equal(reserved,16-simulated);assert.ok(reserved>=4);assert.equal(reserved+simulated,16);
+  }
+});
+
+
+test('event-only coordinator test is independent of checkout name and working directory', {timeout:40000}, () => {
+  const directory=fs.mkdtempSync(path.join(os.tmpdir(),'polytrack-relocation-'));
+  const sourceRoot=fileURLToPath(new URL('../..',import.meta.url));
+  const files=['tools/verifier/queue.test.mjs','tools/verifier/queue.mjs','tools/verifier/run.mjs',
+    'tools/verifier/runner.mjs','tools/verifier/firestore.mjs',
+    'workers/ranked/src/verification.js','workers/ranked/package.json'];
+  // Copy only coordinator source. No credentials, engine assets, browser, or network are needed.
+  const env=Object.fromEntries(['PATH','Path','SystemRoot','SYSTEMROOT','WINDIR','TEMP','TMP','TMPDIR','HOME','USERPROFILE']
+    .filter(key=>process.env[key]!==undefined).map(key=>[key,process.env[key]]));
+  try {
+    for (const name of ['Polytrack-0.6.2','unrelated checkout with spaces']) {
+      const checkout=path.join(directory,name);
+      for (const file of files) {
+        const destination=path.join(checkout,file);
+        fs.mkdirSync(path.dirname(destination),{recursive:true});
+        fs.copyFileSync(path.join(sourceRoot,file),destination);
+      }
+      const result=spawnSync(process.execPath,['--test',
+        '--test-name-pattern=^event work processes with normal queue empty without invoking normal physics$',
+        path.join(checkout,'tools/verifier/queue.test.mjs')],
+      {cwd:directory,env,encoding:'utf8',windowsHide:true,timeout:15000,maxBuffer:256*1024});
+      assert.ifError(result.error);
+      assert.equal(result.status,0,name+'\n'+result.stdout+result.stderr);
+    }
+  } finally {
+    assert.equal(path.dirname(path.resolve(directory)),path.resolve(os.tmpdir()));
+    fs.rmSync(directory,{recursive:true,force:true});
   }
 });

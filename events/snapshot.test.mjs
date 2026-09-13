@@ -11,6 +11,12 @@ test('complete event snapshot replaces atomically without merging entries',async
 test('older delayed event response cannot replace a newer cached board',async()=>{const f=fixture(async()=>board(10));const newer={...board(20),fetchedAt:1};f.cache.set('p',newer);assert.equal(await f.run(period,true),newer);assert.equal(f.cache.get('p'),newer);});
 test('offline event read preserves a complete saved board',async()=>{const f=fixture(async()=>{throw Error('offline');});f.saved.set('test-p',{...board(20),fetchedAt:1});const result=await f.run(period,true);assert.equal(result.saved,true);assert.equal(result.updatedAt,20);});
 test('another track or malformed partial response cannot replace saved data',async()=>{for(const value of [{period,updatedAt:30},{...board(30),period:{...period,trackId:'c'.repeat(64)}}]){const f=fixture(async()=>value);f.cache.set('p',{...board(20),fetchedAt:1});assert.equal((await f.run(period,true)).updatedAt,20);assert.equal(f.cache.get('p').updatedAt,20);}});
+test('wrong-period cache on the same track is rejected on fresh and offline paths',async()=>{
+ for(const force of [false,true])for(const wrong of [{...period,id:'weekly-other'},{...period,kind:'weekly'}]){
+  const f=fixture(async()=>{throw Error('offline');});f.cache.set('p',{...board(20),period:wrong,fetchedAt:1000000});
+  await assert.rejects(f.run(period,force),/offline/);
+ }
+});
 
 const receiptSource=source.slice(source.indexOf('  function receiptText('),source.indexOf('  function rows('));
 const receiptText=vm.runInNewContext('('+receiptSource+')');

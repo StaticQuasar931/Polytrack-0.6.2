@@ -56,6 +56,13 @@
 #ui .track-selection-ui .sq-event-track-group>.sq-events-entry{position:absolute;right:10px;top:20px;display:flex!important;width:auto!important;min-width:0!important;min-height:36px;height:36px;margin:0!important;padding:6px 14px;font-size:20px;border:1px solid #83cfe9!important;background:#112052!important;clip-path:polygon(6px 0,100% 0,calc(100% - 6px) 100%,0 100%)}
 @media(max-width:650px){#ui .track-selection-ui .sq-event-track-group>.sq-events-entry{top:0;right:4px;height:30px;min-height:30px;font-size:16px;padding:5px 10px}#ui .track-selection-ui .sq-event-track-group>.group-title{padding-right:85px}}
 /* Normal-track weight/status must not describe an event-only board. */
+.sq-event-board .image-container{position:relative}
+html.sq-track-leaderboard-loading body.sq-event-active .sq-event-board>.container>button.main{visibility:visible!important}
+html.sq-track-leaderboard-loading body.sq-event-active .sq-event-board>.container::after{display:none!important;content:none!important}
+.sq-event-track-group>.track>button[data-native-weekly-event]{position:relative}
+.sq-event-native-label{position:absolute;left:4px;right:4px;bottom:3px;padding:3px;background:#13234c;color:#b7edff;font-size:12px;line-height:1.1;text-align:center;pointer-events:none}
+.sq-event-board .image-container img[hidden],.sq-event-board .sq-event-car-unavailable[hidden]{display:none!important}
+.sq-event-board .sq-event-car-unavailable{display:flex;align-items:center;justify-content:center;width:100%;height:100%;padding:4px;box-sizing:border-box;font-size:12px;line-height:1.15;text-align:center;opacity:.7}
 body.sq-event-active #polytrackTrackFreshness{display:none!important}
 body.sq-event-active .track-info-ui .side-panel>.sq-event-personal-title{display:block!important}
 @media(max-width:650px){body.sq-event-active .track-info-ui .side-panel>.sq-event-personal-title{display:none!important}.sq-event-board>.button-wrapper{flex-wrap:nowrap!important;gap:6px!important}.sq-event-board>.button-wrapper>.button{white-space:nowrap!important;min-width:0!important;font-size:20px!important}}

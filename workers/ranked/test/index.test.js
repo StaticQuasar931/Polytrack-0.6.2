@@ -910,3 +910,32 @@ test('thirty racers stay inline without sidecar reads or writes, and shrinking a
   assert.equal(JSON.stringify(f.sidecar()),oldSidecar);
   assert.equal(f.calls.filter(p=>p.endsWith('/main_results')).length,0);
 });
+
+test('digest bootstrap wakes terminal NEVER queues despite completed old bootstrap, without due query',async()=>{
+  const {PRE_EVENT_LAUNCH_ENGINE}=await import('../src/event-engine-compatibility.js');
+  const {eventDecode}=await import('../src/events-store.js');
+  const f=bootstrapFixture(2),base='projects/test/databases/(default)/documents/';
+  const oldJobId=VERIFICATION_BOOTSTRAP_ID.replace(VERIFIER_ENGINE_DIGEST,PRE_EVENT_LAUNCH_ENGINE);
+  assert.notEqual(oldJobId,VERIFICATION_BOOTSTRAP_ID);
+  const oldJob={name:base+'0.6.2_s1_worker_jobs/'+oldJobId,fields:wire({complete:true}).mapValue.fields,updateTime:'old-complete'};
+  f.docs.set('/0.6.2_s1_worker_jobs/'+oldJobId,oldJob);
+  for(let i=0;i<2;i++) {
+    const trackId=String(i).padStart(64,'0');
+    const row={accountId:'racer',trackId,timeMs:20000,raceTimeFrames:20000};
+    const key=JSON.parse(verificationKey(row));key[1]=PRE_EVENT_LAUNCH_ENGINE;
+    const state={trackId,pending:false,notBefore:Number.MAX_SAFE_INTEGER,slots:{racer:{...pendingSlot(row),
+      key:JSON.stringify(key),status:'verified',engineDigest:PRE_EVENT_LAUNCH_ENGINE,retryAt:Number.MAX_SAFE_INTEGER}}};
+    f.docs.set('/0.6.2_s1_verification/'+trackId,{name:base+'0.6.2_s1_verification/'+trackId,
+      fields:wire(state).mapValue.fields,updateTime:'old-terminal-'+i});
+  }
+  const before=Date.now();assert.deepEqual(await bootstrapSnapshotVerification(f.env),{scanned:2,complete:true});
+  assert.equal(f.calls.length,5,'one new job read, one board page, two queues, one atomic commit');
+  for(let i=0;i<2;i++) {
+    const trackId=String(i).padStart(64,'0');
+    const state=eventDecode({mapValue:{fields:f.docs.get('/0.6.2_s1_verification/'+trackId).fields}});
+    assert.equal(state.pending,true);assert.equal(state.slots.racer.status,'waiting');
+    assert.ok(state.notBefore>=before&&state.notBefore<=Date.now());
+    assert.equal(JSON.parse(state.slots.racer.key)[1],VERIFIER_ENGINE_DIGEST);
+  }
+  assert.deepEqual(f.docs.get('/0.6.2_s1_worker_jobs/'+oldJobId),oldJob);
+});

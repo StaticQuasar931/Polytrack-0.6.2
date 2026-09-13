@@ -1,7 +1,7 @@
 import { eventWorkerHandler, eventWorkerMaintenance } from './events-worker.js';
 import {packPlannerResults, plannerDocumentBytes, PLANNER_BUNDLE_VERSION, PLANNER_PUBLICATION_VERSION} from './planner-results.js';
 export {packPlannerResults} from './planner-results.js';
-import { VERIFICATION_BOOTSTRAP_ID, VERIFICATION_BOOTSTRAP_BATCH, bootstrapSlots, VERIFICATION_COLLECTION, verificationSchedule, verificationKey, verifiedVerdict, pendingSlot } from './verification.js';
+import { VERIFICATION_BOOTSTRAP_ID, VERIFICATION_BOOTSTRAP_BATCH, bootstrapSlots, VERIFICATION_COLLECTION, verificationSchedule, verificationKey, verifiedVerdict, verifiedTargetMs, pendingSlot } from './verification.js';
 const FIREBASE_JWKS_URL = 'https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com';
 const FIREBASE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
 const PROJECT_ID = 'polytrack-052';
@@ -1152,9 +1152,10 @@ export default {
           at: Number(_event.scheduledTime || Date.now()),
           targetForTrack: async trackId => {
             const snapshot = await readDocument(env, COLLECTIONS.track, trackId);
-            const times = (snapshot?.data?.entries || []).filter(row => row.runVerified === true)
-              .map(row => row.timeMs).filter(ms => Number.isSafeInteger(ms) && ms > 0 && ms <= 300000);
-            return times.length ? Math.min(...times) : null;
+            if (!snapshot?.data?.entries?.length) return null;
+            // Cached public labels can outlive a repin; require the exact current private proof.
+            const queue = await readDocument(env, VERIFICATION_COLLECTION, trackId);
+            return verifiedTargetMs(snapshot.data.entries, queue?.data?.slots || {});
           }
         });
       }

@@ -118,3 +118,113 @@ test('native integrity decorator keeps published event rows verified and local r
 test('ended events disappear from the native rail instead of leaving dead cards',async t=>{const p=await fixture(t);await showLiveRail(p);assert.equal(await p.locator('.sq-event-track-buttons [data-event-id]').count(),1);await p.evaluate(async()=>{bridgeFixture.readCatalog=async()=>({periods:[],archives:[]});await ui.refreshCatalog(true);ui.tick();});assert.equal(await p.locator('.sq-event-track-buttons').count(),0);assert.equal(await p.locator('.sq-events-entry').count(),1);});
 test('native event view labels a matching rejected attempt as not scored',async t=>{const p=await fixture(t);await enter(p);await p.waitForFunction(()=>!!window.car);await p.evaluate(()=>car.finish(20000));await p.waitForFunction(()=>submits.length===1);await p.evaluate(()=>{bridgeFixture.readOwnStatus=async()=>({attemptId:submits[0].attemptId,timeMs:20000,status:'mismatch'});});await p.locator('.sq-event-refresh').click();await p.waitForFunction(()=>document.querySelector('.sq-event-board .verified-state').textContent.includes('Not scored'));assert.match(await p.locator('.sq-event-board').innerText(),/No points were added/);assert.equal(await p.locator('.sq-event-board .verified-state.verified').count(),0);});
 test('leaving event preserves native opponent controls and listeners',async t=>{const p=await fixture(t);await p.evaluate(()=>{const target=document.querySelector('.opponents-container');const button=document.createElement('button');button.textContent='Original opponent';button.onclick=()=>window.opponentClicked=true;target.append(button);window.originalOpponent=button;});await enter(p);await p.waitForFunction(()=>!!window.car);await p.evaluate(()=>ui.leave());assert.equal(await p.evaluate(()=>originalOpponent.isConnected),true);await p.locator('button',{hasText:'Original opponent'}).click();assert.equal(await p.evaluate(()=>opponentClicked),true);});
+
+async function sharedTrackPeriods(p){await p.evaluate(async()=>{
+ const daily={id:'daily-shared',kind:'daily',trackId:id,startsAt:Date.now()-1000,endsAt:Date.now()+3600000,maxRp:100};
+ window.periods=[{...daily,id:'weekly-shared',kind:'weekly',maxRp:500},daily];
+ bridgeFixture.readCatalog=async()=>({periods});bridgeFixture.readSnapshot=async key=>({period:periods.find(p=>p.id===key),entries:[],updatedAt:Date.now()});
+ await ui.refreshCatalog(true);
+});}
+test('daily and weekly on the same physical track retain exact period binding',async t=>{
+ const p=await fixture(t);await sharedTrackPeriods(p);
+ let count=0;for(const kind of ['daily','weekly','daily']){
+  assert.equal(await p.evaluate(kind=>ui.openEvent({kind,trackId:id}),kind),true);
+  await p.waitForFunction(()=>!!window.car);await p.evaluate(ms=>car.finish(ms),20000-count*1000);count++;
+  await p.waitForFunction(count=>submits.length===count,count);assert.equal(await p.locator('.sq-event-board h3').innerText(),kind==='daily'?'Daily event':'Weekly event');
+  assert.equal(await p.evaluate(()=>submits.at(-1).periodId),kind+'-shared');
+  await p.evaluate(()=>{ui.leave();window.car=null;});
+ }
+});
+test('featured track without exactly one matching server period never opens another event',async t=>{
+ const p=await fixture(t);await sharedTrackPeriods(p);
+ assert.equal(await p.evaluate(()=>ui.openEvent({kind:'daily',trackId:'b'.repeat(64)})),false);
+ assert.equal(await p.evaluate(()=>!!window.car),false);assert.match(await p.locator('.sq-events-dialog main').innerText(),/may differ/);
+ await p.evaluate(async()=>{periods.push({...periods[1],id:'duplicate-daily'});await ui.refreshCatalog(true);});
+ assert.equal(await p.evaluate(()=>ui.openEvent({kind:'daily',trackId:id})),false);assert.equal(await p.evaluate(()=>!!window.car),false);
+});
+async function addNativePlay(p){await p.evaluate(()=>{window.normalStarts=0;const play=document.createElement('button');play.className='button play';play.textContent='Play';play.onclick=()=>normalStarts++;document.querySelector('.side-panel').append(play);});}
+test('event Play never falls through to normal PB launch; leaving restores normal Play',async t=>{
+ const p=await fixture(t);await addNativePlay(p);await enter(p);
+ await p.locator('.side-panel .play').click();assert.equal(await p.evaluate(()=>normalStarts),0);assert.match(await p.locator('.sq-event-inline-status').innerText(),/safe event race launch/);
+ await p.evaluate(()=>{bridgeFixture.startEventRace=async context=>{window.eventLaunch=context;};});await p.locator('.side-panel .play').click();
+ assert.deepEqual(await p.evaluate(()=>({period:eventLaunch.periodId,track:eventLaunch.trackId,account:eventLaunch.accountId,normalStarts})),{period:'daily-fixture',track:id,account:id,normalStarts:0});
+ await p.evaluate(()=>{bridgeFixture.startEventRace=async()=>{throw Error('unavailable');};});await p.locator('.side-panel .play').click();assert.equal(await p.evaluate(()=>normalStarts),0);
+ await p.evaluate(()=>ui.leave());await p.locator('.side-panel .play').click();assert.equal(await p.evaluate(()=>normalStarts),1);
+});
+test('native event cars use exact validated cached styles and label unknown cars honestly',async t=>{
+ const p=await fixture(t);await p.evaluate(()=>{
+  const original=bridgeFixture.require();bridgeFixture.require=()=>n=>n===8724?{A:{deserializeSafe:s=>s==='exact-saved-style'?{}:null}}:original(n);
+  window.__polytrackCarStyleByUser062={[id]:'exact-saved-style',['c'.repeat(64)]:'malformed'};window.renderCalls=[];
+  window.BT=async(...args)=>{renderCalls.push(args);return 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aS1sAAAAASUVORK5CYII=';};
+  const read=bridgeFixture.readSnapshot;bridgeFixture.readSnapshot=async key=>({...await read(key),entries:[{accountId:id,name:'Cached',timeMs:20000,rank:1,rp:100},{accountId:'b'.repeat(64),name:'Unknown',timeMs:21000,rank:2,rp:90},{accountId:'c'.repeat(64),name:'Malformed',timeMs:22000,rank:3,rp:80}]});
+ });await enter(p);await p.waitForFunction(()=>renderCalls.length===1);assert.deepEqual(await p.evaluate(()=>renderCalls),[['exact-saved-style','']]);
+ assert.equal(await p.locator('.sq-event-board .image-container img[alt="Car unavailable"]').count(),2);
+ await p.locator('.sq-event-board .image-container img[alt="Cached profile car"]').waitFor();
+ assert.equal(await p.locator('.sq-event-board .verified-state.verified').count(),3);
+});
+test('normal leaderboard loading state cannot hide an event row or its car',async t=>{
+ const p=await fixture(t);await p.addStyleTag({content:'.sq-track-leaderboard-loading .leaderboard-ui>.container>button.main{visibility:hidden!important}.sq-track-leaderboard-loading .leaderboard-ui>.container::after{content:"Loading track leaderboard";display:block}'});
+ await p.addStyleTag({url:base+'/events/events.css'});await enter(p);await p.waitForFunction(()=>!!window.car);await p.evaluate(()=>{car.finish(20000);document.documentElement.classList.add('sq-track-leaderboard-loading');});
+ assert.deepEqual(await p.evaluate(()=>({row:getComputedStyle(document.querySelector('.sq-event-board button.main')).visibility,overlay:getComputedStyle(document.querySelector('.sq-event-board>.container'),'::after').display})),{row:'visible',overlay:'none'});
+});
+test('expired event Play remains blocked after a UI tick, never reverting to normal ghosts',async t=>{
+ const p=await fixture(t);await addNativePlay(p);await enter(p);
+ await p.evaluate(()=>{const now=Date.now();Date.now=()=>now+7200000;ui.tick();});
+ await p.locator('.side-panel .play').click();assert.equal(await p.evaluate(()=>normalStarts),0);
+ assert.match(await p.locator('.sq-event-inline-status').innerText(),/no longer open/);
+});
+const eventBridge=section('  let pendingEventLaunch=null;','  async function eventCloudRead(');
+test('event bridge rejects duplicate native launches until the first launch is consumed',async t=>{
+ const p=await fixture(t);assert.deepEqual(await p.evaluate(source=>{
+  const activeRankedAccountId=()=>id;window.__pt062NativeEventLaunchVersion=1;
+  const start=eval('(()=>{'+source+';return startEventRace})()');let invokes=0,current=true,rejected=false;
+  const context={periodId:'daily-fixture',trackId:id,accountId:id,endsAt:Date.now()+10000};
+  start(context,()=>invokes++,()=>current);try{start(context,()=>invokes++,()=>true);}catch{rejected=true;}
+  const first=window.__pt062PrepareEventRace(id,null);start(context,()=>invokes++,()=>current);current=false;start(context,()=>invokes++,()=>true);
+  return {invokes,rejected,first,last:window.__pt062PrepareEventRace(id,null)};
+ },eventBridge),{invokes:3,rejected:true,first:true,last:true});
+});
+test('actual event bridge permits native click once and rejects stale launch context',async t=>{
+ const p=await fixture(t);await addNativePlay(p);await p.evaluate(source=>{
+  const activeRankedAccountId=()=>id;window.__pt062NativeEventLaunchVersion=1;
+  bridgeFixture.startEventRace=eval('(()=>{'+source+';return startEventRace})()');
+  document.querySelector('.side-panel .play').onclick=()=>{window.nativeEvent=window.__pt062PrepareEventRace(id,null);};
+ },eventBridge);await enter(p);await p.locator('.side-panel .play').click();assert.equal(await p.evaluate(()=>nativeEvent),true);
+ assert.equal(await p.evaluate(()=>window.__pt062PrepareEventRace(id,null)),false,'launch policy is consumed, not sticky');
+ assert.equal(await p.evaluate(()=>{
+  let current=true;bridgeFixture.startEventRace({periodId:'daily-fixture',trackId:id,accountId:id,endsAt:Date.now()+10000},()=>{},()=>current);current=false;
+  try{window.__pt062PrepareEventRace(id,null);return false;}catch{return true;}
+ }),true);
+ await p.evaluate(()=>ui.leave());await p.locator('.side-panel .play').click();assert.equal(await p.evaluate(()=>nativeEvent),false);
+});
+test('Ranked footer replaces legacy targets with exact catalog assignments without repeated reads',async t=>{
+ const p=await fixture(t);await sharedTrackPeriods(p);await p.evaluate(()=>{
+  const panel=document.createElement('div');panel.id='overallLeaderboardPanel';
+  panel.innerHTML=['weekly-cup','daily-card'].map(kind=>`<section class="${kind}"><button class="competition-feature-button" data-track-id="legacy"><span class="competition-feature-image"></span><span class="competition-kicker">Legacy</span><strong class="competition-track-name">Wrong legacy track</strong><span class="competition-result">Normal result</span></button><small>Wrong deadline</small></section>`).join('');document.body.append(panel);ui.tick();window.beforeFooterReads=catalogReads;
+  for(let i=0;i<100;i++)ui.tick();
+ });
+ assert.equal(await p.evaluate(()=>catalogReads),await p.evaluate(()=>beforeFooterReads));
+ assert.equal(await p.locator('.daily-card button').getAttribute('data-event-id'),'daily-shared');assert.equal(await p.locator('.weekly-cup button').getAttribute('data-event-id'),'weekly-shared');
+ assert.equal(await p.locator('.daily-card button').getAttribute('data-track-id'),null);assert.match(await p.locator('.daily-card small').innerText(),/Local/);assert.doesNotMatch(await p.locator('#overallLeaderboardPanel').innerText(),/Wrong|Normal result/);
+ await p.locator('.daily-card button').click();await p.waitForFunction(()=>!!window.car);await p.evaluate(()=>car.finish(20000));await p.waitForFunction(()=>submits.length===1);assert.equal(await p.evaluate(()=>submits[0].periodId),'daily-shared');
+});
+test('trusted Static Rolling Hills Racer card enters only its registered live weekly event; synthetic click cannot recurse',async t=>{
+ const p=await fixture(t);await sharedTrackPeriods(p);await p.evaluate(()=>{
+  const trackId='fb769ac2ea77e8f19a21a9dd3071742f2342bd49c41e4748d7e8c7903d4f0778';periods.forEach(p=>p.trackId=trackId);bridgeFixture.require()(9117).A.prototype.getId=()=>trackId;
+  bridgeFixture.trackInfo=()=>({name:'Rolling Hills Racer'});const host=document.createElement('div');host.className='track-selection-ui';host.innerHTML='<div><div class="group-title">StaticQuasar931</div><div class="track"><button id="rolling"><span class="track-title"><p>Rolling Hills Racer</p></span></button></div></div>';document.body.append(host);
+  window.nativeSelections=0;document.querySelector('#rolling').onclick=()=>{nativeSelections++;window.car=makeCar();};bridgeFixture.openTrack=()=>document.querySelector('#rolling').click();ui.tick();
+ });
+ assert.match(await p.locator('#rolling').innerText(),/Weekly event \+ normal PB/);await p.locator('#rolling').click();await p.waitForFunction(()=>!!window.car);assert.equal(await p.evaluate(()=>nativeSelections),1);
+ await p.evaluate(()=>car.finish(21000));await p.waitForFunction(()=>submits.length===1);assert.equal(await p.evaluate(()=>submits[0].periodId),'weekly-shared');
+ await p.evaluate(async()=>{ui.leave();bridgeFixture.readCatalog=async()=>({periods:[]});await ui.refreshCatalog(true);ui.tick();});assert.equal(await p.locator('.sq-event-native-label').count(),0);
+ await p.locator('#rolling').click();await p.evaluate(()=>car.finish(19000));assert.equal(await p.evaluate(()=>submits.length),1,'no current weekly event means ordinary play, not a historical award');assert.equal(await p.evaluate(()=>nativeSelections),2);
+});
+test('Ranked visibility imports event module once even without any track group',async t=>{
+ const p=await fixture(t);assert.deepEqual(await p.evaluate(async source=>{
+  let eventUi=null,eventUiPromise=null,eventQueueChecked=true,eventModuleRetryAt=0,calls=0;
+  const isElementVisible=e=>e.getClientRects().length>0&&getComputedStyle(e).display!=='none';
+  const ensureEventUi=()=>{calls++;return Promise.resolve({tick(){}});};
+  const panel=document.createElement('div');panel.id='overallLeaderboardPanel';panel.textContent='Ranked';panel.style.display='none';document.body.append(panel);
+  const invoke=eval('('+source+')');invoke();const hidden=calls;panel.style.display='block';for(let i=0;i<100;i++)invoke();await Promise.resolve();return {hidden,visible:calls};
+ },entry),{hidden:0,visible:1});
+});
