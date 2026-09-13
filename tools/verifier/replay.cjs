@@ -31,6 +31,18 @@ class Rejection extends Error {
   }
 }
 
+function linearScanWork(lists, timeMs) {
+  let work = timeMs * 5;
+  for (const name of ['up', 'right', 'down', 'left', 'reset']) {
+    const frames = lists[name];
+    for (let i = 0; i < frames.length; i++) {
+      // Native lookup restarts at index zero; element i is visited only AFTER i-1's tick.
+      work += Math.max(0, timeMs - (i === 0 ? 0 : frames[i - 1] + 1));
+    }
+  }
+  return work;
+}
+
 function decodeReplay(replay, timeMs) {
   if (typeof replay !== 'string' || !replay.length) throw new Rejection('invalid_replay_type');
   if (replay.length > LIMITS.replayCharacters) throw new Rejection('replay_size_limit', 'unavailable');
@@ -75,8 +87,9 @@ function decodeReplay(replay, timeMs) {
     lists[name] = frames;
   }
   if (cursor !== bytes.length) throw new Rejection('trailing_transition_bytes');
-  if (timeMs * (total + 5) > LIMITS.scanWork) throw new Rejection('scan_work_limit', 'unavailable');
-  return { lists, transitions: total, inflatedBytes: bytes.length };
+  const scanWork = linearScanWork(lists, timeMs);
+  if (scanWork > LIMITS.scanWork) throw new Rejection('scan_work_limit', 'unavailable');
+  return { lists, transitions: total, inflatedBytes: bytes.length, scanWork };
 }
 
 function checkJob(job) {
@@ -93,4 +106,4 @@ function checkJob(job) {
   return decodeReplay(job.replay, job.timeMs);
 }
 
-module.exports = { LIMITS, sha256, Rejection, decodeReplay, checkJob };
+module.exports = { LIMITS, sha256, Rejection, decodeReplay, checkJob, linearScanWork };

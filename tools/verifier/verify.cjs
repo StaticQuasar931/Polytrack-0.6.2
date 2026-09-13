@@ -5,10 +5,11 @@ const path = require('node:path');
 const { execFile } = require('node:child_process');
 const { LIMITS, sha256, checkJob } = require('./replay.cjs');
 const { snapshot, serve } = require('./assets.cjs');
+const { geometryDecision } = require('./geometry.cjs');
 
 const VERIFIER_VERSION = 'polytrack-native-bounded-v1';
 const trace = message => { if (process.env.VERIFIER_DEBUG === '1') process.stderr.write(`[verifier] ${message}\n`); };
-const verifierFingerprint = sha256(['verify.cjs', 'assets.cjs', 'replay.cjs'].map(name => name + '\n' + fs.readFileSync(path.join(__dirname, name), 'utf8').replace(/\r\n?/g, '\n')).join('\n'));
+const verifierFingerprint = sha256(['verify.cjs', 'assets.cjs', 'replay.cjs', 'geometry.cjs', 'track-geometry.json'].map(name => name + '\n' + fs.readFileSync(path.join(__dirname, name), 'utf8').replace(/\r\n?/g, '\n')).join('\n'));
 
 function duration(name, maximum) {
   const raw = process.env[name];
@@ -41,6 +42,7 @@ function verdict(job, status, reason, engine, track, extra = {}) {
   const fingerprint = actualReplayHash === null ? null : sha256(JSON.stringify(binding));
   return {
     ...input, status, reason,
+    trackGeometry: track?.geometry ?? null, geometryPolicy: track?.geometryPolicy ?? null,
     engineDigest: binding.engineDigest,
     engineFingerprint: binding.engineDigest,
     boundinputfingerprint: fingerprint,
@@ -189,7 +191,7 @@ async function initialize(session, engine, origin) {
   await page.evaluate(() => { for (const worker of __workers) worker.terminate(); __workers.length = 0; });
   const tracks = [...engine.files].filter(([name, file]) => name.startsWith('tracks/') && name.endsWith('.track') && file.bytes.length <= LIMITS.trackBytes)
     .map(([name, file]) => ({ name, hash: file.hash, text: file.bytes.toString('utf8').trim() }));
-  const catalog = await page.evaluate(({ tracks, limits }) => {
+  const catalog = await page.evaluate(({ tracks }) => {
     const Track = __vrRequire(9117).A;
     globalThis.__tracks = new Map();
     const result = [];
@@ -202,17 +204,19 @@ async function initialize(session, engine, origin) {
         const spanX = bounds.max.x - bounds.min.x;
         const spanZ = bounds.max.y - bounds.min.y;
         let reason = null;
-        if (track.numberOfParts > limits.trackParts || !Number.isFinite(spanX) || !Number.isFinite(spanZ) || spanX > limits.trackSpan || spanZ > limits.trackSpan) reason = 'track_geometry_limit';
         if (!track.getStartTransform()) reason = 'track_missing_start';
         // Duplicates with identical native geometry use the first sorted committed path.
         if (__tracks.has(id)) continue;
         __tracks.set(id, track);
-        result.push({ id, name: source.name, hash: source.hash, reason });
+        result.push({ id, name: source.name, hash: source.hash, reason, geometry: {parts: track.numberOfParts, spanX, spanZ} });
       } catch { /* A malformed trusted artifact is not evidence against any player. */ }
     }
     return result;
-  }, { tracks, limits: LIMITS });
-  return new Map(catalog.map(track => [track.id, track]));
+  }, { tracks });
+  return new Map(catalog.map(track => {
+    const decision = geometryDecision(track, engine.engineFingerprint);
+    return [track.id, {...track, ...decision, reason: track.reason || decision.reason}];
+  }));
 }
 
 async function simulate(session, job) {

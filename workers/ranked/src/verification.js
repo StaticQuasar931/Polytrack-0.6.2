@@ -18,7 +18,7 @@ export function verificationSchedule(slots, now = Date.now()) {
   return {pending: due.length > 0, notBefore: due.length ? Math.min(...due.map(slot => slot.status === 'waiting' ? now : Number(slot.retryAt))) : Number.MAX_SAFE_INTEGER};
 }
 
-export const VERIFICATION_BOOTSTRAP_ID = 'verification_snapshot_v2_' + VERIFIER_VERSION + '_' + VERIFIER_ENGINE_DIGEST;
+export const VERIFICATION_BOOTSTRAP_ID = 'verification_snapshot_v3_' + VERIFIER_VERSION + '_' + VERIFIER_ENGINE_DIGEST;
 export const VERIFICATION_BOOTSTRAP_BATCH = 4;
 
 export function legacyTimingFrames(row) {
@@ -43,8 +43,7 @@ export function bootstrapSlots(trackId, entries, existing = {}) {
     // The runner fetches canonical data and replaces this provisional binding before verifying.
     if (slot?.key !== verificationKey(entry) || slot?.reason === 'canonical_missing') {
       slots[accountId] = pendingSlot(entry);
-    } else if (slot.status === 'unavailable' && ['time_limit', 'scan_work_limit'].includes(slot.reason) &&
-        legacyTimingFrames(entry) !== null) {
+    } else if (slot.status === 'unavailable' && (['track_geometry_limit','scan_work_limit'].includes(slot.reason) || slot.reason === 'time_limit' && legacyTimingFrames(entry) !== null)) {
       slots[accountId] = {...pendingSlot(entry), attempts: slot.attempts ?? 0};
     }
   }

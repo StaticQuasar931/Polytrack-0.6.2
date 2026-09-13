@@ -336,3 +336,16 @@ test('large planner sidecar is used only with exact snapshot binding',async()=>{
   let seen;ctx.expandRankedResults=async d=>{seen=d;return d.entries};await run('fetchOverallEntries',ctx)(true);assert.equal(reads,1);assert.equal(seen.resultBundle,offset?undefined:'bundle');
  }
 });
+
+test('weekly reset is next Monday UTC even when local weekday differs',()=>{
+ let instant;const ctx={Date,escapeHtml:x=>x,Intl:{DateTimeFormat:class{format(value){instant=value;return 'Sunday 5:00 PM PDT'}}}};
+ const html=run('resetTimeMarkup',ctx)(true,Date.UTC(2026,8,13,12));assert.equal(instant,Date.UTC(2026,8,14));assert.match(html,/Monday 00:00 UTC/);assert.match(html,/<strong[^>]*>Sunday 5:00 PM PDT local/);
+});
+test('daily reset advances at midnight and does not use a fixed local offset',()=>{
+ let instant;const ctx={Date,escapeHtml:x=>x,Intl:{DateTimeFormat:class{format(value){instant=value;return 'local'}}}};
+ run('resetTimeMarkup',ctx)(false,Date.UTC(2026,8,14));assert.equal(instant,Date.UTC(2026,8,15));
+});
+test('fresh successful checks may refresh planner observations without changing the board timestamp',()=>{
+ const ctx={trackOverlayCache:null,trackSnapshotStore:()=>({a:{entries:[{accountId:'me',rank:1}],serverUpdatedAt:100,checkedAt:500}}),applyCanonicalTrackWeight:(_id,e)=>e,cleanUserId:x=>x,entryTimeMs:()=>1000,knownFinishWeight:()=>2};
+ const result=run('cachedTrackFinishOverlays',ctx)();assert.equal(result.get('me')[0].cachedAt,500);
+});
