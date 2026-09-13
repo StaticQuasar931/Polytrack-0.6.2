@@ -1,4 +1,5 @@
 import { canonicalPromotion } from './event-canonical.js';
+import { matchesClockRejection } from './event-clock-recovery.js';
 import { VERIFIER_ENGINE_DIGEST, VERIFIER_VERSION } from './verification.js';
 
 // Importing this library neither adds routes nor starts work. Authentication,
@@ -195,7 +196,7 @@ export function createEventService({ store, now = Date.now, hash = sha256, rando
         const receiptPath = path(C.receipts, `${periodId}_${accountId}`), receipt = await tx.get(receiptPath);
         const inboxPath = path(C.inbox, `${periodId}_${accountId}`);
         const cursorPath = path(C.cursors, `${periodId}_${accountId}`);
-        let cursorReceipt;
+        let cursorReceipt, clockRecovery = false;
         if (inboxDocument) {
           const current = await tx.get(inboxPath);
           demand(current && current.ownerUid === ownerUid && current.accountId === accountId &&
@@ -205,7 +206,8 @@ export function createEventService({ store, now = Date.now, hash = sha256, rando
             current.receivedAt?.__firestoreTimestamp === inboxDocument.receivedAt?.__firestoreTimestamp, 'inbox_superseded', 409);
           const cursor = await tx.get(cursorPath);
           cursorReceipt = current.receivedAt;
-          if (cursor?.attemptId === attemptId && cursor.receivedAt?.__firestoreTimestamp === cursorReceipt.__firestoreTimestamp) return { duplicate: true, runId: cursor.runId, status: cursor.status };
+          clockRecovery = matchesClockRejection(current, cursor, receipt);
+          if (!clockRecovery && cursor?.attemptId === attemptId && cursor.receivedAt?.__firestoreTimestamp === cursorReceipt.__firestoreTimestamp) return { duplicate: true, runId: cursor.runId, status: cursor.status };
           receivedAt = receiptTime(current.receivedAt);
           demand(receivedAt <= stamp() && stamp() < p.endsAt + p.graceMs, 'inbox_receipt_expired', 409);
         }
@@ -243,6 +245,7 @@ export function createEventService({ store, now = Date.now, hash = sha256, rando
         const run = { runId, periodId, periodBinding: periodBinding(p), ownerUid, accountId, trackId, attemptId, sessionId,
           timeMs, frames: timeMs, replay, replayHash, carStyle, name: text(profile.name || profile.nickname, 24) || 'Racer',
           receivedAt, status: 'waiting', attempts: 0 };
+        if (clockRecovery) run.clockRecovery = { rejectedAt: receipt.updatedAt, recoveredAt: stamp() };
         run.eventKey = binding(run);
         if (!owner) await tx.create(ownerPath, { ownerUid, accountId, createdAt: stamp() });
         await tx.create(runPath, run);
@@ -251,7 +254,7 @@ export function createEventService({ store, now = Date.now, hash = sha256, rando
           subjects: quota ? queue.subjects : [...(queue.subjects || []), { accountId, ownerHash }],
           admitted: queue.admitted + 1, replayBytes: queue.replayBytes + replay.length, entrants: queue.entrants + (quota ? 0 : 1),
           slots: [...queue.slots, { runId, notBefore: receivedAt, attempts: 0, lease: null, leaseUntil: 0 }] });
-        if (!receipt || timeMs < receipt.timeMs) await tx.set(receiptPath,
+        if (!receipt || timeMs < receipt.timeMs || clockRecovery) await tx.set(receiptPath,
           { ownerUid, accountId, periodId, attemptId, timeMs, status: 'waiting', reason: '', updatedAt: stamp() });
         if (inboxDocument) await tx.set(cursorPath, { receivedAt: cursorReceipt, attemptId, status: 'waiting', runId });
         return { runId, status: 'waiting', duplicate: false };

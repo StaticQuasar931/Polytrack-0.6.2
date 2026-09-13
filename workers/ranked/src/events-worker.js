@@ -13,9 +13,10 @@ export function eventWorkerHandler(env, { request, authenticate, origins }) {
     } });
 }
 
-export async function eventWorkerMaintenance(env, { request, officialIds, allIds, targetForTrack, at = Date.now() }) {
+export async function eventWorkerMaintenance(env, { request, officialIds, allIds, targetForTrack, at = Date.now(), now = Date.now }) {
   if (String(env.EVENTS_ENABLED) !== 'true') return { disabled: true };
-  const runtime = eventRuntime(request, { projectId: env.FIREBASE_PROJECT_ID || 'polytrack-052', now: () => at });
+  // Scheduled time selects the work phase; admission and expiry use a live clock.
+  const runtime = eventRuntime(request, { projectId: env.FIREBASE_PROJECT_ID || 'polytrack-052', now });
   // One bounded unit per invocation, separate from canonical reconciliation.
   if (Math.floor(at / 60000) % 5 === 0) {
     let capacity;

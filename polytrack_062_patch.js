@@ -32,7 +32,7 @@
   });
 
   const eventsModuleUrl=new URL('./events/client.mjs',document.currentScript?.src||location.href).href;
-  let eventUi=null,eventUiPromise=null,eventQueueChecked=false;
+  let eventUi=null,eventUiPromise=null,eventQueueChecked=false,eventModuleRetryAt=0;
   async function eventCloudRead(path,collection,id){
     if(rankedEdgeAvailable()){
       try{const response=await fetch(rankedBrokerUrl()+path,{headers:{Accept:'application/json'},signal:AbortSignal.timeout(8000)});
@@ -48,7 +48,7 @@
     if(eventUi)return eventUi;if(eventUiPromise)return eventUiPromise;
     eventUiPromise=import(eventsModuleUrl).then(({installEvents})=>{
       if(!document.querySelector('link[data-event-css]')){const link=document.createElement('link');link.rel='stylesheet';link.href=new URL('./events.css',eventsModuleUrl).href;link.dataset.eventCss='';document.head.append(link);}
-      eventUi=installEvents({trackInfo,thumbnail:trackThumbnailMarkup,formatTime:formatRaceTime,accountId:activeRankedAccountId,require:__pt062WebpackRequire,ready:db,openTrack:id=>focusTrackFromRanked(id,{event:true}),
+      eventUi=installEvents({trackInfo,thumbnail:trackThumbnailMarkup,formatTime:formatRaceTime,accountId:activeRankedAccountId,require:__pt062WebpackRequire,ready:db,openTrack:id=>focusTrackFromRanked(id,{event:true}),openRankedEvents:()=>window.__pt062OpenRankedEvents?.(),
         readCatalog:()=>eventCloudRead('/v1/events/catalog','0.6.2_event_public','catalog'),
         readSnapshot:id=>eventCloudRead('/v1/events/'+encodeURIComponent(id)+'/snapshot','0.6.2_event_public',id),
         readTotals:()=>eventCloudRead('/v1/events/totals','0.6.2_event_public','totals'),
@@ -79,10 +79,12 @@
   function ensureEventEntry(){
     if(!eventQueueChecked){eventQueueChecked=true;try{if(JSON.parse(localStorage.getItem('polytrack-062-events-v1-queue')||'[]').length)void ensureEventUi().then(ui=>ui.flush()).catch(()=>{setTimeout(()=>{eventQueueChecked=false;},60000);});}catch{}}
     const title=[...document.querySelectorAll('.track-selection-ui .group-title')].find(node=>node.textContent.trim()==='StaticQuasar931');
+    if(title)title.parentElement.classList.add('sq-event-track-group');
     if(title&&!title.parentElement.querySelector('.sq-events-entry')){
-      const button=document.createElement('button');button.className='button sq-events-entry';button.type='button';button.textContent='Events · Daily / Weekly';
-      button.addEventListener('click',event=>{event.stopPropagation();ensureEventUi().then(ui=>ui.open()).catch(()=>{button.textContent='Events unavailable · retry';});});title.insertAdjacentElement('afterend',button);
+      const button=document.createElement('button');button.className='button sq-events-entry';button.type='button';button.textContent='Events';button.setAttribute('aria-label','Browse events and past results');
+      button.addEventListener('click',event=>{event.stopPropagation();ensureEventUi().then(ui=>ui.open()).catch(()=>{button.textContent='Events unavailable · retry';});});title.parentElement.append(button);
     }
+    if(title&&isElementVisible(title)&&!eventUi&&!eventUiPromise&&Date.now()>=eventModuleRetryAt){eventModuleRetryAt=Date.now()+60000;void ensureEventUi().then(ui=>ui.tick()).catch(()=>{});}
     eventUi?.tick();
   }
 
@@ -683,8 +685,8 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
   }
   const LEADERBOARD_USAGE_KEY='polytrack-0.6.2-leaderboard-arcade-v1';
   const PLAYTIME_KEY='polytrack-0.6.2-active-playtime-v1';
-  const LEADERBOARD_LABELS={overall:'Overall RP',skill:'Best 10 skill',consistency:'All-track depth',pbs:'PBs set',playtime:'Active time',veterans:'Racing longest',rising:'Rising racers',wins:'Track wins',medals:'Podium points',tracks:'Tracks completed',weight:'Total track weight',average:'Average place',competitiveAverage:'Competitive average',podiumRate:'Podium rate',topTracks:'Top Tracks',official:'Official tracks',community:'Community tracks'};
-  const LEADERBOARD_INFO={overall:'Your combined Ranked score. Lower is better.',average:'Your literal average finishing place across every eligible Ranked result.',competitiveAverage:'Average place on recognized tracks with at least five racers. Custom and small-field tracks are excluded.',tracks:'Number of distinct Ranked tracks completed.',medals:'Podium points on recognized tracks with at least five racers: 9 for first, 3 for second, 1 for third.',rising:'Progress adjusted for how recently the racer joined and how many Ranked tracks they completed.',topTracks:'Tracks ordered by their current Ranked weight.',skill:'Weighted average of each racer’s best ten results. Lower is better.',consistency:'Weighted performance across all eligible results with weak outliers limited. Lower is better.',wins:'First-place finishes on recognized tracks with at least five racers.',podiumRate:'Eligible podium finishes divided by eligible tracks. At least three eligible tracks are required.',weight:'Combined weight of all eligible completed tracks.',pbs:'Accepted personal-best improvements saved to Ranked.',playtime:'Visible active play time saved with PB updates.',veterans:'Time since the racer’s earliest saved Ranked result.'};
+  const LEADERBOARD_LABELS={events:'Event RP',overall:'Overall RP',skill:'Best 10 skill',consistency:'All-track depth',pbs:'PBs set',playtime:'Active time',veterans:'Racing longest',rising:'Rising racers',wins:'Track wins',medals:'Podium points',tracks:'Tracks completed',weight:'Total track weight',average:'Average place',competitiveAverage:'Competitive average',podiumRate:'Podium rate',topTracks:'Top Tracks',official:'Official tracks',community:'Community tracks'};
+  const LEADERBOARD_INFO={events:'Lifetime points from verified event PBs. Higher is better. Event RP is separate from Overall RP.',overall:'Your combined Ranked score. Lower is better.',average:'Your literal average finishing place across every eligible Ranked result.',competitiveAverage:'Average place on recognized tracks with at least five racers. Custom and small-field tracks are excluded.',tracks:'Number of distinct Ranked tracks completed.',medals:'Podium points on recognized tracks with at least five racers: 9 for first, 3 for second, 1 for third.',rising:'Progress adjusted for how recently the racer joined and how many Ranked tracks they completed.',topTracks:'Tracks ordered by their current Ranked weight.',skill:'Weighted average of each racer’s best ten results. Lower is better.',consistency:'Weighted performance across all eligible results with weak outliers limited. Lower is better.',wins:'First-place finishes on recognized tracks with at least five racers.',podiumRate:'Eligible podium finishes divided by eligible tracks. At least three eligible tracks are required.',weight:'Combined weight of all eligible completed tracks.',pbs:'Accepted personal-best improvements saved to Ranked.',playtime:'Visible active play time saved with PB updates.',veterans:'Time since the racer’s earliest saved Ranked result.'};
   const PROFILE_COSMETICS_KEY='polytrack-0.6.2-profile-cosmetics-v1';
   const PROFILE_COSMETIC_OPTIONS={
     theme:[['classic','PolyTrack blue',0],['cyan','Electric cyan',0],['ocean','Deep ocean',0],['ice','Ice blue',0],['mono','Monochrome',0],['sunset','Sunset',3],['neon','Neon arcade',3],['forest','Forest',8],['ember','Ember',8],['crimson','Crimson',8],['podium','Champion','podium'],['beta','Beta neon','beta']],
@@ -1009,14 +1011,14 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
   function resetTimeMarkup(weekly,now=Date.now()){
     const date=new Date(now);const next=Date.UTC(date.getUTCFullYear(),date.getUTCMonth(),date.getUTCDate()+1);
     const instant=weekly?next+((8-new Date(next).getUTCDay())%7)*86400000:next;
-    const local=new Intl.DateTimeFormat(undefined,{weekday:'long',hour:'numeric',minute:'2-digit',timeZoneName:'short'}).format(instant);
-    return 'Changes '+(weekly?'Monday ':'')+'00:00 UTC<br><strong class="competition-local-reset">'+escapeHtml(local)+' local</strong>';
+    const local=new Intl.DateTimeFormat(undefined,{weekday:'long',hour:'numeric',minute:'2-digit'}).format(instant);
+    return 'Changes '+(weekly?'Monday ':'')+'00:00 UTC<br><strong class="competition-local-reset">'+escapeHtml(local)+' Local</strong>';
   }
   function dailySpotlightMarkup(){
     const daily = dailySpotlight();
     const weekly=weeklyCup();
-    const runProgress = `${Math.min(3,daily.targetRuns)}/3 target finishes`;
-    const pbProgress = `${Math.min(1,daily.targetPbs)}/1 target PB`;
+    const runProgress = `${Math.min(3,daily.targetRuns)}/3 finishes`;
+    const pbProgress = `${Math.min(1,daily.targetPbs)}/1 PB`;
     const improvement = daily.bestPbImprovementMs > 0 ? ` · best gain ${(daily.bestPbImprovementMs/1000).toFixed(3)}s` : '';
     const streakWord=daily.streak===1?'day':'days';
     const weeklyResult=weekly.result&&weekly.result!=='Not entered'?`${weekly.result}${weekly.field?` of ${weekly.field}`:''}`:'Not entered';
@@ -1562,7 +1564,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     style.textContent += ".competition-local-reset{color:#b5e7ff}@media(max-height:800px) and (min-width:700px){}";
     style.textContent += "#overallProfilePopup .profile-helpfulness b{font:28px/1.1 ForcedSquare,Arial,sans-serif!important}@media(max-width:700px){}";
     style.textContent += "#overallDailyGrid .competition-local-reset{font-size:14px!important;line-height:1.2!important}#overallDailyGrid .competition-kicker{font-size:10px!important;line-height:1.2!important;max-width:none!important}@media(min-width:1000px){}";
-    style.textContent += "/* One owner for featured cards and the collapsed planner. Existing game palette and font retained. */\n#overallLeaderboardPanel #overallDailyGrid {\n  display:grid!important;grid-template-columns:minmax(480px,1.55fr) minmax(240px,.8fr) minmax(300px,.95fr)!important;\n  grid-template-rows:minmax(0,1fr)!important;gap:12px!important;align-items:stretch!important;\n  box-sizing:border-box!important;width:100%!important;height:calc(144px * var(--sq-ui-scale,1))!important;min-height:0!important;max-height:calc(144px * var(--sq-ui-scale,1))!important;\n  flex:0 0 calc(144px * var(--sq-ui-scale,1))!important;padding:10px 14px!important;overflow:visible!important;\n  background:#142149;border-top:1px solid #5876a8;\n}\n#overallDailyGrid .overall-challenge-stack {\n  display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;grid-template-rows:minmax(0,1fr)!important;\n  grid-column:1!important;grid-row:1!important;gap:8px!important;min-width:0;order:0!important;\n}\n#overallDailyGrid .overall-challenge-stack>section {\n  display:flex!important;flex-direction:column!important;justify-content:center!important;align-items:stretch!important;\n  box-sizing:border-box;min-width:0!important;min-height:0!important;margin:0!important;padding:8px!important;\n  gap:6px!important;grid-column:auto!important;grid-row:auto!important;background:#203363;border:1px solid #5774a8;\n}\n#overallDailyGrid .competition-feature-button {\n  display:grid!important;grid-template-columns:44px minmax(0,1fr)!important;gap:8px!important;align-items:center!important;\n  width:100%;min-width:0;min-height:56px!important;margin:0!important;padding:0!important;\n  color:#fff;background:transparent!important;border:0!important;text-align:left;cursor:pointer;font:inherit;clip-path:none!important;\n}\n#overallDailyGrid .competition-feature-button:hover .competition-track-name {color:#a8f0ff!important}\n#overallDailyGrid .competition-feature-button:focus-visible {outline:2px solid #a8f0ff;outline-offset:4px}\n#overallDailyGrid .competition-feature-image {\n  display:grid!important;place-items:center;position:relative!important;width:44px!important;height:48px!important;\n  min-width:0;overflow:hidden;background:#14244c;border:1px solid #425c8e;\n}\n#overallDailyGrid .competition-feature-image img {\n  position:static!important;width:100%!important;height:100%!important;max-width:100%!important;object-fit:contain!important;transform:none!important;\n}\n#overallDailyGrid .competition-feature-copy {display:flex!important;flex-direction:column!important;align-items:flex-start!important;min-width:0!important;gap:3px!important}\n#overallDailyGrid .competition-kicker {font:calc(12px * var(--sq-ui-scale,1))/1.2 ForcedSquare,sans-serif!important;letter-spacing:.06em;max-width:none!important;color:#91dfff;white-space:normal!important}\n#overallDailyGrid .competition-track-name {display:block!important;min-height:0!important;width:auto!important;max-width:100%;padding:0!important;margin:0!important;background:none!important;font:calc(18px * var(--sq-ui-scale,1))/1.2 ForcedSquare,sans-serif!important;color:#fff;overflow-wrap:anywhere;white-space:normal!important}\n#overallDailyGrid .competition-result {display:block!important;grid-column:auto!important;grid-row:auto!important;margin:0!important;padding:0!important;background:none!important;font:calc(14px * var(--sq-ui-scale,1))/1.25 ForcedSquare,sans-serif!important;color:#c4d8f4;white-space:normal!important}\n#overallDailyGrid .overall-challenge-stack>section>small {display:block!important;grid-column:auto!important;grid-row:auto!important;border-top:1px solid #3c5484;padding:5px 0 0!important;margin:0!important;text-align:left!important;font:calc(11px * var(--sq-ui-scale,1))/1.25 ForcedSquare,sans-serif!important;color:#adbfdb;white-space:normal!important}\n#overallDailyGrid .competition-local-reset {font:calc(12px * var(--sq-ui-scale,1))/1.3 ForcedSquare,sans-serif!important;color:#d2edff}\n#overallDailyGrid .overall-center-tools {grid-column:2!important;grid-row:1!important;align-self:center!important;min-width:0!important;margin:0!important}\n#overallDailyGrid .overall-footer-right {grid-column:3!important;grid-row:1!important;align-self:center!important;min-width:0!important;margin:0!important}\n#overallProfilePopup .profile-guide {border:1px solid #5475a8;box-shadow:none;background:#172953}\n#overallProfilePopup .profile-guide>summary {\n  display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr)) 104px!important;grid-auto-rows:minmax(104px,auto)!important;\n  align-items:stretch!important;gap:8px!important;padding:10px!important;list-style:none;cursor:pointer;\n}\n#overallProfilePopup .profile-guide>summary::-webkit-details-marker {display:none}\n#overallProfilePopup .profile-guide>summary:focus-visible {outline:3px solid #a8f0ff;outline-offset:3px}\n#overallProfilePopup .route-preview-item {\n  display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:flex-start!important;\n  min-width:0!important;min-height:104px!important;box-sizing:border-box;padding:10px!important;gap:10px;\n  background:#203663;border:1px solid #5475a8;border-top:2px solid #8ddfff;\n}\n#overallProfilePopup .route-preview-image {position:relative!important;display:grid!important;place-items:center;width:52px!important;height:56px!important;flex:0 0 52px!important;overflow:hidden;background:#14244c;border:1px solid #425c8e}\n#overallProfilePopup .route-preview-image img {position:static!important;width:100%!important;height:100%!important;object-fit:contain!important;transform:none!important}\n#overallProfilePopup .route-preview-copy {display:flex!important;flex-direction:column!important;align-items:flex-start!important;gap:4px;min-width:0!important;text-align:left}\n#overallProfilePopup .route-preview-copy>b {font:calc(11px * var(--sq-ui-scale,1))/1.2 ForcedSquare,sans-serif!important;text-transform:uppercase;letter-spacing:.03em;color:#95deff}\n#overallProfilePopup .route-preview-copy strong {font:calc(19px * var(--sq-ui-scale,1))/1.2 ForcedSquare,sans-serif!important;color:#fff;overflow-wrap:anywhere}\n#overallProfilePopup .route-preview-copy small {display:block;margin:0!important;font:calc(14px * var(--sq-ui-scale,1))/1.25 ForcedSquare,sans-serif!important;color:#bfd2ee}\n#overallProfilePopup .route-preview-copy .guide-weight {font-size:calc(12px * var(--sq-ui-scale,1))!important;padding:0!important;border:0!important;background:none!important;color:#9ed4e8}\n#overallProfilePopup .profile-guide>summary .route-open-label {\n  display:flex!important;align-items:center!important;justify-content:center!important;align-self:stretch!important;justify-self:stretch!important;\n  box-sizing:border-box;grid-column:auto!important;grid-row:auto!important;min-height:104px!important;padding:12px!important;margin:0!important;\n  background:#8be5fb!important;border:1px solid #b6f1ff;color:#11294b!important;font:calc(17px * var(--sq-ui-scale,1))/1.25 ForcedSquare,sans-serif!important;font-style:normal;text-align:center;white-space:normal!important;\n}\n#overallProfilePopup .profile-guide[open]>summary .route-open-label {font-size:0!important;background:#ffd783!important;border-color:#ffe7b1}\n#overallProfilePopup .profile-guide[open]>summary .route-open-label:after {content:'Close plan';font:calc(17px * var(--sq-ui-scale,1))/1.25 ForcedSquare,sans-serif}\n@media(max-width:1100px) {\n  #overallLeaderboardPanel #overallDailyGrid {grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;grid-template-rows:auto auto!important;height:auto!important;min-height:0!important;max-height:36dvh!important;flex:0 0 auto!important;overflow-y:auto!important;gap:8px!important}\n  #overallDailyGrid .overall-challenge-stack {grid-column:1/-1!important;grid-row:2!important}\n  #overallDailyGrid .overall-center-tools {grid-column:1!important;grid-row:1!important}\n  #overallDailyGrid .overall-footer-right {grid-column:2!important;grid-row:1!important}\n  #overallProfilePopup .profile-guide>summary {grid-template-columns:repeat(3,minmax(0,1fr)) 86px!important}\n  #overallProfilePopup .route-preview-image {width:40px!important;height:48px!important;flex-basis:40px!important}\n  #overallProfilePopup .route-preview-item {padding:8px!important;gap:7px}\n  #overallProfilePopup .route-preview-copy strong {font-size:calc(17px * var(--sq-ui-scale,1))!important}\n}\n@media(max-width:700px) {\n  #overallProfilePopup .profile-guide>summary {grid-template-columns:repeat(2,minmax(0,1fr))!important;grid-auto-rows:minmax(104px,auto)!important;padding:8px!important}\n  #overallDailyGrid .competition-track-name {font-size:calc(16px * var(--sq-ui-scale,1))!important}\n}\n@media(max-width:430px) {\n  #overallLeaderboardPanel #overallDailyGrid {padding:8px!important;max-height:38dvh!important}\n  #overallDailyGrid .overall-challenge-stack {grid-template-columns:1fr!important}\n  #overallDailyGrid .competition-feature-button {grid-template-columns:40px minmax(0,1fr)!important;min-height:48px!important}\n  #overallDailyGrid .competition-feature-image {width:40px!important;height:40px!important}\n  #overallProfilePopup .profile-guide>summary {grid-template-columns:minmax(0,1fr)!important;grid-auto-rows:minmax(80px,auto)!important}\n  #overallProfilePopup .route-preview-item,#overallProfilePopup .profile-guide>summary .route-open-label {min-height:80px!important}\n  #overallProfilePopup .route-preview-copy {display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;column-gap:10px}\n  #overallProfilePopup .route-preview-copy>b,#overallProfilePopup .route-preview-copy strong {grid-column:1/-1}\n}\n@media(max-height:500px) and (min-width:600px) {\n  #overallLeaderboardPanel #overallDailyGrid {height:96px!important;max-height:96px!important;flex-basis:96px!important;grid-template-columns:1fr 1fr!important;grid-template-rows:1fr!important;padding:5px!important}\n  #overallDailyGrid .overall-challenge-stack {display:none!important}\n  #overallDailyGrid .overall-center-tools {grid-column:1!important;grid-row:1!important}\n  #overallDailyGrid .overall-footer-right {grid-column:2!important;grid-row:1!important}\n}\n";
+    style.textContent += "/* One owner for featured cards and the collapsed planner. Existing game palette and font retained. */\n#overallLeaderboardPanel #overallDailyGrid {\n  display:grid!important;grid-template-columns:minmax(480px,1.55fr) minmax(240px,.8fr) minmax(300px,.95fr)!important;\n  grid-template-rows:minmax(0,1fr)!important;gap:12px!important;align-items:stretch!important;\n  box-sizing:border-box!important;width:100%!important;height:calc(176px * var(--sq-ui-scale,1))!important;min-height:0!important;max-height:calc(176px * var(--sq-ui-scale,1))!important;\n  flex:0 0 calc(176px * var(--sq-ui-scale,1))!important;padding:10px 14px!important;overflow:visible!important;\n  background:#142149;border-top:1px solid #5876a8;\n}\n#overallDailyGrid .overall-challenge-stack {\n  display:grid!important;grid-template-columns:minmax(0,1fr)!important;grid-template-rows:repeat(2,minmax(0,1fr))!important;\n  grid-column:1!important;grid-row:1!important;gap:8px!important;min-width:0;order:0!important;\n}\n#overallDailyGrid .overall-challenge-stack>section {\n  display:grid!important;grid-template-columns:minmax(0,1fr) 126px!important;align-items:center!important;\n  box-sizing:border-box;min-width:0!important;min-height:0!important;margin:0!important;padding:8px!important;\n  gap:6px!important;grid-column:auto!important;grid-row:auto!important;background:#203363;border:1px solid #5774a8;\n}\n#overallDailyGrid .competition-feature-button {\n  display:grid!important;grid-template-columns:44px minmax(0,1fr)!important;gap:8px!important;align-items:center!important;\n  width:100%;min-width:0;min-height:56px!important;margin:0!important;padding:0!important;\n  color:#fff;background:transparent!important;border:0!important;text-align:left;cursor:pointer;font:inherit;clip-path:none!important;\n}\n#overallDailyGrid .competition-feature-button:hover .competition-track-name {color:#a8f0ff!important}\n#overallDailyGrid .competition-feature-button:focus-visible {outline:2px solid #a8f0ff;outline-offset:4px}\n#overallDailyGrid .competition-feature-image {\n  display:grid!important;place-items:center;position:relative!important;width:44px!important;height:44px!important;\n  min-width:0;overflow:hidden;background:#14244c;border:1px solid #425c8e;\n}\n#overallDailyGrid .competition-feature-image img {\n  position:static!important;width:100%!important;height:100%!important;max-width:100%!important;object-fit:contain!important;transform:none!important;\n}\n#overallDailyGrid .competition-feature-copy {display:flex!important;flex-direction:column!important;align-items:flex-start!important;min-width:0!important;gap:3px!important}\n#overallDailyGrid .competition-kicker {font:calc(12px * var(--sq-ui-scale,1))/1.2 ForcedSquare,sans-serif!important;letter-spacing:.06em;max-width:none!important;color:#91dfff;white-space:normal!important}\n#overallDailyGrid .competition-track-name {display:block!important;min-height:0!important;width:auto!important;max-width:100%;padding:0!important;margin:0!important;background:none!important;font:calc(18px * var(--sq-ui-scale,1))/1.2 ForcedSquare,sans-serif!important;color:#fff;overflow-wrap:anywhere;white-space:normal!important}\n#overallDailyGrid .competition-result {display:block!important;grid-column:auto!important;grid-row:auto!important;margin:0!important;padding:0!important;background:none!important;font:calc(14px * var(--sq-ui-scale,1))/1.25 ForcedSquare,sans-serif!important;color:#c4d8f4;white-space:normal!important;text-align:left!important;align-self:flex-start!important}\n#overallDailyGrid .overall-challenge-stack>section>small {display:block!important;grid-column:auto!important;grid-row:auto!important;border-top:0;border-left:1px solid #5875a5;padding:0 0 0 8px!important;margin:0!important;text-align:left!important;font:calc(11px * var(--sq-ui-scale,1))/1.25 ForcedSquare,sans-serif!important;color:#adbfdb;white-space:normal!important}\n#overallDailyGrid .competition-local-reset {font:calc(12px * var(--sq-ui-scale,1))/1.3 ForcedSquare,sans-serif!important;color:#d2edff}\n#overallDailyGrid .overall-center-tools {grid-column:2!important;grid-row:1!important;align-self:center!important;min-width:0!important;margin:0!important}\n#overallDailyGrid .overall-footer-right {grid-column:3!important;grid-row:1!important;align-self:center!important;min-width:0!important;margin:0!important}\n#overallProfilePopup .profile-guide {border:2px solid #8ddfff;box-shadow:0 0 0 4px #101d40;background:#172953}\n#overallProfilePopup .profile-guide>summary {\n  display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr)) 104px!important;grid-auto-rows:minmax(104px,auto)!important;\n  align-items:stretch!important;gap:8px!important;padding:10px!important;list-style:none;cursor:pointer;\n}\n#overallProfilePopup .profile-guide>summary::-webkit-details-marker {display:none}\n#overallProfilePopup .profile-guide>summary:focus-visible {outline:3px solid #a8f0ff;outline-offset:3px}\n#overallProfilePopup .route-preview-item {\n  display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:flex-start!important;\n  min-width:0!important;min-height:104px!important;box-sizing:border-box;padding:10px!important;gap:10px;\n  background:#203663;border:1px solid #5475a8;border-top:2px solid #8ddfff;\n}\n#overallProfilePopup .route-preview-image {position:relative!important;display:grid!important;place-items:center;width:52px!important;height:56px!important;flex:0 0 52px!important;overflow:hidden;background:#14244c;border:1px solid #425c8e}\n#overallProfilePopup .route-preview-image img {position:static!important;width:100%!important;height:100%!important;object-fit:contain!important;transform:none!important}\n#overallProfilePopup .route-preview-copy {display:flex!important;flex-direction:column!important;align-items:flex-start!important;gap:4px;min-width:0!important;text-align:left}\n#overallProfilePopup .route-preview-copy>b {font:calc(11px * var(--sq-ui-scale,1))/1.2 ForcedSquare,sans-serif!important;text-transform:uppercase;letter-spacing:.03em;color:#95deff}\n#overallProfilePopup .route-preview-copy strong {font:calc(19px * var(--sq-ui-scale,1))/1.2 ForcedSquare,sans-serif!important;color:#fff;overflow-wrap:anywhere}\n#overallProfilePopup .route-preview-copy small {display:block;margin:0!important;font:calc(14px * var(--sq-ui-scale,1))/1.25 ForcedSquare,sans-serif!important;color:#bfd2ee}\n#overallProfilePopup .route-preview-copy .guide-weight {font-size:calc(12px * var(--sq-ui-scale,1))!important;padding:0!important;border:0!important;background:none!important;color:#9ed4e8}\n#overallProfilePopup .profile-guide>summary .route-open-label {\n  display:flex!important;align-items:center!important;justify-content:center!important;align-self:stretch!important;justify-self:stretch!important;\n  box-sizing:border-box;grid-column:auto!important;grid-row:auto!important;min-height:104px!important;padding:12px!important;margin:0!important;\n  background:#8be5fb!important;border:1px solid #b6f1ff;color:#11294b!important;font:calc(17px * var(--sq-ui-scale,1))/1.25 ForcedSquare,sans-serif!important;font-style:normal;text-align:center;white-space:normal!important;\n}\n#overallProfilePopup .profile-guide[open]>summary .route-open-label {font-size:0!important;background:#ffd783!important;border-color:#ffe7b1}\n#overallProfilePopup .profile-guide[open]>summary .route-open-label:after {content:'Close plan';font:calc(17px * var(--sq-ui-scale,1))/1.25 ForcedSquare,sans-serif}\n@media(max-width:1100px) {\n  #overallLeaderboardPanel #overallDailyGrid {grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;grid-template-rows:auto auto!important;height:auto!important;min-height:0!important;max-height:36dvh!important;flex:0 0 auto!important;overflow-y:auto!important;gap:8px!important}\n  #overallDailyGrid .overall-challenge-stack {grid-column:1/-1!important;grid-row:2!important}\n  #overallDailyGrid .overall-center-tools {grid-column:1!important;grid-row:1!important}\n  #overallDailyGrid .overall-footer-right {grid-column:2!important;grid-row:1!important}\n  #overallProfilePopup .profile-guide>summary {grid-template-columns:repeat(3,minmax(0,1fr)) 86px!important}\n  #overallProfilePopup .route-preview-image {width:40px!important;height:48px!important;flex-basis:40px!important}\n  #overallProfilePopup .route-preview-item {padding:8px!important;gap:7px}\n  #overallProfilePopup .route-preview-copy strong {font-size:calc(17px * var(--sq-ui-scale,1))!important}\n}\n@media(max-width:700px) {\n  #overallProfilePopup .profile-guide>summary {grid-template-columns:repeat(2,minmax(0,1fr))!important;grid-auto-rows:minmax(104px,auto)!important;padding:8px!important}\n  #overallDailyGrid .competition-track-name {font-size:calc(16px * var(--sq-ui-scale,1))!important}\n}\n@media(max-width:430px) {\n  #overallLeaderboardPanel #overallDailyGrid {padding:8px!important;max-height:38dvh!important}\n  #overallDailyGrid .overall-challenge-stack {grid-template-columns:1fr!important}\n  #overallDailyGrid .competition-feature-button {grid-template-columns:40px minmax(0,1fr)!important;min-height:48px!important}\n  #overallDailyGrid .competition-feature-image {width:40px!important;height:40px!important}\n  #overallProfilePopup .profile-guide>summary {grid-template-columns:minmax(0,1fr)!important;grid-auto-rows:minmax(80px,auto)!important}\n  #overallProfilePopup .route-preview-item,#overallProfilePopup .profile-guide>summary .route-open-label {min-height:80px!important}\n  #overallProfilePopup .route-preview-copy {display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;column-gap:10px}\n  #overallProfilePopup .route-preview-copy>b,#overallProfilePopup .route-preview-copy strong {grid-column:1/-1}\n}\n@media(max-height:500px) and (min-width:600px) {\n  #overallLeaderboardPanel #overallDailyGrid {height:96px!important;max-height:96px!important;flex-basis:96px!important;grid-template-columns:1fr 1fr!important;grid-template-rows:1fr!important;padding:5px!important}\n  #overallDailyGrid .overall-challenge-stack {display:none!important}\n  #overallDailyGrid .overall-center-tools {grid-column:1!important;grid-row:1!important}\n  #overallDailyGrid .overall-footer-right {grid-column:2!important;grid-row:1!important}\n}\n\n#overallProfilePopup .profile-guide-body{border-top:3px solid #8ddfff;padding:16px!important;background:#13254f}\n#overallProfilePopup .profile-guide-body>header{border-bottom:2px solid #6d92c6;padding-bottom:14px;margin-bottom:16px}\n#overallProfilePopup .profile-guide-track{border:2px solid #7298ce!important;border-left:5px solid #8ddfff!important;background:#253e73!important;box-shadow:0 3px 0 #0a1737}\n#overallProfilePopup .profile-guide-copy>b{font-size:calc(21px * var(--sq-ui-scale,1))!important;color:#fff!important}\n#overallProfilePopup .profile-guide h4{font-size:calc(24px * var(--sq-ui-scale,1));line-height:1.45}\n#overallProfilePopup .planner-rival-name{display:inline;padding:2px 8px;background:#93e6ff;color:#10264b;border-bottom:3px solid #fff;font-weight:900;box-decoration-break:clone;-webkit-box-decoration-break:clone}\n@media(max-width:430px){#overallDailyGrid .overall-challenge-stack>section{grid-template-columns:minmax(0,1fr) 108px!important}}\n\n#overallDailyGrid .competition-feature-image .profile-track-image-frame{position:static!important;width:100%!important;height:100%!important;min-height:0!important;padding:0!important;display:grid!important;place-items:center}\n\n@media(max-width:600px){#overallLeaderboardPanel #overallDailyGrid{grid-template-columns:minmax(0,1fr)!important;grid-template-rows:auto auto auto!important}#overallDailyGrid .overall-center-tools{grid-column:1!important;grid-row:1!important;width:100%!important}#overallDailyGrid .overall-footer-right{grid-column:1!important;grid-row:2!important;width:100%!important}#overallDailyGrid .overall-challenge-stack{grid-column:1!important;grid-row:3!important}#overallDailyGrid .overall-category-control{width:100%!important;min-width:0!important}#overallDailyGrid .overall-category-select{min-width:0!important;flex:1}#overallDailyGrid .sq-category-trigger{white-space:nowrap!important}#overallDailyGrid .overall-page-status{min-width:0!important}}\n";
     document.head.appendChild(style);
     const rankedPolish=document.createElement('style');
     rankedPolish.id='polytrack-ranked-polish-v1';
@@ -2230,7 +2232,6 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
   }
   function setOverallCategory(next){
     const selected=String(next||'overall');
-    if(selected==='events'){void ensureEventUi().then(ui=>ui.totals()).catch(()=>{const button=document.querySelector('.sq-category-trigger');if(button)button.title='Events could not load. Please try again.';});return;}
     const panel=document.getElementById('overallLeaderboardPanel');
     if(!panel||selected===overallCategory)return;
     overallCategory=selected;
@@ -2242,6 +2243,9 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     overallPage=0;
     syncCategorySelect(panel);
     renderEntries();
+    updateRankedFreshness();
+    if(selected==='events')void fetchEventTotals();
+    else if(!overallEntriesCache.length)void openPanel();
   }
 
   function ensurePanel(){
@@ -2268,6 +2272,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
       if (event.target.closest?.('#overallPrevPage')) changeOverallPage(-1);
       if (event.target.closest?.('#overallNextPage')) changeOverallPage(1);
       const leaderboardShortcut=event.target.closest?.('[data-leaderboard-shortcut]');
+      if(leaderboardShortcut&&leaderboardShortcut.dataset.leaderboardShortcut==='events'){setOverallCategory('events');return;}
       if(leaderboardShortcut){
         overallCategory=String(leaderboardShortcut.dataset.leaderboardShortcut||'overall');
         recordLeaderboardUse(overallCategory);
@@ -3218,6 +3223,81 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
   let overallTrackSummariesCache = [];
   let overallPage = 0;
   let overallCategory = 'overall';
+  const EVENT_TOTALS_CACHE_KEY='polytrack-062-ranked-event-totals-v1';
+  let eventTotalsSnapshot=null,eventTotalsRequest=null;
+  let eventTotalsState={status:'idle',checkedAt:0};
+  function normalizeEventTotals(value){
+    if(!value||!Array.isArray(value.entries)||value.entries.length>200||!Number.isSafeInteger(value.updatedAt)||value.updatedAt<0)throw Error('Invalid Event RP snapshot');
+    const seen=new Set();
+    const metric=(value,integer=false)=>value==null?null:typeof value==='number'&&Number.isFinite(value)&&value>=0&&(!integer||Number.isSafeInteger(value))?value:NaN;
+    const entries=value.entries.map(row=>{
+      const accountId=cleanUserId(row?.accountId||row?.userId||'');
+      if(!accountId||seen.has(accountId))throw Error('Invalid Event RP identity');
+      seen.add(accountId);
+      const rank=metric(row.rank,true),rp=metric(row.rp),events=metric(row.events,true);
+      if([rank,rp,events].some(Number.isNaN)||rank===0)throw Error('Invalid Event RP value');
+      return {accountId,userId:accountId,name:typeof row.name==='string'?row.name:'',rank,rp,events};
+    });
+    return {entries,updatedAt:value.updatedAt};
+  }
+  function savedEventTotals(){
+    if(eventTotalsSnapshot)return eventTotalsSnapshot;
+    try{eventTotalsSnapshot=normalizeEventTotals(readJsonStorage(EVENT_TOTALS_CACHE_KEY,null));}catch{}
+    return eventTotalsSnapshot;
+  }
+  async function fetchEventTotals(force=false){
+    const saved=savedEventTotals();
+    if(eventTotalsRequest)return eventTotalsRequest;
+    if(!force&&saved&&Date.now()-eventTotalsState.checkedAt<120000)return saved.entries;
+    eventTotalsState={...eventTotalsState,status:'loading'};
+    if(overallCategory==='events'){renderEntries();updateRankedFreshness();}
+    eventTotalsRequest=(async()=>{
+      try{
+        const next=normalizeEventTotals(await withTimeout(eventCloudRead('/v1/events/totals','0.6.2_event_public','totals'),12000,'Event RP timed out'));
+        if(!eventTotalsSnapshot||next.updatedAt>=eventTotalsSnapshot.updatedAt){eventTotalsSnapshot=next;writeJsonStorage(EVENT_TOTALS_CACHE_KEY,next);}
+        eventTotalsState={status:next.updatedAt<eventTotalsSnapshot.updatedAt?'stale':'cloud',checkedAt:Date.now()};
+      }catch{eventTotalsState={status:savedEventTotals()?'stale':'error',checkedAt:Date.now()};}
+      finally{eventTotalsRequest=null;if(overallCategory==='events'){renderEntries();updateRankedFreshness();}}
+      return eventTotalsSnapshot?.entries||[];
+    })();
+    return eventTotalsRequest;
+  }
+  function sortedEventEntries(){
+    const identities=new Map(overallEntriesCache.map(row=>[cleanUserId(row.userId||row.accountId||''),row]));
+    return (savedEventTotals()?.entries||[]).map(event=>{
+      const identity=identities.get(event.accountId),row={};
+      // Overall contributes presentation only, never scores, eligibility or movement.
+      for(const key of ['name','nickname','countryCode','carStyle','carColorId','carColors','profileCosmetics','badges'])if(identity?.[key]!=null)row[key]=identity[key];
+      return {...row,...event,name:row.name||event.name||'Racer',nickname:row.nickname||row.name||event.name||'Racer'};
+    }).sort((a,b)=>(a.rank??Infinity)-(b.rank??Infinity)||(b.rp??-Infinity)-(a.rp??-Infinity)||a.accountId.localeCompare(b.accountId));
+  }
+  function renderEventEntryRow(row,index){
+    const id=cleanUserId(row.accountId),name=escapeHtml(safeDisplayName(row.nickname||row.name,id));
+    const rank=row.rank==null?'N/A':'#'+row.rank,rp=row.rp==null?'N/A':formatRp(row.rp);
+    const count=row.events==null?'Event count unavailable':`${row.events} event${row.events===1?'':'s'}`;
+    return `<div class="overall-entry ${row.rank===1?'top-1':row.rank===2?'top-2':row.rank===3?'top-3':''} ${id===activeRankedAccountId()?'is-self':''} ${racerCosmeticClasses(row)}" data-userid="${escapeHtml(id)}" data-category="events" tabindex="0" role="button" aria-label="View ${name} profile. Event RP: ${escapeHtml(rp)}" style="animation-delay:${(index*.03).toFixed(3)}s"><span class="overall-rank">${rank}</span><span class="overall-name">${row.carStyle?carModelPreview(row.carStyle,row.carColorId||row.carColors,id):''}<span class="overall-name-label"><span class="overall-name-main">${name}${countryFlagMarkup(row.countryCode)}${id===activeRankedAccountId()?'<span class="overall-you-tag">YOU</span>':''}${profileBadgeMarkup(row,true)}</span><span class="overall-racer-meta">${count}</span></span></span><div class="overall-mid"><span class="overall-move flat">${count}</span><div class="overall-best">Verified event PBs only</div></div><div class="overall-stats"><div class="overall-score">${rp}</div><div class="overall-score-unit">EVENT RP</div></div></div>`;
+  }
+  function renderEventEntries(listEl){
+    const rows=sortedEventEntries();updateOverallPager();
+    document.getElementById('overallLeaderboardPanel')?.setAttribute('data-category','events');
+    if(!rows.length){
+      const known=Boolean(savedEventTotals());
+      listEl.innerHTML=`<div class="overall-empty"><strong>${eventTotalsState.status==='loading'?'Loading Event RP':known?'No Event RP earned yet':'Event RP unavailable'}</strong><span>${known?'Only verified event PBs earn points. Try a live event.':'No saved event standings are available. Your local PBs remain saved.'}</span><button class="button" type="button" data-rank-retry>Refresh Event RP</button></div>`;
+    }else{
+      listEl.innerHTML=rows.slice(overallPage*OVERALL_PAGE_SIZE,(overallPage+1)*OVERALL_PAGE_SIZE).map(renderEventEntryRow).join('');
+      hydrateOverallCarModels(listEl);
+    }
+    listEl.scrollTop=0;
+  }
+  function updateEventFreshness(el){
+    const status=eventTotalsState.status,saved=savedEventTotals(),failed=status==='stale'||status==='error';
+    el.className=`overall-freshness ${failed?'is-stale':status==='loading'?'is-loading':''}`;
+    el.textContent=`Event RP: ${status==='loading'?'checking cloud':failed?(saved?'cloud failed, saved standings':'cloud failed, no saved standings'):status==='cloud'?'cloud checked':'saved standings'}${saved?' · updated '+ageLabel(saved.updatedAt):''} · click to refresh`;
+    el.title='Lifetime Event RP, separate from Overall RP. Saved event standings never expire.';
+    el.dataset.old=String(Boolean(saved&&Date.now()-saved.updatedAt>7200000));
+  }
+  window.__pt062OpenRankedEvents=function(){ensurePanel();overallCategory='events';overallPage=0;return openPanel();};
+
   function loadedTrackRankingRows(){
     if(overallTrackSummariesCache.length){
       return annotateCategoryRanks(overallTrackSummariesCache.filter((row)=>Number(row.fieldSize||0)>=2).map((row)=>{
@@ -3289,6 +3369,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     return output;
   }
   function sortedOverallEntries(){
+    if(overallCategory==='events')return sortedEventEntries();
     let rows=[...overallEntriesCache];
     if(['overall','skill','consistency','average','competitiveAverage','podiumRate'].includes(overallCategory))rows=rows.filter((entry)=>!entry.provisional&&Number(entry.raceCount||0)>=MIN_RANKED_TRACKS);
     if(overallCategory==='playtime')rows=rows.filter((entry)=>Number(entry.totalPlaytimeMs||0)>0);
@@ -3334,7 +3415,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     const index = sortedOverallEntries().findIndex((entry)=>cleanUserId(entry.userId || entry.accountId || '') === accountId);
     const button = document.getElementById('overallFindMeBtn');
     if (index < 0) {
-      if (button) { const prior=button.textContent; button.textContent='No ranked run'; setTimeout(()=>{if(button.isConnected)button.textContent=prior;},1400); }
+      if (button) { const prior=button.textContent; button.textContent=overallCategory==='events'?'No published Event RP':'No ranked run'; setTimeout(()=>{if(button.isConnected)button.textContent=prior;},1400); }
       return;
     }
     overallPage = Math.floor(index / OVERALL_PAGE_SIZE);
@@ -3772,7 +3853,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     const carrying=allCarrying.filter((action)=>!priorityIds.has(action.trackId)).slice(0,3);
     const strongest=allCarrying[0]||null;
     const racerName=escapeHtml(safeDisplayName(entry.name,entry.userId));
-    const context=isSelf||!rival.length?`Your next moves`:`Your plan against <strong>${racerName}</strong>`;
+    const context=isSelf||!rival.length?`Your next moves`:`Your plan against <strong class="planner-rival-name">&quot;${racerName}&quot;</strong>`;
     const actionVerb=(action)=>action.kind==='start'?'Start':action.kind==='rival'?'Pass them on':action.kind==='carry'?'Protect':'Improve';
     const cards=(rows)=>{const values=rows.filter(Boolean);return values.length?values.map((action)=>guideTrackCard(action,Math.max(...values.map(row=>Number(row.value||0))),actionVerb(action))).join(''):`<p class="profile-guide-empty">${simulationFinishes.filter(f=>Number(f.rank)>0&&Number(f.fieldSize)>=2).length<Number(plannerEntry?.raceCount||0)?'Complete scoring data is not available yet. Refresh Ranked after the next server update.':'No scoring improvement found in these standings. Try another category or refresh the data.'}</p>`;};
     const previewRoutes=(priority.length?priority:carrying).slice(0,3);
@@ -3785,6 +3866,10 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     const entry=overallEntriesCache.find((row)=>cleanUserId(row.userId||row.accountId||'')===cleanUserId(userId));
     const popup=document.getElementById('overallProfilePopup');
     const content=document.getElementById('overallProfileContent');
+    if(!entry&&popup&&content&&overallCategory==='events'){
+      content.innerHTML='<div class="overall-empty"><strong>Ranked profile unavailable</strong><span>This racer has Event RP, but no Overall profile is available in the saved Ranked snapshot. No Overall score or track results are inferred.</span></div>';
+      openRankedDialog(popup);return;
+    }
     if(!entry||!popup||!content)return;
     const profileCard=content.closest('.overall-profile-card');
     const profileScroll=isElementVisible(popup)&&popup.dataset.profileUser===cleanUserId(userId)?profileCard.scrollTop:0;
@@ -3901,11 +3986,12 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
   function renderEntries(entries){
     const listEl = document.getElementById('overallLeaderboardList');
     if (!listEl) return;
-    if (Array.isArray(entries)) { overallEntriesCache = entries; overallPage = 0; }
+    if (Array.isArray(entries)) { overallEntriesCache = entries; if(overallCategory!=='events')overallPage = 0; }
     const columnLabels=document.querySelectorAll('#overallLeaderboardPanel .overall-columns span');
-    const labels=overallCategory==='topTracks'?['Place','Track','Leader & record','Weight']:['Place','Driver','Movement & bests','Score'];
+    const labels=overallCategory==='events'?['Place','Driver','Events','Event RP']:overallCategory==='topTracks'?['Place','Track','Leader & record','Weight']:['Place','Driver','Movement & bests','Score'];
     columnLabels.forEach((column,index)=>{column.textContent=labels[index]||'';});
     const findMe=document.getElementById('overallFindMeBtn'); if(findMe)findMe.disabled=overallCategory==='topTracks';
+    if(overallCategory==='events'){renderEventEntries(listEl);return;}
     if(overallCategory==='topTracks'){
       const tracks=loadedTrackRankingRows();
       updateOverallPager();
@@ -3931,6 +4017,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
 
   function updateRankedFreshness(){
     const el=document.getElementById('overallFreshness'); if(!el) return;
+    if(overallCategory==='events'){updateEventFreshness(el);return;}
     const status=String(overallLoadState.status||'');
     const snapshotAt=Number(overallLoadState.serverUpdatedAt||overallLoadState.fetchedAt||0)||0;
     const checkedAt=Number(overallLoadState.checkedAt||0)||0;
@@ -3955,6 +4042,7 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     if(streakEl?.dataset.base&&streakEl.dataset.fetchedAt) streakEl.textContent=`${streakEl.dataset.base} · ${ageLabel(Number(streakEl.dataset.fetchedAt))}`;
   }
   function requestRankedRefresh(){
+    if(overallCategory==='events')return fetchEventTotals(true);
     const snapshotAge=Date.now()-Number(overallLoadState.fetchedAt||0);
     if(snapshotAge<OVERALL_REFRESH_CHECK_MS&&Date.now()-lastRankedManualRefreshAt<120000&&overallLoadState.status!=='stale'&&overallLoadState.status!=='error'){updateRankedFreshness();return;}
     lastRankedManualRefreshAt=Date.now();
@@ -3985,6 +4073,14 @@ const q0='7f2a',q1='b19e',q2='d44c',q3='9a01';
     const panel = document.getElementById('overallLeaderboardPanel');
     const listEl = document.getElementById('overallLeaderboardList');
     if (!panel || !listEl) return;
+    if(overallCategory==='events'){
+      panel.style.display='flex';
+      if(!overallEntriesCache.length)overallEntriesCache=readOverallSnapshotCache()?.entries||[];
+      syncCategorySelect(panel);
+      const scope=panel.querySelector('#overallTrackScope');if(scope)scope.hidden=true;
+      renderEntries();updateRankedFreshness();
+      return fetchEventTotals(forceRefresh);
+    }
     document.querySelector('.ranked-testing-notice')?.remove();
     const generation = ++overallLoadGeneration;
     const dirtyPb=readJsonStorage(OVERALL_PB_DIRTY_KEY,null);

@@ -102,6 +102,67 @@ function fixture() {
   };
 }
 
+async function clockRejectedFixture() {
+  const f = fixture(); await f.start(); f.time(10000);
+  const key = 'day1_' + account;
+  const inbox = { periodId: 'day1', ownerUid: 'user1', accountId: account, trackId: track,
+    attemptId: 'clock-rejected', timeMs: 20402, frames: 20402, replay, carStyle: '',
+    receivedAt: { __firestoreTimestamp: new Date(2000).toISOString() } };
+  f.data.set(`${C.inbox}/${key}`, inbox);
+  f.data.set(`${C.cursors}/${key}`, { attemptId: inbox.attemptId, receivedAt: inbox.receivedAt, status: 'inbox_receipt_expired', runId: null });
+  f.data.set(`${C.receipts}/${key}`, { periodId: 'day1', ownerUid: 'user1', accountId: account,
+    attemptId: inbox.attemptId, timeMs: inbox.timeMs, status: 'rejected', reason: 'inbox_receipt_expired', updatedAt: 1000 });
+  return { f, inbox, key };
+}
+test('clock recovery preserves exact attempt/time/receipt and charges admission once', async () => {
+  const { f, inbox, key } = await clockRejectedFixture();
+  const result = await f.service.consumeInbox(inbox);
+  assert.equal(result.status, 'waiting'); assert.equal(result.duplicate, false);
+  assert.equal(f.run(result.runId).receivedAt, 2000);
+  assert.equal(f.run(result.runId).timeMs, 20402);
+  assert.equal(f.run(result.runId).attemptId, inbox.attemptId);
+  assert.deepEqual(f.run(result.runId).clockRecovery, { rejectedAt: 1000, recoveredAt: 10000 });
+  assert.deepEqual(f.data.get(`${C.inbox}/${key}`), inbox);
+  assert.equal(f.data.get(`${C.receipts}/${key}`).status, 'waiting');
+  assert.equal(f.data.get(`${C.receipts}/${key}`).reason, '');
+  assert.equal(f.canonical(), undefined); assert.deepEqual((await f.service.totals()).entries, []);
+  assert.equal((await f.service.consumeInbox(inbox)).duplicate, true);
+  assert.equal(f.data.get(`${C.queues}/day1`).admitted, 1);
+});
+test('genuinely expired or unrelated terminal cursors cannot be resurrected', async () => {
+  for (const change of ['rejection-time', 'reason', 'cursor-status', 'attempt']) {
+    const { f, inbox, key } = await clockRejectedFixture();
+    const receipt = f.data.get(`${C.receipts}/${key}`);
+    if (change === 'rejection-time') receipt.updatedAt = 3000;
+    if (change === 'reason') receipt.reason = 'event_entrant_capacity';
+    if (change === 'cursor-status') f.data.get(`${C.cursors}/${key}`).status = 'mismatch';
+    if (change === 'attempt') receipt.attemptId = 'newer';
+    assert.equal((await f.service.consumeInbox(inbox)).duplicate, true);
+    assert.equal(f.data.get(`${C.queues}/day1`).admitted, 0);
+  }
+});
+test('clock recovery still enforces original window, settlement, archive, quota and ownership', async () => {
+  for (const change of ['closed', 'archived', 'rate', 'capacity', 'owner', 'superseded', 'outside-window']) {
+    const { f, inbox, key } = await clockRejectedFixture();
+    if (change === 'closed') f.time(p.endsAt + p.graceMs);
+    if (change === 'archived') f.data.set(`${C.archives}/day1`, { immutable: true });
+    if (change === 'rate') f.data.set(`${C.quotas}/day1_${hash('user1')}`, { accountId: account, lastAt: 1999, count: 1 });
+    if (change === 'capacity') f.data.get(`${C.queues}/day1`).admitted = p.capacity.admissionsPerPeriod;
+    if (change === 'owner') f.data.get(`${C.profiles}/${account}`).ownerUid = 'someone-else';
+    if (change === 'superseded') f.data.set(`${C.inbox}/${key}`, { ...inbox, attemptId: 'newer', timeMs: 15000, frames: 15000 });
+    if (change === 'outside-window') f.data.set(`${C.periods}/day1`, eventPeriod({ ...inputPeriod, startsAt: 3000 }));
+    const before = structuredClone(f.data);
+    await assert.rejects(f.service.consumeInbox(inbox));
+    assert.deepEqual(f.data, before, change);
+  }
+});
+test('clock recovery transaction conflict cannot half-clear receipt or charge quota', async () => {
+  const { f, inbox } = await clockRejectedFixture();
+  const before = structuredClone(f.data);
+  f.store.fail(`${C.queues}/day1`);
+  await assert.rejects(f.service.consumeInbox(inbox), /simulated_write_failure/);
+  assert.deepEqual(f.data, before);
+});
 test('inbox exact receipt is guarded, newer PB preserved, private cursor idempotent', async () => {
   const f = fixture(); await f.start(); f.time(10000);
   const key = `${C.inbox}/day1_${account}`;
