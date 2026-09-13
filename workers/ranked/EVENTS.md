@@ -1,6 +1,6 @@
 # Event RP server handoff
 
-Source integration is present but `EVENTS_ENABLED` is false. No deployment or workflow dispatch was performed by this task. Tests are local unit/adapter/coordinator tests, not a 200-player concurrency or production load test.
+Event RP was activated after the matching client/workflow and Firestore rules were published. `EVENTS_ENABLED` is true. Local unit/adapter/coordinator tests passed; this is not a 200-player concurrency or production load-test claim. A full real-player event submission/verification smoke test remains required.
 
 ## Contract
 

@@ -16,7 +16,7 @@
     "BETA_CUTOFF_MS": "1788656400000",
     "RANKED_WRITES_ENABLED": "true",
     "MULTIPLAYER_ENABLED": "true",
-    "EVENTS_ENABLED": "false",
+    "EVENTS_ENABLED": "true",
     "EVENT_CAPACITY_JSON": "{\"policyVersion\":\"event-200-v1\",\"entrants\":200,\"admissionsPerPeriod\":2048,\"replayBytesPerPeriod\":16777216,\"minIntervalMs\":5000,\"verificationsPerDay\":1536}"
   },
   "ratelimits": [
