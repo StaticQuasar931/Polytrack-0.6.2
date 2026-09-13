@@ -22,11 +22,14 @@
 .sq-event-actions{flex-wrap:wrap}
 .sq-event-receipt{background:#17264e;padding:12px;border-left:3px solid #9de5ff;line-height:1.4}
 /* Native track row: ordinary tracks left, event cards right. */
+#ui .track-selection-ui .sq-event-track-group .sq-event-track-buttons{margin-left:0!important;align-self:flex-start}
+#ui .track-selection-ui .sq-event-track-group>.group-title{flex-basis:100%;min-width:0}
 #ui .track-selection-ui .sq-event-track-group{display:flex!important;flex-wrap:wrap;align-items:flex-start;gap:0!important}
 .track-selection-ui .sq-event-track-group>.group-title{flex:0 0 calc(100% - 40px)}
 .track-selection-ui .sq-event-track-group>.track{flex:0 0 auto}
 .track-selection-ui .sq-event-track-group>.sq-events-entry{margin:10px 10px 10px auto!important;width:216px!important;min-width:216px;height:241px;align-self:flex-start;clip-path:none;padding:16px;border:2px solid #83cfe9!important;font-size:24px}
-.track-selection-ui .sq-event-track-buttons{margin:0 0 0 auto!important;padding:0 0 0 16px;gap:0;border-left:2px solid #7a9dcc;width:auto;max-width:100%;display:flex;flex-wrap:wrap;box-sizing:border-box;justify-content:flex-start;align-items:flex-start;position:relative}
+.track-selection-ui .sq-event-track-buttons{margin:0!important;padding:0;gap:0;border:0;width:auto;max-width:100%;display:flex;flex-wrap:wrap;box-sizing:border-box;justify-content:flex-start;align-items:flex-start;position:relative}
+.track-selection-ui .sq-event-track-buttons:before{content:'';position:absolute;left:-1px;top:10px;bottom:10px;border-left:2px solid #7a9dcc;pointer-events:none}
 .track-selection-ui .sq-event-track-buttons .sq-event-card{width:216px;min-width:216px;max-width:216px;height:241px;min-height:241px;flex:0 0 216px;margin:10px;padding:0;display:flex;flex-direction:column;gap:0;overflow:hidden;background:var(--button-color,#112052);border:0;border-top:3px solid #8ddfff;box-shadow:none;text-align:center;clip-path:polygon(8px 0,100% 0,calc(100% - 8px) 100%,0 100%)}
 .track-selection-ui .sq-event-track-buttons .sq-event-card:hover{background:var(--button-hover-color,#334b77)}
 .track-selection-ui .sq-event-track-buttons .sq-event-card>span:last-child{display:contents}
@@ -36,7 +39,7 @@
 .track-selection-ui .sq-event-track-buttons .sq-event-thumb{order:2;width:176px;height:137px;flex:0 0 137px;padding:10px 20px;box-sizing:border-box;background:transparent}
 .track-selection-ui .sq-event-track-buttons .sq-event-card>span:last-child>span{order:3;display:block;width:100%;box-sizing:border-box;padding:8px 4px;background:#212b58;font-size:20px;color:#fff}
 .track-selection-ui .sq-event-track-group:has(.sq-event-track-buttons)>.sq-events-entry{display:none!important}
-@media(max-width:650px){.track-selection-ui .sq-event-track-buttons{margin-left:0!important;padding-left:6px}.track-selection-ui .sq-event-track-group>.sq-events-entry{margin-left:10px!important}}
+@media(max-width:650px){.track-selection-ui .sq-event-track-buttons{margin-left:0!important;padding-left:0}.track-selection-ui .sq-event-track-group>.sq-events-entry{margin-left:10px!important}}
 .sq-events-overlay{touch-action:pan-y;overscroll-behavior:contain}
 .sq-events-dialog main{overscroll-behavior:contain}
 @media(max-width:650px){
@@ -46,6 +49,7 @@
 .track-selection-ui .sq-event-track-group .track-title>p{width:100%;padding:0 8px}
 .track-selection-ui .sq-event-track-buttons{flex:1 1 50%;width:50%;max-width:50%;padding:0;box-sizing:border-box}
 .track-selection-ui .sq-event-track-buttons .sq-event-card{width:calc(100% - 12px);min-width:0;max-width:none;flex:1 1 auto;height:174px;min-height:174px;margin:6px}
+.track-selection-ui .sq-event-track-buttons .sq-event-card:first-child{margin-top:0}
 .track-selection-ui .sq-event-track-buttons .sq-event-thumb{width:100%;height:96px;flex-basis:96px;padding:8px 16px}
 .track-selection-ui .sq-event-track-buttons .sq-event-card strong{font-size:18px;padding:3px 8px}
 .track-selection-ui .sq-event-track-buttons .sq-event-card small:first-child{font-size:11px;padding:3px 0}

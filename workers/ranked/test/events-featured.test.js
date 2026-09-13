@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import {eventWorkerMaintenance,weeklyEventRegistry} from '../src/events-worker.js';
+import {eventWorkerMaintenance} from '../src/events-worker.js';
 import {EVENT_COLLECTIONS as C} from '../src/events.js';
 import {eventEncode,eventDecode} from '../src/events-store.js';
 import {utcEventCandidates} from '../src/events-runtime.js';
@@ -36,28 +36,29 @@ function fixture(target,existing=false) {
     {request,officialIds:[official],allIds:[rolling,official],at,now:()=>at,
       targetForTrack:async id=>{lookups.push(id);return target;}})};
 }
-test('featured weekly config is registered, optional, and leaves daily selection unchanged',()=>{
-  const all=[rolling,official];assert.equal(weeklyEventRegistry(undefined,all),all);
-  assert.equal(weeklyEventRegistry('',all),all);
-  assert.deepEqual(weeklyEventRegistry(rolling,all),[rolling]);assert.deepEqual(all,[rolling,official]);
-  for(const bad of [null,123,'bad','b'.repeat(64)])assert.throws(()=>weeklyEventRegistry(bad,all),/registered/);
-  assert.deepEqual(utcEventCandidates(at,[official],all)[0],utcEventCandidates(at,[official],[rolling])[0]);
-  const config=JSON.parse(fs.readFileSync(new URL('../wrangler.jsonc',import.meta.url),'utf8'));
-  assert.equal(config.vars.EVENT_WEEKLY_TRACK_ID,rolling);
+test('daily and weekly stay in disjoint registries across dates',()=>{
+ for(let day=1;day<=30;day++) {
+  const candidates=utcEventCandidates(Date.UTC(2026,8,day),[official],[rolling,official]);
+  assert.equal(candidates.find(p=>p.kind==='daily').trackId,rolling);
+  assert.equal(candidates.find(p=>p.kind==='weekly').trackId,official);
+ }
+ const config=JSON.parse(fs.readFileSync(new URL('../wrangler.jsonc',import.meta.url),'utf8'));
+ assert.equal(config.vars.EVENT_WEEKLY_TRACK_ID,undefined);
 });
-test('featured weekly waits for legitimate target and never falls back to another track',async()=>{
+
+test('official weekly waits for legitimate target and never falls back to another track',async()=>{
   for(const target of [null,0,NaN,300001]) {
     const f=fixture(target),result=await f.run();
     assert.equal(result.created,null);assert.equal(result.reason,'no_verified_target_in_bounded_scan');
-    assert.deepEqual(f.lookups,[rolling]);assert.equal(f.data.has(C.periods+'/'+f.weekly.id),false);
+    assert.deepEqual(f.lookups,[official]);assert.equal(f.data.has(C.periods+'/'+f.weekly.id),false);
     assert.ok(f.writes.every(p=>p.startsWith(C.cursors+'/')));assert.ok(f.calls.length<=8);
   }
 });
-test('featured weekly uses trusted lookup target and preserves archive and normal score collections',async()=>{
+test('official weekly uses trusted lookup target and preserves archive and normal score collections',async()=>{
   const f=fixture(21000),archive=structuredClone(f.data.get(C.archives+'/w_20260907'));
   const result=await f.run();assert.equal(result.created,f.weekly.id);
   const period=f.data.get(C.periods+'/'+f.weekly.id);
-  assert.equal(period.trackId,rolling);assert.equal(period.targetMs,21000);assert.equal(period.maxRp,500);
+  assert.equal(period.trackId,official);assert.equal(period.targetMs,21000);assert.equal(period.maxRp,500);
   assert.equal(period.kind,'weekly');assert.equal(period.eligibility,'best-submitted-during-period');
   assert.deepEqual(f.data.get(C.archives+'/w_20260907'),archive);
   assert.ok(!f.writes.some(p=>p.startsWith(C.archives+'/')||p.startsWith(C.canonical+'/')||p.startsWith(C.totals+'/')));

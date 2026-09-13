@@ -127,9 +127,10 @@ export function utcEventCandidates(at, officialIds, allIds) {
   const day = Math.floor(at / 86400000) * 86400000;
   const monday = day - ((new Date(day).getUTCDay() + 6) % 7) * 86400000;
   const key = ms => new Date(ms).toISOString().slice(0, 10).replaceAll('-', '');
+  const communityIds=allIds.filter(id=>!officialIds.includes(id));
   return [
-    { id: 'd_' + key(day), kind: 'daily', startsAt: day, endsAt: day + 86400000, maxRp: 100, trackId: officialIds[Number(key(day)) % officialIds.length] },
-    { id: 'w_' + key(monday), kind: 'weekly', startsAt: monday, endsAt: monday + 7 * 86400000, maxRp: 500, trackId: allIds[(Number(key(monday)) * 17 + 11) % allIds.length] }
+    ...(communityIds.length ? [{ id: 'd_' + key(day), kind: 'daily', startsAt: day, endsAt: day + 86400000, maxRp: 100, trackId: communityIds[Number(key(day)) % communityIds.length] }] : []),
+    { id: 'w_' + key(monday), kind: 'weekly', startsAt: monday, endsAt: monday + 7 * 86400000, maxRp: 500, trackId: officialIds[(Number(key(monday)) * 17 + 11) % officialIds.length] }
   ];
 }
 
@@ -140,7 +141,7 @@ export async function provisionEvent(runtime, { officialIds, allIds, capacity, t
   if (Math.floor(runtime.now() / 300000) % 2) candidates.reverse();
   for (const candidate of candidates) {
     if (await runtime.request('/' + C.periods + '/' + candidate.id)) continue;
-    const registry = candidate.kind === 'daily' ? officialIds : allIds;
+    const registry = candidate.kind === 'daily' ? allIds.filter(id=>!officialIds.includes(id)) : officialIds;
     const cursorPath = C.cursors + '/provision_' + candidate.id;
     const raw = await runtime.request('/' + cursorPath), prior = raw ? decode(raw) : null;
     const offset = prior?.offset || 0, start = registry.indexOf(candidate.trackId);

@@ -35,13 +35,13 @@ test('disabled periods do not wake verifier and malformed query fails closed', a
   assert.equal(calls.some(path => path.includes(C.queues)), false);
   await assert.rejects(inboxPage({ request: async () => null }), /Unexpected/);
 });
-test('UTC daily and weekly use insertion order and exact existing seeds', () => {
+test('UTC daily uses community and weekly uses official without overlap', () => {
   const at = Date.UTC(2026, 8, 13, 23, 59);
   const official = ['a', 'b', 'c'], all = ['z', 'x', 'a', 'b', 'c'];
   const [day, week] = utcEventCandidates(at, official, all);
   assert.equal(day.id, 'd_20260913'); assert.equal(week.id, 'w_20260907');
-  assert.equal(day.trackId, official[20260913 % 3]);
-  assert.equal(week.trackId, all[(20260907 * 17 + 11) % 5]);
+  assert.equal(day.trackId, ['z','x'][20260913 % 2]);
+  assert.equal(week.trackId, official[(20260907 * 17 + 11) % 3]);
   assert.equal(day.maxRp, 100); assert.equal(week.maxRp, 500);
   assert.equal(day.endsAt - day.startsAt, 86400000);
   assert.equal(week.endsAt - week.startsAt, 7 * 86400000);
@@ -579,4 +579,43 @@ test('period compatibility never accepts obsolete proofs, arbitrary engines or r
   f.data.get(`${C.periods}/day1`).engineDigest='d'.repeat(64);
   await assert.rejects(f.service.snapshot('day1'),/event_version_unavailable/);
   assert.equal(eventPeriod({...inputPeriod,engineDigest:PRE_EVENT_LAUNCH_ENGINE}).engineDigest,engine);
+});
+
+test('event public rows retain bounded car style but reject URLs and markup',()=>{for(const style of ['AAMBBG1XKg0UIhMTE2ZmZg','https://bad.test/car.png','<svg>','a'.repeat(257)]){const row=eventLeaderboard(p,[{accountId:account,timeMs:12000,name:'Racer',carStyle:style}])[0];assert.equal(row.carStyle,style==='AAMBBG1XKg0UIhMTE2ZmZg'?style:'');}});
+
+test('own-ghost repin preserves old period binding, event Play, pending runs and frozen archive scores', async () => {
+  const f=fixture();await f.start();
+  const oldPeriod={...f.data.get(`${C.periods}/day1`),engineDigest:'895eeacbdfdd5f68b9db92c502af620709539c5211782809f610c1a76e60785d'};
+  f.data.set(`${C.periods}/day1`,oldPeriod);
+  assert.equal((await f.service.snapshot('day1')).period.targetMs,oldPeriod.targetMs);
+  const first=await f.submit();
+  assert.equal(f.run(first.runId).periodBinding,JSON.stringify(oldPeriod));
+  const originalBinding=f.run(first.runId).eventKey;
+  await f.publish();
+  assert.equal(f.run(first.runId).eventKey,originalBinding);
+  assert.equal(f.run(first.runId).proof.engineDigest,engine);
+  assert.deepEqual(f.data.get(`${C.periods}/day1`),oldPeriod);
+  f.time(p.endsAt-1);await f.submit(15000,'late-repin');
+  f.time(p.endsAt+p.graceMs-1);const [job]=await f.service.leaseJobs('day1');
+  f.time(p.endsAt+p.graceMs);await f.service.archivePeriod('day1');
+  const archive=structuredClone(f.data.get(`${C.archives}/day1`));
+  const totals=structuredClone(f.data.get(`${C.public}/totals`));
+  const result=await f.service.completeJob('day1',job,verdict(job));
+  assert.equal(result.eventImproved,false);assert.equal(result.canonicalImproved,true);
+  assert.deepEqual(f.data.get(`${C.archives}/day1`),archive);
+  assert.deepEqual(f.data.get(`${C.public}/totals`),totals);
+  assert.equal((await f.service.snapshot('day1')).archived,true);
+});
+
+test('previous launch-engine period compatibility never accepts obsolete proofs, arbitrary engines or rewritten new periods',async()=>{
+  assert.notEqual(engine,'895eeacbdfdd5f68b9db92c502af620709539c5211782809f610c1a76e60785d','repin must be applied with compatibility');
+  const f=fixture();await f.start();
+  f.data.get(`${C.periods}/day1`).engineDigest='895eeacbdfdd5f68b9db92c502af620709539c5211782809f610c1a76e60785d';
+  await f.submit();const [job]=await f.service.leaseJobs('day1');
+  const proof=verdict(job);proof.engineDigest='895eeacbdfdd5f68b9db92c502af620709539c5211782809f610c1a76e60785d';proof.binding.engineDigest='895eeacbdfdd5f68b9db92c502af620709539c5211782809f610c1a76e60785d';
+  await assert.rejects(f.service.completeJob('day1',job,proof),/verifier_proof_mismatch/);
+  assert.deepEqual(f.data.get(`${C.live}/day1`).entries,[]);
+  f.data.get(`${C.periods}/day1`).engineDigest='d'.repeat(64);
+  await assert.rejects(f.service.snapshot('day1'),/event_version_unavailable/);
+  assert.equal(eventPeriod({...inputPeriod,engineDigest:'895eeacbdfdd5f68b9db92c502af620709539c5211782809f610c1a76e60785d'}).engineDigest,engine);
 });

@@ -475,7 +475,7 @@ test('event-only coordinator test is independent of checkout name and working di
   const directory=fs.mkdtempSync(path.join(os.tmpdir(),'polytrack-relocation-'));
   const sourceRoot=fileURLToPath(new URL('../..',import.meta.url));
   const files=['tools/verifier/queue.test.mjs','tools/verifier/queue.mjs','tools/verifier/run.mjs',
-    'tools/verifier/runner.mjs','tools/verifier/firestore.mjs',
+    'tools/verifier/runner.mjs','tools/verifier/firestore.mjs','tools/verifier/throughput.mjs',
     'workers/ranked/src/verification.js','workers/ranked/package.json'];
   // Copy only coordinator source. No credentials, engine assets, browser, or network are needed.
   const env=Object.fromEntries(['PATH','Path','SystemRoot','SYSTEMROOT','WINDIR','TEMP','TMP','TMPDIR','HOME','USERPROFILE']

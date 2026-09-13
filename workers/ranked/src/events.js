@@ -92,7 +92,7 @@ export function eventLeaderboard(period, rows) {
   const seen = new Set();
   const sorted = rows.map(row => {
     hex(row.accountId); demand(!seen.has(row.accountId), 'duplicate_account', 503); seen.add(row.accountId);
-    return { accountId: row.accountId, timeMs: row.timeMs, rp: eventRp(period, row.timeMs), name: text(row.name, 24) || 'Racer' };
+    return { accountId: row.accountId, timeMs: row.timeMs, rp: eventRp(period, row.timeMs), name: text(row.name, 24) || 'Racer', carStyle: typeof row.carStyle==='string'&&/^[A-Za-z0-9_-]{1,256}$/.test(row.carStyle)?row.carStyle:'' };
   }).sort((a, b) => a.timeMs - b.timeMs || (a.accountId < b.accountId ? -1 : a.accountId > b.accountId ? 1 : 0));
   let rank = 0;
   return sorted.map((row, index) => {

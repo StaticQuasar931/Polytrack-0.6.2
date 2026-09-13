@@ -153,7 +153,7 @@ test('event Play never falls through to normal PB launch; leaving restores norma
 });
 test('native event cars use exact validated cached styles and label unknown cars honestly',async t=>{
  const p=await fixture(t);await p.evaluate(()=>{
-  const original=bridgeFixture.require();bridgeFixture.require=()=>n=>n===8724?{A:{deserializeSafe:s=>s==='exact-saved-style'?{}:null}}:original(n);
+  const original=bridgeFixture.require();bridgeFixture.require=()=>n=>n===8724?{A:{deserializeSafe:s=>s==='exact-saved-style'?{serialize:()=>s}:{serialize:()=>'default'}}}:original(n);
   window.__polytrackCarStyleByUser062={[id]:'exact-saved-style',['c'.repeat(64)]:'malformed'};window.renderCalls=[];
   window.BT=async(...args)=>{renderCalls.push(args);return 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aS1sAAAAASUVORK5CYII=';};
   const read=bridgeFixture.readSnapshot;bridgeFixture.readSnapshot=async key=>({...await read(key),entries:[{accountId:id,name:'Cached',timeMs:20000,rank:1,rp:100},{accountId:'b'.repeat(64),name:'Unknown',timeMs:21000,rank:2,rp:90},{accountId:'c'.repeat(64),name:'Malformed',timeMs:22000,rank:3,rp:80}]});
@@ -162,6 +162,53 @@ test('native event cars use exact validated cached styles and label unknown cars
  await p.locator('.sq-event-board .image-container img[alt="Cached profile car"]').waitFor();
  assert.equal(await p.locator('.sq-event-board .verified-state.verified').count(),3);
 });
+test('cold event rows supply exact cars and refreshed directory names',async t=>{
+ const p=await fixture(t);await p.evaluate(()=>{
+  const prior=bridgeFixture.require();bridgeFixture.require=()=>n=>n===8724?{A:{deserializeSafe:s=>({serialize:()=>s==='row-style'?s:'default'})}}:prior(n);
+  bridgeFixture.displayName=(account,name)=>account===id?'Refreshed racer':name;
+  window.renderCalls=[];window.BT=async style=>{renderCalls.push(style);return 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aS1sAAAAASUVORK5CYII=';};
+  const read=bridgeFixture.readSnapshot;bridgeFixture.readSnapshot=async key=>({...await read(key),entries:[{accountId:id,name:'Old racer',carStyle:'row-style',timeMs:20000,rank:1,rp:100}]});
+ });await enter(p);await p.waitForFunction(()=>renderCalls.length===1);
+ assert.deepEqual(await p.evaluate(()=>renderCalls),['row-style']);
+ assert.match(await p.locator('.sq-event-board').innerText(),/Refreshed racer/);
+ assert.equal(await p.locator('.sq-event-board .total-players').innerText(),'1 racer');
+});
+
+test('event car falls back to an account-matched persisted style and native renderer',async t=>{
+ const p=await fixture(t);await p.evaluate(()=>{
+  localStorage.setItem('polytrack-0.6.2-s1-overall-snapshot-v5',JSON.stringify({entries:[{userId:id,carStyle:'saved-exact'}]}));
+  const prior=bridgeFixture.require();window.fallbackCalls=0;window.BT=async()=>'';
+  bridgeFixture.require=()=>n=>n===8724?{A:{deserializeSafe:s=>s==='saved-exact'?{style:s,serialize:()=>s}:null}}:n===3787?{F:async value=>{fallbackCalls++;if(value.style!=='saved-exact')throw Error('wrong style');return 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aS1sAAAAASUVORK5CYII=';}}:prior(n);
+ });await enter(p);await p.waitForFunction(()=>!!window.car);await p.evaluate(()=>car.finish(20000));await p.waitForFunction(()=>fallbackCalls===1);
+ await p.locator('.sq-event-board img[alt="Cached profile car"]').waitFor();await p.evaluate(()=>{for(let i=0;i<30;i++)ui.tick();});assert.equal(await p.evaluate(()=>fallbackCalls),1);
+});
+test('event thumbnail rendering runs at most two jobs concurrently',async t=>{
+ const p=await fixture(t);await p.evaluate(()=>{
+  const prior=bridgeFixture.require();bridgeFixture.require=()=>n=>n===8724?{A:{deserializeSafe:s=>s.startsWith('style-')?{serialize:()=>s}:null}}:prior(n);
+  window.renderJobs=[];window.activeRenders=0;window.maxRenders=0;window.BT=()=>new Promise(resolve=>{activeRenders++;maxRenders=Math.max(maxRenders,activeRenders);renderJobs.push(()=>{activeRenders--;resolve('');});});
+  const read=bridgeFixture.readSnapshot;bridgeFixture.readSnapshot=async key=>({...await read(key),entries:Array.from({length:5},(_,i)=>({accountId:String(i+1).repeat(64),carStyle:'style-'+i,timeMs:20000+i,rank:i+1}))});
+ });await enter(p);await p.waitForFunction(()=>renderJobs.length===2);
+ for(let count=2;count<=5;count++){await p.waitForFunction(count=>renderJobs.length>=count,count);await p.evaluate(i=>renderJobs[i](),count-2);}
+ assert.equal(await p.evaluate(()=>maxRenders),2);
+});
+test('readiness wait shows cancellable progress and cannot reopen after cancellation',async t=>{
+ const p=await fixture(t,{deferReady:true});await showLiveRail(p);await p.locator('.sq-event-track-buttons [data-event-id]').click();
+ assert.match(await p.locator('.sq-events-dialog main').innerText(),/Opening event/);await p.locator('[data-event-close]').click();await p.evaluate(()=>resolveReady());await p.waitForTimeout(400);assert.equal(await p.evaluate(()=>!!window.car),false);
+});
+test('own event replay survives upload without borrowing normal or another period replay',async t=>{
+ const p=await fixture(t);await enter(p);await p.waitForFunction(()=>!!window.car);await p.evaluate(()=>car.finish(20000));await p.waitForFunction(()=>submits.length===1);
+ assert.deepEqual(await p.evaluate(()=>{const r=ui.getOwnReplay('daily-fixture');return {period:r.periodId,track:r.trackId,account:r.accountId,time:r.timeMs,replay:r.replay,other:ui.getOwnReplay('weekly-fixture')};}),{period:'daily-fixture',track:id,account:id,time:20000,replay:'AAAA',other:null});
+ await p.evaluate(()=>{const key='polytrack-062-events-v1-replays',rows=JSON.parse(localStorage.getItem(key));rows[0].trackId='b'.repeat(64);localStorage.setItem(key,JSON.stringify(rows));});assert.equal(await p.evaluate(()=>ui.getOwnReplay('daily-fixture')),null);
+});
+test('corrupt local replay cache never blocks event Play',async t=>{
+ const p=await fixture(t);await addNativePlay(p);await enter(p);
+ for(const cache of [null,{},[null],[null,{periodId:'daily-fixture',accountId:id,trackId:id}]]){
+  await p.evaluate(cache=>{localStorage.setItem('polytrack-062-events-v1-replays',JSON.stringify(cache));bridgeFixture.supportsEventGhost=()=>true;bridgeFixture.startEventRace=context=>{window.safeContext=context;};},cache);
+  assert.equal(await p.evaluate(()=>ui.getOwnReplay('daily-fixture')),null);
+  await p.locator('.side-panel .play').click();assert.equal(await p.evaluate(()=>safeContext.ownGhost),null);
+ }
+});
+
 test('normal leaderboard loading state cannot hide an event row or its car',async t=>{
  const p=await fixture(t);await p.addStyleTag({content:'.sq-track-leaderboard-loading .leaderboard-ui>.container>button.main{visibility:hidden!important}.sq-track-leaderboard-loading .leaderboard-ui>.container::after{content:"Loading track leaderboard";display:block}'});
  await p.addStyleTag({url:base+'/events/events.css'});await enter(p);await p.waitForFunction(()=>!!window.car);await p.evaluate(()=>{car.finish(20000);document.documentElement.classList.add('sq-track-leaderboard-loading');});
@@ -182,14 +229,14 @@ test('event bridge rejects duplicate native launches until the first launch is c
   start(context,()=>invokes++,()=>current);try{start(context,()=>invokes++,()=>true);}catch{rejected=true;}
   const first=window.__pt062PrepareEventRace(id,null);start(context,()=>invokes++,()=>current);current=false;start(context,()=>invokes++,()=>true);
   return {invokes,rejected,first,last:window.__pt062PrepareEventRace(id,null)};
- },eventBridge),{invokes:3,rejected:true,first:true,last:true});
+ },eventBridge),{invokes:3,rejected:true,first:{ownGhost:null},last:{ownGhost:null}});
 });
 test('actual event bridge permits native click once and rejects stale launch context',async t=>{
  const p=await fixture(t);await addNativePlay(p);await p.evaluate(source=>{
   const activeRankedAccountId=()=>id;window.__pt062NativeEventLaunchVersion=1;
   bridgeFixture.startEventRace=eval('(()=>{'+source+';return startEventRace})()');
   document.querySelector('.side-panel .play').onclick=()=>{window.nativeEvent=window.__pt062PrepareEventRace(id,null);};
- },eventBridge);await enter(p);await p.locator('.side-panel .play').click();assert.equal(await p.evaluate(()=>nativeEvent),true);
+ },eventBridge);await enter(p);await p.locator('.side-panel .play').click();assert.deepEqual(await p.evaluate(()=>nativeEvent),{ownGhost:null});
  assert.equal(await p.evaluate(()=>window.__pt062PrepareEventRace(id,null)),false,'launch policy is consumed, not sticky');
  assert.equal(await p.evaluate(()=>{
   let current=true;bridgeFixture.startEventRace({periodId:'daily-fixture',trackId:id,accountId:id,endsAt:Date.now()+10000},()=>{},()=>current);current=false;

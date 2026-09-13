@@ -22,21 +22,11 @@ export async function eventWorkerMaintenance(env, { request, officialIds, allIds
     let capacity;
     try { capacity = JSON.parse(env.EVENT_CAPACITY_JSON); } catch { throw Error('Explicit reviewed event capacity required'); }
     return provisionEvent(runtime, { officialIds,
-      allIds: weeklyEventRegistry(env.EVENT_WEEKLY_TRACK_ID, allIds), capacity, targetForTrack });
+      allIds, capacity, targetForTrack });
   }
   if ([1, 3].includes(Math.floor(at / 60000) % 5)) {
     const cleanup = await cleanupEvents(runtime);
     if (!cleanup.idle) return cleanup;
   }
   return consumeEventInbox(runtime, { preferRetry: Math.floor(at / 60000) % 2 === 0 });
-}
-
-
-export function weeklyEventRegistry(featuredTrackId, allIds) {
-  if (featuredTrackId === undefined || featuredTrackId === '') return allIds;
-  if (typeof featuredTrackId !== 'string' || !/^[a-f0-9]{64}$/.test(featuredTrackId) || !allIds.includes(featuredTrackId)) {
-    throw Error('Featured weekly track must be registered');
-  }
-  // Restrict new weekly selection only. Existing periods and verified-target gating are unchanged.
-  return [featuredTrackId];
 }

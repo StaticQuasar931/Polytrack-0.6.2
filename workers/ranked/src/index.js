@@ -1,7 +1,7 @@
 import { eventWorkerHandler, eventWorkerMaintenance } from './events-worker.js';
 import {packPlannerResults, plannerDocumentBytes, PLANNER_BUNDLE_VERSION, PLANNER_PUBLICATION_VERSION} from './planner-results.js';
 export {packPlannerResults} from './planner-results.js';
-import { VERIFICATION_BOOTSTRAP_ID, VERIFICATION_BOOTSTRAP_BATCH, bootstrapSlots, VERIFICATION_COLLECTION, verificationSchedule, verificationKey, verifiedVerdict, verifiedTargetMs, pendingSlot } from './verification.js';
+import { VERIFICATION_BOOTSTRAP_ID, VERIFICATION_BOOTSTRAP_BATCH, bootstrapSlots, VERIFICATION_COLLECTION, verificationSchedule, verificationKey, hasAcceptedVerifiedProof, verifiedVerdict, verifiedTargetMs, pendingSlot } from './verification.js';
 const FIREBASE_JWKS_URL = 'https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com';
 const FIREBASE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
 const PROJECT_ID = 'polytrack-052';
@@ -669,7 +669,7 @@ async function prepareVerification(env, trackId, rows, complete = false) {
   for(const row of rows){
     if(!structurallyValidResult(row,trackId))continue;
     const id=safeText(row.accountId||row.userId,128);
-    if(slots[id]?.key!==verificationKey(row)||slots[id]?.reason==='canonical_missing'){slots[id]=pendingSlot(row);changed=true;}
+    if(slots[id]?.reason==='canonical_missing'||slots[id]?.key!==verificationKey(row)&&!hasAcceptedVerifiedProof(row,slots[id])){slots[id]=pendingSlot(row);changed=true;}
   }
   if(Object.keys(slots).length>TRACK_LIMIT)throw new Error('VERIFICATION_TRACK_CAP');
   if(changed)await commitDocuments(env,[{collection:VERIFICATION_COLLECTION,id:trackId,prior,data:{trackId,slots,...verificationSchedule(slots),updatedAt:Date.now()}}]);

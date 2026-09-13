@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test test-synthetic.cjs test-cleanup.cjs queue.test.mjs test-limits.cjs",
+    "test": "node --test test-synthetic.cjs test-cleanup.cjs queue.test.mjs test-limits.cjs throughput.test.mjs",
     "verify": "node run.mjs",
     "test:native-limits": "node --test test-native-limits.cjs"
   },

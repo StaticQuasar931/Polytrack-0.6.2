@@ -1,11 +1,23 @@
-export const VERIFIER_ENGINE_DIGEST = '895eeacbdfdd5f68b9db92c502af620709539c5211782809f610c1a76e60785d';
+export const VERIFIER_ENGINE_DIGEST = '32bfe32b8680597d9f1322dbcbb19242be38bee9ab243a379f5e449c3f4030fd';
 export const VERIFIER_VERSION = 'polytrack-native-bounded-v1';
 export const VERIFICATION_COLLECTION = '0.6.2_s1_verification';
-export function verificationKey(row) {
-  return JSON.stringify([VERIFIER_VERSION,VERIFIER_ENGINE_DIGEST,String(row.accountId||row.userId||''),String(row.trackId||''),Number(row.timeMs),Number(row.raceTimeFrames||row.frames||0),Number(row.uploadId||row.id||0),String(row.replayHash||'').toLowerCase()]);
+// Compatibility is a reviewed pair, not a rolling list inherited by future engines.
+export const PRE_GHOST_PROOF_ENGINE = '895eeacbdfdd5f68b9db92c502af620709539c5211782809f610c1a76e60785d';
+const REVIEWED_GHOST_ENGINE = '32bfe32b8680597d9f1322dbcbb19242be38bee9ab243a379f5e449c3f4030fd';
+export function verificationKey(row) { return boundVerificationKey(row, VERIFIER_ENGINE_DIGEST); }
+function boundVerificationKey(row, engineDigest) {
+  return JSON.stringify([VERIFIER_VERSION,engineDigest,String(row.accountId||row.userId||''),String(row.trackId||''),Number(row.timeMs),Number(row.raceTimeFrames||row.frames||0),Number(row.uploadId||row.id||0),String(row.replayHash||'').toLowerCase()]);
+}
+export function hasAcceptedVerifiedProof(row, verdict) {
+  const digest = verdict?.engineDigest;
+  const compatible = digest === VERIFIER_ENGINE_DIGEST ||
+    VERIFIER_ENGINE_DIGEST === REVIEWED_GHOST_ENGINE && digest === PRE_GHOST_PROOF_ENGINE;
+  if (row.frames != null && row.raceTimeFrames != null && row.frames !== row.raceTimeFrames) return false;
+  return compatible && verdict?.status === 'verified' && verdict.verifierVersion === VERIFIER_VERSION &&
+    verdict.key === boundVerificationKey(row, digest);
 }
 export function verifiedVerdict(row, verdict) {
-  return row.integrityVerified === true && verdict?.status === 'verified' && verdict.key === verificationKey(row) && verdict.verifierVersion === VERIFIER_VERSION && verdict.engineDigest === VERIFIER_ENGINE_DIGEST;
+  return row.integrityVerified === true && hasAcceptedVerifiedProof(row, verdict);
 }
 export function pendingSlot(row) {
   const accountId=String(row.accountId||row.userId||'');
@@ -41,7 +53,7 @@ export function bootstrapSlots(trackId, entries, existing = {}) {
     const slot = slots[accountId];
     // Bootstrap runs once per version; even stale snapshots must wake terminal old keys.
     // The runner fetches canonical data and replaces this provisional binding before verifying.
-    if (slot?.key !== verificationKey(entry) || slot?.reason === 'canonical_missing') {
+    if (slot?.reason === 'canonical_missing' || slot?.key !== verificationKey(entry) && !hasAcceptedVerifiedProof(entry, slot)) {
       slots[accountId] = pendingSlot(entry);
     } else if (slot.status === 'unavailable' && (['track_geometry_limit','scan_work_limit'].includes(slot.reason) || slot.reason === 'time_limit' && legacyTimingFrames(entry) !== null)) {
       slots[accountId] = {...pendingSlot(entry), attempts: slot.attempts ?? 0};

@@ -939,3 +939,37 @@ test('digest bootstrap wakes terminal NEVER queues despite completed old bootstr
   }
   assert.deepEqual(f.docs.get('/0.6.2_s1_worker_jobs/'+oldJobId),oldJob);
 });
+
+function previousGhostProof(row){
+ const digest='895eeacbdfdd5f68b9db92c502af620709539c5211782809f610c1a76e60785d';
+ const key=JSON.parse(verificationKey(row));key[1]=digest;
+ return {...pendingSlot(row),key:JSON.stringify(key),status:'verified',engineDigest:digest,retryAt:Number.MAX_SAFE_INTEGER};
+}
+test('snapshot and equal-PB notification preserve exact previous approved proof without queue replacement',async()=>{
+ const row=validRun({accountId:'racer',trackId:TRACK,timeMs:20000});const proof=previousGhostProof(row);
+ assert.equal(computeTrackEntries([row],TRACK,{}, {racer:proof})[0].runVerified,true);
+ assert.equal(computeTrackEntries([{...row,timeMs:19999,raceTimeFrames:19999}],TRACK,{}, {racer:proof})[0].runVerified,false);
+ let writes=0;
+ const env={__TEST_FIRESTORE:async(p,init={})=>{
+  if(p===':commit'){writes++;return {};}
+  if(p.includes('s1_leaderboards_track'))return {fields:wire({algorithmVersion:'participation-v8-s1',revision:2,entries:[row]}).mapValue.fields,updateTime:'v1'};
+  if(p.includes('s1_verification'))return {fields:wire({trackId:TRACK,slots:{racer:proof},pending:false,notBefore:Number.MAX_SAFE_INTEGER}).mapValue.fields,updateTime:'v1'};
+  throw Error('unexpected path '+p);
+ }};
+ const result=await mergeCanonicalResultIntoTrack(env,TRACK,row,true);
+ assert.equal(result.changed,false);assert.equal(writes,0);
+});
+test('bounded digest bootstrap retains exact approved NEVER slot but wakes changed PB',async()=>{
+ const {eventDecode}=await import('../src/events-store.js');const f=bootstrapFixture(2),base='projects/test/databases/(default)/documents/';
+ for(let i=0;i<2;i++){
+  const trackId=String(i).padStart(64,'0'),row={accountId:'racer',trackId,timeMs:20000,raceTimeFrames:20000};
+  const proof=previousGhostProof(i===0?row:{...row,timeMs:20001,raceTimeFrames:20001});
+  f.docs.set('/0.6.2_s1_verification/'+trackId,{name:base+'0.6.2_s1_verification/'+trackId,fields:wire({trackId,pending:false,notBefore:Number.MAX_SAFE_INTEGER,slots:{racer:proof}}).mapValue.fields,updateTime:'old'+i});
+ }
+ assert.deepEqual(await bootstrapSnapshotVerification(f.env),{scanned:2,complete:true});
+ for(let i=0;i<2;i++){
+  const state=eventDecode({mapValue:{fields:f.docs.get('/0.6.2_s1_verification/'+String(i).padStart(64,'0')).fields}});
+  assert.equal(state.slots.racer.status,i===0?'verified':'waiting');assert.equal(state.pending,i!==0);
+  if(i===0)assert.equal(state.notBefore,Number.MAX_SAFE_INTEGER);else assert.notEqual(state.notBefore,Number.MAX_SAFE_INTEGER);
+ }
+});
